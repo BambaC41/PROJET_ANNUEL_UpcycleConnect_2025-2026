@@ -1,0 +1,116 @@
+{
+  "nav_home": "Accueil",
+  "nav_ads": "Annonces",
+  "nav_services": "Prestations",
+  "nav_events": "Événements",
+  "nav_tips": "Conseils",
+  "nav_admin": "Admin",
+  "nav_particulier": "Mon espace",
+  "nav_pro": "Espace professionnel",
+  "nav_employee": "Espace salarié",
+
+  "btn_login": "Connexion",
+  "btn_register": "S'inscrire",
+  "btn_submit": "Soumettre",
+  "btn_save": "Enregistrer",
+  "btn_cancel": "Annuler",
+  "btn_validate": "Valider",
+  "btn_reject": "Refuser",
+  "btn_reserve": "Réserver & payer",
+  "btn_participate": "Participer",
+  "btn_generate_codes": "Générer les codes (démo)",
+
+  "footer_language": "Langue :",
+  "footer_multilang_note": "Le site est multilingue : ajout de langues via fichiers de traduction (sans Google et sans modifier le code).",
+
+  "dashboard_title": "Tableau de bord",
+  "dashboard_admin": "Administration",
+  "dashboard_particulier": "Tableau de bord personnel",
+  "dashboard_pro": "Tableau de bord professionnel",
+  "dashboard_employee": "Tableau de bord salarié",
+
+  "section_users": "Gestion des utilisateurs",
+  "section_catalog": "Catalogue des prestations",
+  "section_categories": "Catégories",
+  "section_events_validation": "Validation des événements",
+  "section_notifications": "Notifications",
+  "section_finance": "Gestion financière",
+  "section_containers": "Conteneurs / Box",
+  "section_documents": "Documents & Codes",
+  "section_planning": "Planning",
+
+  "annonce_title": "Déposer une annonce (don ou vente)",
+  "annonce_validation": "Validation administrateur requise",
+  "annonce_submit": "Déposer une annonce",
+
+  "conteneur_title": "Demande de dépôt dans un conteneur",
+  "conteneur_check": "Demander la validation Check",
+  "conteneur_code": "Code d'ouverture",
+  "conteneur_barcode": "Code-barres",
+
+  "catalog_title": "Catalogue (services, formations, événements)",
+  "conseils_title": "Conseils & Actualités",
+  "score_title": "Score d’Upcycling",
+  "planning_title": "Planning personnel",
+
+  "finance_revenue": "Revenus",
+  "finance_expenses": "Charges",
+
+  "status_pending": "En attente",
+  "status_active": "Actif",
+  "status_confirmed": "Confirmé",
+  "status_validated": "Validé",
+  "status_rejected": "Refusé",
+
+  "btn_logout": "Déconnexion",
+
+  "home_hero_title": "Donnez une seconde vie aux objets inutilisés",
+  "home_hero_subtitle": "Réduisez les déchets. Mesurez votre impact positif.",
+  "home_search_placeholder": "Rechercher un objet...",
+
+  "home_btn_discover_trainings": "Découvrir les formations",
+  "home_discover_listings": "Annonces à découvrir",
+  "home_btn_view_listing": "Voir l'annonce",
+
+  "home_listing_1_title": "Chaise Rétro Recyclée",
+  "home_listing_1_meta": "20€ • Paris",
+  "home_listing_2_title": "Palette Transformée",
+  "home_listing_2_meta": "30€ • Lyon",
+  "home_listing_3_title": "Vélo à Réparer",
+  "home_listing_3_meta": "Gratuit • Marseille",
+  "home_listing_4_title": "Lampe en Bocaux",
+  "home_listing_4_meta": "15€ • Lille",
+
+  "home_how_title": "Comment ça marche ?",
+  "home_how_step1_title": "1. Déposez un objet",
+  "home_how_step1_desc": "Publiez votre annonce en quelques clics.",
+  "home_how_step2_title": "2. Validation & conteneur",
+  "home_how_step2_desc": "Recevez un code pour déposer votre objet.",
+  "home_how_step3_title": "3. Transformation",
+  "home_how_step3_desc": "Un artisan le récupère et lui donne une nouvelle vie.",
+
+  "home_impact_title": "Impact environnemental",
+  "home_impact_co2": "3847 kg de CO₂ économisés",
+  "home_impact_objects": "16820 objets revalorisés",
+  "home_impact_score_label": "Score moyen",
+
+  "home_community_title": "Un espace communautaire pour le partage et l’innovation",
+  "home_btn_join_community": "Rejoindre la communauté",
+
+  "home_footer_about": "À propos",
+  "home_footer_about_who": "Qui sommes-nous ?",
+  "home_footer_about_mission": "Notre mission",
+  "home_footer_about_partners": "Partenaires",
+
+  "home_footer_resources": "Ressources",
+  "home_footer_blog": "Blog",
+  "home_footer_faq": "FAQ",
+  "home_footer_contact": "Contact",
+
+  "home_footer_legal": "Légal",
+  "home_footer_legal_notice": "Mentions légales",
+  "home_footer_legal_privacy": "Politique de confidentialité",
+  "home_footer_legal_terms": "CGU",
+
+  "home_footer_copyright": "© 2026 UpcycleConnect — Tous droits réservés"
+}

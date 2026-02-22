@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Connexion — UpcycleConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<header class="navbar">
+  <div class="logo">
+    <a href="index.html"><img src="logo.png" alt="UpcycleConnect Logo"></a>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="#">Annonces</a>
+    <a href="#">Prestations</a>
+    <a href="#">Événements</a>
+    <a href="#">Conseils</a>
+  </nav>
+
+  <div class="auth-buttons" id="authButtons">
+    <a class="btn-outline" href="login.html">Connexion</a>
+    <a class="btn-primary" href="register.html">S'inscrire</a>
+  </div>
+
+  <div class="user-box hidden" id="userBox">
+    <span id="userHello"></span>
+    <button class="btn-outline" id="logoutBtn">Déconnexion</button>
+  </div>
+</header>
+
+<main class="auth-page">
+  <section class="auth-card">
+    <h1>Connexion</h1>
+    <p class="muted">Accédez à votre espace UpcycleConnect.</p>
+
+    <form id="loginForm" class="auth-form">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="ex: moi@mail.com" required>
+
+      <label>Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" required>
+
+      <button class="btn-primary" type="submit">Se connecter</button>
+
+      <p class="muted small">
+        Pas de compte ?
+        <a href="register.html">Créer un compte</a>
+      </p>
+
+      <p class="error" id="errorMsg" aria-live="polite"></p>
+    </form>
+  </section>
+</main>
+
+<script src="auth.js"></script>
+<script>
+  // Si déjà connecté, retour accueil
+  if (window.UC_AUTH.getAuthUser()) {
+    window.location.href = "index.html";
+  }
+
+  document.getElementById("loginForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const error = document.getElementById("errorMsg");
+    error.textContent = "";
+
+    try {
+      window.UC_AUTH.loginUser({
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value
+      });
+      window.location.href = "index.html";
+    } catch (err) {
+      error.textContent = err.message || "Erreur de connexion.";
+    }
+  });
+</script>
+</body>
+</html>

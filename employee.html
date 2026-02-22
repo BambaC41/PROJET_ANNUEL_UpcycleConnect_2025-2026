@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Espace Salariés — UpcycleConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<header class="navbar">
+  <div class="logo">
+    <a href="index.html"><img src="logo.png" alt="UpcycleConnect Logo"></a>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="#">Annonces</a>
+    <a href="#">Prestations</a>
+    <a href="#">Événements</a>
+    <a href="#">Conseils</a>
+  </nav>
+
+  <div class="auth-buttons" id="authButtons">
+    <a class="btn-outline" href="login.html">Connexion</a>
+    <a class="btn-primary" href="register.html">S'inscrire</a>
+  </div>
+
+  <div class="user-box hidden" id="userBox">
+    <span id="userHello"></span>
+    <button class="btn-outline" id="logoutBtn">Déconnexion</button>
+  </div>
+</header>
+
+<main class="dash">
+  <aside class="dash-sidebar">
+    <h2>Espace Salariés</h2>
+    <p class="muted small" id="empInfo">Animateur / Formateur</p>
+
+    <div class="dash-nav">
+      <a href="#formations">Formations & Ateliers</a>
+      <a href="#planning">Planning</a>
+      <a href="#conseils">Conseils & News</a>
+      <a href="#forums">Forums (modération)</a>
+    </div>
+
+    <div class="dash-badge">
+      <div class="badge-title">À faire</div>
+      <div class="badge-row">
+        <span class="pill pill-gray" id="todoValid">2 validations</span>
+        <span class="pill pill-green" id="todoToday">3 aujourd’hui</span>
+      </div>
+      <p class="muted small">Créez des contenus, animez des sessions, modérez la communauté.</p>
+    </div>
+  </aside>
+
+  <section class="dash-content">
+    <div class="dash-top">
+      <div>
+        <h1>Dashboard Salarié</h1>
+        <p class="muted">Créez et animez les formations/ateliers, gérez le planning, publiez des conseils et modérez les forums.</p>
+      </div>
+      <div class="dash-actions">
+        <button class="btn-outline" id="openNewFormation">Nouvelle formation</button>
+        <button class="btn-primary" id="openNewConseil">Publier un conseil</button>
+      </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Sessions à venir</div>
+        <div class="kpi-value">6</div>
+        <div class="kpi-sub muted small">7 jours</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">En attente validation</div>
+        <div class="kpi-value">2</div>
+        <div class="kpi-sub muted small">par un responsable</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Conseils publiés</div>
+        <div class="kpi-value">14</div>
+        <div class="kpi-sub muted small">ce mois</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Signalements forum</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-sub muted small">à traiter</div>
+      </div>
+    </div>
+
+    <!-- 1) Formations & Ateliers -->
+    <section class="panel" id="formations">
+      <div class="panel-head">
+        <h2>Formations & Ateliers</h2>
+        <div class="row">
+          <button class="btn-outline" id="btnDraft">Brouillons</button>
+          <button class="btn-primary" id="btnCreateFormation">Créer</button>
+        </div>
+      </div>
+
+      <div class="grid-2 dash-grid">
+        <div class="card-lite">
+          <h3>Créer une formation (workflow)</h3>
+          <ol class="list">
+            <li>Créer le contenu (titre, description, durée, niveau)</li>
+            <li>Soumettre à validation manager</li>
+            <li>Une fois validée : planifier une session</li>
+            <li>Après animation : marquer “terminée”</li>
+          </ol>
+          <div class="row">
+            <span class="pill pill-gray">Validation requise</span>
+            <span class="pill pill-green">Traçabilité</span>
+          </div>
+          <p class="muted small">Le sujet impose la validation par responsable avant publication.</p>
+        </div>
+
+        <div class="card-lite">
+          <h3>Demandes de validation</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Contenu</th>
+                  <th>Type</th>
+                  <th>Statut</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Atelier “Upcycling bois”</td>
+                  <td>Atelier</td>
+                  <td><span class="pill pill-gray">En attente</span></td>
+                  <td><button class="btn-outline">Relancer manager</button></td>
+                </tr>
+                <tr>
+                  <td>Formation “Réparer un vélo”</td>
+                  <td>Formation</td>
+                  <td><span class="pill pill-gray">En attente</span></td>
+                  <td><button class="btn-outline">Relancer manager</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted small">À brancher plus tard à l’admin/manager (validation).</p>
+        </div>
+      </div>
+
+      <div class="cards-pro" style="margin-top:14px;">
+        <div class="card-lite">
+          <h3>Session — “Upcycling textile”</h3>
+          <p class="muted">12/03 • 18:00 • 12 places</p>
+          <div class="row">
+            <span class="pill pill-green">Validée</span>
+            <span class="pill pill-gray">À animer</span>
+          </div>
+          <button class="btn-primary">Démarrer la session</button>
+        </div>
+
+        <div class="card-lite">
+          <h3>Atelier — “Décoration bocaux”</h3>
+          <p class="muted">14/03 • 10:00 • 8 places</p>
+          <div class="row">
+            <span class="pill pill-green">Validée</span>
+            <span class="pill pill-gray">À animer</span>
+          </div>
+          <button class="btn-outline">Voir participants</button>
+        </div>
+
+        <div class="card-lite">
+          <h3>Formation — “Bois : bases & outils”</h3>
+          <p class="muted">Brouillon</p>
+          <div class="row">
+            <span class="pill pill-gray">Brouillon</span>
+            <span class="pill pill-gray">Non soumis</span>
+          </div>
+          <button class="btn-primary">Soumettre validation</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2) Planning -->
+    <section class="panel" id="planning">
+      <div class="panel-head">
+        <h2>Planning</h2>
+        <div class="row">
+          <button class="btn-outline">Exporter</button>
+          <button class="btn-primary">Ajouter créneau</button>
+        </div>
+      </div>
+
+      <div class="grid-2 dash-grid">
+        <div class="card-lite">
+          <h3>Vue semaine (démo)</h3>
+          <div class="calendar">
+            <div class="cal-col">
+              <div class="cal-day">Lun</div>
+              <div class="cal-slot">18:00 — Atelier bois</div>
+              <div class="cal-slot muted">Libre</div>
+            </div>
+            <div class="cal-col">
+              <div class="cal-day">Mar</div>
+              <div class="cal-slot">12:00 — Modération forum</div>
+              <div class="cal-slot muted">Libre</div>
+            </div>
+            <div class="cal-col">
+              <div class="cal-day">Mer</div>
+              <div class="cal-slot">10:00 — Formation vélo</div>
+              <div class="cal-slot muted">Libre</div>
+            </div>
+            <div class="cal-col">
+              <div class="cal-day">Jeu</div>
+              <div class="cal-slot muted">Libre</div>
+              <div class="cal-slot">18:00 — Textile</div>
+            </div>
+            <div class="cal-col">
+              <div class="cal-day">Ven</div>
+              <div class="cal-slot">09:00 — Conseils/news</div>
+              <div class="cal-slot muted">Libre</div>
+            </div>
+          </div>
+          <p class="muted small">À brancher sur l’API planning plus tard.</p>
+        </div>
+
+        <div class="card-lite">
+          <h3>Mes tâches du jour</h3>
+          <ul class="list">
+            <li>Valider plan de session “Textile” (check matériel)</li>
+            <li>Répondre aux questions forum (3 tickets)</li>
+            <li>Publier un conseil “Réparer une chaise”</li>
+          </ul>
+          <div class="row">
+            <button class="btn-outline">Marquer terminé</button>
+            <button class="btn-primary">Créer tâche</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3) Conseils & News -->
+    <section class="panel" id="conseils">
+      <div class="panel-head">
+        <h2>Gestion des conseils & news</h2>
+        <div class="row">
+          <input class="input" placeholder="Rechercher un conseil...">
+          <button class="btn-outline">Filtres</button>
+          <button class="btn-primary" id="btnCreateConseil">Nouveau</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Titre</th>
+              <th>Catégorie</th>
+              <th>Statut</th>
+              <th>Dernière maj</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Réparer un vélo : les bases</td>
+              <td>Conseil</td>
+              <td><span class="pill pill-green">Publié</span></td>
+              <td>02/03</td>
+              <td class="row">
+                <button class="btn-outline">Éditer</button>
+                <button class="btn-outline">Dépublier</button>
+              </td>
+            </tr>
+            <tr>
+              <td>Atelier bois : liste matériel</td>
+              <td>News</td>
+              <td><span class="pill pill-gray">Brouillon</span></td>
+              <td>01/03</td>
+              <td class="row">
+                <button class="btn-primary">Publier</button>
+                <button class="btn-outline">Éditer</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted small">Les salariés sont responsables de la production régulière de contenus.</p>
+    </section>
+
+    <!-- 4) Modération forums -->
+    <section class="panel" id="forums">
+      <div class="panel-head">
+        <h2>Forums — modération</h2>
+        <div class="row">
+          <button class="btn-outline">Voir tout</button>
+          <button class="btn-primary">Créer un topic</button>
+        </div>
+      </div>
+
+      <div class="grid-2 dash-grid">
+        <div class="card-lite">
+          <h3>Signalements</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>Raison</th>
+                  <th>Priorité</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>“Vente palette”</td>
+                  <td>Spam</td>
+                  <td><span class="pill pill-gray">Moyenne</span></td>
+                  <td class="row">
+                    <button class="btn-outline">Masquer</button>
+                    <button class="btn-primary">Avertir</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td>“Outils recommandés”</td>
+                  <td>Hors-sujet</td>
+                  <td><span class="pill pill-gray">Basse</span></td>
+                  <td class="row">
+                    <button class="btn-outline">Déplacer</button>
+                    <button class="btn-outline">Ignorer</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted small">Historique des actions (audit) à brancher côté Admin.</p>
+        </div>
+
+        <div class="card-lite">
+          <h3>Derniers topics</h3>
+          <div class="cards-pro">
+            <div class="card-lite">
+              <h3>Quels matériaux pour une chaise ?</h3>
+              <p class="muted">12 réponses • Dernier msg : 1h</p>
+              <div class="row">
+                <button class="btn-outline">Voir</button>
+                <button class="btn-outline">Épingler</button>
+              </div>
+            </div>
+            <div class="card-lite">
+              <h3>Idées upcycling textile</h3>
+              <p class="muted">8 réponses • Dernier msg : 3h</p>
+              <div class="row">
+                <button class="btn-outline">Voir</button>
+                <button class="btn-primary">Mettre en avant</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="dash-footer">
+      <span class="muted small">© 2026 UpcycleConnect — Espace Salariés</span>
+    </footer>
+
+  </section>
+</main>
+
+<script src="auth.js"></script>
+<script>
+  // Boutons rapides (démo)
+  document.getElementById("openNewFormation").addEventListener("click", () => {
+    window.location.hash = "#formations";
+    alert("Démo : ouvrir un formulaire 'Nouvelle formation' (à implémenter).");
+  });
+
+  document.getElementById("openNewConseil").addEventListener("click", () => {
+    window.location.hash = "#conseils";
+    alert("Démo : ouvrir un formulaire 'Nouveau conseil' (à implémenter).");
+  });
+
+  document.getElementById("btnCreateFormation").addEventListener("click", () => {
+    alert("Démo : formulaire création formation + soumission validation manager.");
+  });
+
+  document.getElementById("btnCreateConseil").addEventListener("click", () => {
+    alert("Démo : formulaire création conseil/news.");
+  });
+</script>
+</body>
+</html>

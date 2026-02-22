@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Espace Particulier — UpcycleConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+<header class="navbar">
+  <div class="logo">
+    <a href="index.html"><img src="logo.png" alt="UpcycleConnect Logo"></a>
+  </div>
+
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="particulier.html">Espace Particulier</a>
+    <a href="#">Annonces</a>
+    <a href="#">Événements</a>
+    <a href="#">Conseils</a>
+  </nav>
+
+  <div class="auth-buttons">
+    <a class="btn-outline" href="login.html">Connexion</a>
+    <a class="btn-primary" href="register.html">S'inscrire</a>
+  </div>
+</header>
+
+<main class="dash">
+  <!-- SIDEBAR -->
+  <aside class="dash-sidebar">
+    <h2>Mon espace</h2>
+    <p class="muted small">Particulier</p>
+
+    <div class="dash-nav">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#annonce">Déposer une annonce</a>
+      <a href="#conteneur">Dépôt conteneur</a>
+      <a href="#catalogue">Catalogue</a>
+      <a href="#conseils">Conseils</a>
+      <a href="#score">Upcycling Score</a>
+      <a href="#planning">Planning</a>
+    </div>
+
+    <div class="dash-badge">
+      <div class="badge-title">Notifications</div>
+      <p class="muted small">• 1 nouvel atelier disponible</p>
+      <p class="muted small">• 1 annonce en attente validation</p>
+    </div>
+
+    <button class="btn-outline" id="btnReplayTutorial">Rejouer le tutoriel</button>
+  </aside>
+
+  <!-- CONTENT -->
+  <section class="dash-content">
+
+    <!-- DASHBOARD -->
+    <section class="panel" id="dashboard">
+      <div class="panel-head">
+        <h2>Dashboard Particulier</h2>
+        <div class="row">
+          <button class="btn-outline">Voir mes annonces</button>
+          <button class="btn-primary">Réserver une formation</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="kpi">
+          <div class="kpi-label">Annonces</div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-sub muted small">dont 1 en validation</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Événements</div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-sub muted small">inscriptions</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Score</div>
+          <div class="kpi-value">84</div>
+          <div class="kpi-sub muted small">Upcycling Score</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEPOT ANNONCE -->
+    <section class="panel" id="annonce">
+      <div class="panel-head">
+        <h2>Déposer une annonce (don ou vente)</h2>
+        <span class="pill pill-gray">Validation admin requise</span>
+      </div>
+
+      <form class="form-block">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Titre de l’objet</label>
+            <input class="input" placeholder="ex: Chaise en bois" />
+          </div>
+          <div class="form-group">
+            <label>Type</label>
+            <select class="input">
+              <option>Don</option>
+              <option>Vente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Prix (si vente)</label>
+            <input class="input" type="number" placeholder="€" />
+          </div>
+          <div class="form-group">
+            <label>Localisation</label>
+            <input class="input" placeholder="Ville" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea class="input textarea" rows="4" placeholder="État, dimensions, infos..."></textarea>
+        </div>
+
+        <div class="row">
+          <button class="btn-primary" type="button">Soumettre l’annonce</button>
+          <button class="btn-outline" type="button">Brouillon</button>
+        </div>
+
+        <p class="muted small">Votre annonce sera validée par le service administratif avant publication.</p>
+      </form>
+    </section>
+
+    <!-- CONTENEUR -->
+    <section class="panel" id="conteneur">
+      <div class="panel-head">
+        <h2>Demande de dépôt dans un conteneur</h2>
+        <button class="btn-primary" id="btnGenerateCodes">Générer codes (démo)</button>
+      </div>
+
+      <div class="grid-2 dash-grid">
+        <div class="card-lite">
+          <h3>1) Demander le check</h3>
+          <p class="muted">Un service “Check” vérifie si l’objet peut être donné/vendu.</p>
+          <div class="form-group">
+            <label>Objet concerné</label>
+            <input class="input" placeholder="ex: Vélo à réparer" />
+          </div>
+          <button class="btn-outline" type="button">Envoyer demande</button>
+        </div>
+
+        <div class="card-lite">
+          <h3>2) Codes reçus (après validation Check)</h3>
+          <ul class="list" id="codesBox">
+            <li><strong>Code ouverture :</strong> —</li>
+            <li><strong>Code-barres :</strong> —</li>
+          </ul>
+          <p class="muted small">Le code-barres sera lu par l’artisan/pro pour récupérer l’objet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATALOGUE -->
+    <section class="panel" id="catalogue">
+      <div class="panel-head">
+        <h2>Catalogue (services, formations, événements)</h2>
+        <div class="row">
+          <input class="input" placeholder="Rechercher..." />
+          <button class="btn-outline">Filtres</button>
+        </div>
+      </div>
+
+      <div class="cards-pro">
+        <div class="card-lite">
+          <h3>Atelier Upcycling Bois</h3>
+          <p class="muted">25€ • 2h • Paris</p>
+          <button class="btn-primary">Réserver & payer</button>
+        </div>
+
+        <div class="card-lite">
+          <h3>Formation Réparer un vélo</h3>
+          <p class="muted">45€ • 3h • Lyon</p>
+          <button class="btn-primary">Réserver & payer</button>
+        </div>
+
+        <div class="card-lite">
+          <h3>Événement “Journée Upcycling”</h3>
+          <p class="muted">Gratuit • 14/03</p>
+          <button class="btn-outline">Participer</button>
+        </div>
+      </div>
+
+      <p class="muted small">Paiement Stripe sera branché côté backend plus tard (démo front).</p>
+    </section>
+
+    <!-- CONSEILS -->
+    <section class="panel" id="conseils">
+      <div class="panel-head">
+        <h2>Espace Conseils</h2>
+        <button class="btn-outline">Voir tous les conseils</button>
+      </div>
+
+      <div class="cards-pro">
+        <div class="card-lite">
+          <h3>Conseil : poncer du bois</h3>
+          <p class="muted">Guide rapide pour préparer une palette.</p>
+          <button class="btn-outline">Lire</button>
+        </div>
+        <div class="card-lite">
+          <h3>News : nouveaux conteneurs</h3>
+          <p class="muted">Deux nouveaux points de dépôt cette semaine.</p>
+          <button class="btn-outline">Lire</button>
+        </div>
+        <div class="card-lite">
+          <h3>Conseil : réparation vélo</h3>
+          <p class="muted">Vérifier pneus, chaîne, freins…</p>
+          <button class="btn-outline">Lire</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCORE -->
+    <section class="panel" id="score">
+      <div class="panel-head">
+        <h2>Upcycling Score</h2>
+        <span class="pill pill-green">84 / 100</span>
+      </div>
+
+      <div class="grid-2 dash-grid">
+        <div class="card-lite">
+          <h3>Mes statistiques</h3>
+          <ul class="list">
+            <li>Objets déposés : 7</li>
+            <li>Objets revalorisés : 4</li>
+            <li>CO₂ économisé (estim.) : 18 kg</li>
+          </ul>
+        </div>
+        <div class="card-lite">
+          <h3>Comment améliorer mon score ?</h3>
+          <ul class="list">
+            <li>Participer à un atelier</li>
+            <li>Déposer plus d’objets revalorisables</li>
+            <li>Suivre une formation</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLANNING -->
+    <section class="panel" id="planning">
+      <div class="panel-head">
+        <h2>Planning personnel</h2>
+        <button class="btn-primary">Ajouter au planning</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Activité</th>
+              <th>Type</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>12/03</td>
+              <td>Atelier Upcycling Bois</td>
+              <td>Atelier</td>
+              <td><span class="pill pill-green">Confirmé</span></td>
+            </tr>
+            <tr>
+              <td>14/03</td>
+              <td>Journée Upcycling</td>
+              <td>Événement</td>
+              <td><span class="pill pill-gray">Inscrit</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="dash-footer">
+      <span class="muted small">© 2026 UpcycleConnect — Espace Particulier</span>
+    </footer>
+
+  </section>
+</main>
+
+<!-- ===== TUTORIEL OVERLAY (1ère connexion) ===== -->
+<div class="tour-overlay hidden" id="tourOverlay">
+  <div class="tour-card">
+    <h3 id="tourTitle">Bienvenue !</h3>
+    <p id="tourText" class="muted">On va vous guider rapidement.</p>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn-outline" id="tourSkip">Passer</button>
+      <button class="btn-primary" id="tourNext">Suivant</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== Codes conteneur (démo) =====
+  document.getElementById("btnGenerateCodes").addEventListener("click", () => {
+    const openCode = Math.random().toString(36).slice(2,6).toUpperCase() + "-" + Math.random().toString(36).slice(2,5).toUpperCase();
+    const barcode = "UCX-" + Math.floor(100000 + Math.random() * 900000);
+    document.getElementById("codesBox").innerHTML = `
+      <li><strong>Code ouverture :</strong> ${openCode}</li>
+      <li><strong>Code-barres :</strong> ${barcode}</li>
+    `;
+  });
+
+  // ===== Tutoriel (1ère connexion) - démo front =====
+  const TOUR_KEY = "uc_tour_done_particulier";
+  const overlay = document.getElementById("tourOverlay");
+  const title = document.getElementById("tourTitle");
+  const text = document.getElementById("tourText");
+  const next = document.getElementById("tourNext");
+  const skip = document.getElementById("tourSkip");
+  const replay = document.getElementById("btnReplayTutorial");
+
+  const steps = [
+    { t: "Bienvenue sur votre espace !", d: "Ici vous retrouvez les activités et votre score d'impact." },
+    { t: "Déposer une annonce", d: "Vous pouvez donner ou vendre un objet. L’annonce passe en validation admin." },
+    { t: "Conteneurs", d: "Après check, vous recevez un code d’ouverture + un code-barres." },
+    { t: "Catalogue & planning", d: "Réservez des ateliers/formations/événements, et retrouvez tout dans votre planning." }
+  ];
+
+  let idx = 0;
+  function showStep(i) {
+    idx = i;
+    title.textContent = steps[i].t;
+    text.textContent = steps[i].d;
+    overlay.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+    next.textContent = (i === steps.length - 1) ? "Terminer" : "Suivant";
+  }
+
+  function endTour() {
+    overlay.classList.add("hidden");
+    document.body.style.overflow = "";
+    localStorage.setItem(TOUR_KEY, "1");
+  }
+
+  next.addEventListener("click", () => {
+    if (idx >= steps.length - 1) return endTour();
+    showStep(idx + 1);
+  });
+
+  skip.addEventListener("click", endTour);
+  replay.addEventListener("click", () => { localStorage.removeItem(TOUR_KEY); showStep(0); });
+
+  if (!localStorage.getItem(TOUR_KEY)) {
+    showStep(0);
+  }
+</script>
+
+</body>
+</html>

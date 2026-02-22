@@ -1,0 +1,116 @@
+{
+  "nav_home": "Home",
+  "nav_ads": "Listings",
+  "nav_services": "Services",
+  "nav_events": "Events",
+  "nav_tips": "Tips",
+  "nav_admin": "Admin",
+  "nav_particulier": "My Space",
+  "nav_pro": "Professional Space",
+  "nav_employee": "Employee Space",
+
+  "btn_login": "Login",
+  "btn_register": "Sign up",
+  "btn_submit": "Submit",
+  "btn_save": "Save",
+  "btn_cancel": "Cancel",
+  "btn_validate": "Approve",
+  "btn_reject": "Reject",
+  "btn_reserve": "Book & Pay",
+  "btn_participate": "Participate",
+  "btn_generate_codes": "Generate codes (demo)",
+
+  "footer_language": "Language:",
+  "footer_multilang_note": "This website supports multiple languages: add languages via translation files (no Google, no code changes).",
+
+  "dashboard_title": "Dashboard",
+  "dashboard_admin": "Administration",
+  "dashboard_particulier": "Personal Dashboard",
+  "dashboard_pro": "Professional Dashboard",
+  "dashboard_employee": "Employee Dashboard",
+
+  "section_users": "User Management",
+  "section_catalog": "Service Catalog",
+  "section_categories": "Categories",
+  "section_events_validation": "Event Validation",
+  "section_notifications": "Notifications",
+  "section_finance": "Financial Management",
+  "section_containers": "Containers / Boxes",
+  "section_documents": "Documents & Codes",
+  "section_planning": "Planning",
+
+  "annonce_title": "Post a listing (donation or sale)",
+  "annonce_validation": "Admin validation required",
+  "annonce_submit": "Submit listing",
+
+  "conteneur_title": "Request container deposit",
+  "conteneur_check": "Request check validation",
+  "conteneur_code": "Opening code",
+  "conteneur_barcode": "Barcode",
+
+  "catalog_title": "Catalog (services, training, events)",
+  "conseils_title": "Tips & News",
+  "score_title": "Upcycling Score",
+  "planning_title": "Personal Planning",
+
+  "finance_revenue": "Revenue",
+  "finance_expenses": "Expenses",
+
+  "status_pending": "Pending",
+  "status_active": "Active",
+  "status_confirmed": "Confirmed",
+  "status_validated": "Approved",
+  "status_rejected": "Rejected",
+  
+  "btn_logout": "Logout",
+
+  "home_hero_title": "Give unused items a second life",
+  "home_hero_subtitle": "Reduce waste. Measure your positive impact.",
+  "home_search_placeholder": "Search for an item...",
+
+  "home_btn_discover_trainings": "Discover trainings",
+  "home_discover_listings": "Listings to discover",
+  "home_btn_view_listing": "View listing",
+
+  "home_listing_1_title": "Recycled Retro Chair",
+  "home_listing_1_meta": "€20 • Paris",
+  "home_listing_2_title": "Upcycled Wooden Pallet",
+  "home_listing_2_meta": "€30 • Lyon",
+  "home_listing_3_title": "Bike to repair",
+  "home_listing_3_meta": "Free • Marseille",
+  "home_listing_4_title": "Jar Lamp",
+  "home_listing_4_meta": "€15 • Lille",
+
+  "home_how_title": "How does it work?",
+  "home_how_step1_title": "1. Drop off an item",
+  "home_how_step1_desc": "Post your listing in a few clicks.",
+  "home_how_step2_title": "2. Validation & container",
+  "home_how_step2_desc": "Receive a code to deposit your item.",
+  "home_how_step3_title": "3. Transformation",
+  "home_how_step3_desc": "A craftsperson picks it up and gives it a new life.",
+
+  "home_impact_title": "Environmental impact",
+  "home_impact_co2": "3847 kg CO₂ saved",
+  "home_impact_objects": "16820 items upcycled",
+  "home_impact_score_label": "Average score",
+
+  "home_community_title": "A community space for sharing and innovation",
+  "home_btn_join_community": "Join the community",
+
+  "home_footer_about": "About",
+  "home_footer_about_who": "Who are we?",
+  "home_footer_about_mission": "Our mission",
+  "home_footer_about_partners": "Partners",
+
+  "home_footer_resources": "Resources",
+  "home_footer_blog": "Blog",
+  "home_footer_faq": "FAQ",
+  "home_footer_contact": "Contact",
+
+  "home_footer_legal": "Legal",
+  "home_footer_legal_notice": "Legal notice",
+  "home_footer_legal_privacy": "Privacy policy",
+  "home_footer_legal_terms": "Terms of use",
+
+  "home_footer_copyright": "© 2026 UpcycleConnect — All rights reserved"
+}
