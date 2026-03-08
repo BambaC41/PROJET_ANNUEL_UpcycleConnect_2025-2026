@@ -1,0 +1,162 @@
+CREATE DATABASE IF NOT EXISTS db;
+USE db;
+
+CREATE TABLE IF NOT EXISTS role (
+    id_role INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    libelle VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS utilisateur (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    prenom VARCHAR(100),
+    nom VARCHAR(100),
+    telephone VARCHAR(20),
+    adresse_rue VARCHAR(150),
+    adresse_ville VARCHAR(100),
+    adresse_code_postal VARCHAR(20),
+    adresse_pays VARCHAR(100),
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_role INT NOT NULL,
+    FOREIGN KEY (id_role) REFERENCES role(id_role)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS objet (
+    id_objet INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(150) NOT NULL,
+    description TEXT,
+    etat VARCHAR(50),
+    type_materiau VARCHAR(100),
+    poids DECIMAL(8,2),
+    volume DECIMAL(8,2),
+    photo_url VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS conteneur (
+    id_conteneur INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    adresse VARCHAR(255),
+    statut VARCHAR(50),
+    date_installation DATE,
+    derniere_maintenance DATE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS demande_depot (
+    id_demande INT AUTO_INCREMENT PRIMARY KEY,
+    statut VARCHAR(50),
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    validated_at DATETIME,
+    deposited_at DATETIME,
+    id_user INT NOT NULL,
+    id_objet INT NOT NULL,
+    id_conteneur INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
+    FOREIGN KEY (id_conteneur) REFERENCES conteneur(id_conteneur)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS code_acces (
+    id_code_acces INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(100) NOT NULL,
+    expires_at DATETIME,
+    used_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_demande INT UNIQUE,
+    FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS code_barre (
+    id_code_barre INT AUTO_INCREMENT PRIMARY KEY,
+    barcode_value VARCHAR(100) NOT NULL UNIQUE,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used_at DATETIME,
+    id_demande INT UNIQUE,
+    FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS retrait (
+    id_retrait INT AUTO_INCREMENT PRIMARY KEY,
+    collected_at DATETIME,
+    notes TEXT,
+    id_user INT NOT NULL,
+    id_code_barre INT UNIQUE,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_code_barre) REFERENCES code_barre(id_code_barre)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS annonce (
+    id_annonce INT AUTO_INCREMENT PRIMARY KEY,
+    mode VARCHAR(50),
+    prix DECIMAL(10,2),
+    statut VARCHAR(50),
+    validated_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    id_objet INT UNIQUE,
+    id_validateur INT,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
+    FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS categorie_prestation (
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    description TEXT
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS prestation (
+    id_prestation INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(150) NOT NULL,
+    description TEXT,
+    type VARCHAR(50),
+    prix DECIMAL(10,2),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_categorie INT NOT NULL,
+    FOREIGN KEY (id_categorie) REFERENCES categorie_prestation(id_categorie)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS session (
+    id_session INT AUTO_INCREMENT PRIMARY KEY,
+    date_debut DATETIME,
+    date_fin DATETIME,
+    lieu VARCHAR(150),
+    capacite_max INT,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_prestation INT NOT NULL,
+    id_validateur INT,
+    FOREIGN KEY (id_prestation) REFERENCES prestation(id_prestation),
+    FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS inscription (
+    id_inscription INT AUTO_INCREMENT PRIMARY KEY,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    id_session INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_session) REFERENCES session(id_session)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS paiement (
+    id_paiement INT AUTO_INCREMENT PRIMARY KEY,
+    provider VARCHAR(50),
+    payment_ref VARCHAR(150),
+    montant DECIMAL(10,2),
+    devise VARCHAR(10),
+    statut VARCHAR(50),
+    paid_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_inscription INT UNIQUE,
+    FOREIGN KEY (id_inscription) REFERENCES inscription(id_inscription)
+) ENGINE=InnoDB;
