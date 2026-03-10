@@ -158,3 +158,20 @@ INSERT INTO role (id_role, code, libelle) VALUES
 ON DUPLICATE KEY UPDATE
 code = VALUES(code),
 libelle = VALUES(libelle);
+INSERT INTO utilisateur (
+    email,
+    password_hash,
+    pseudo,
+    prenom,
+    nom,
+    statut,
+    id_role
+) VALUES (
+    'admin@upcycleconnect.fr',
+    '$2a$10$R7qQxVw8i4M1M5bCqM8d8uG0k1Vb2zKjv2mX3Qn6eG1f0s9U7M2wS',
+    'admin_upcycleconnect',
+    'Super',
+    'Admin',
+    'actif',
+    1
+);
