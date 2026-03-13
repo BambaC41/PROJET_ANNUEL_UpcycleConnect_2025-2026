@@ -333,6 +333,76 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
     </div>
 </div>
 
+<!-- MODAL CRÉATION UTILISATEUR (ADMIN / STAFF) -->
+<div id="createUserModal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Ajouter un utilisateur</h3>
+            <button onclick="closeCreateUserModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="users.php" class="form-block">
+            <input type="hidden" name="action" value="create_user">
+
+            <div class="form-group">
+                <label>Pseudo</label>
+                <input type="text" name="pseudo" class="input" required>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Prénom</label>
+                    <input type="text" name="prenom" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label>Nom</label>
+                    <input type="text" name="nom" class="input" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" class="input" required>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" name="password" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmer le mot de passe</label>
+                    <input type="password" name="password_confirm" class="input" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Photo de profil (URL)</label>
+                <input type="text" name="photo_profil" class="input">
+            </div>
+
+            <div class="form-group">
+                <label>Bio</label>
+                <textarea name="bio" class="input textarea"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Rôle (seulement ADMIN ou STAFF)</label>
+                <select name="role_id" class="input" required>
+                    <option value="">Choisir un rôle</option>
+                    <option value="1">ADMIN</option>
+                    <option value="2">STAFF</option>
+                </select>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeCreateUserModal()">Annuler</button>
+                <button type="submit" class="btn-primary">Créer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="passwordModal" class="modal-overlay">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
