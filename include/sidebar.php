@@ -1,20 +1,13 @@
-<!-- SIDEBAR -->
-<aside class="admin-sidebar">
+<div class="admin-sidebar">
     <h2>Administration</h2>
-    <a href="admin.php">Dashboard</a>
-    <details>
-        <summary>Membres</summary>
-        <a href="users.php">Utilisateurs</a>
-        <a href="actors.php">Acteurs</a>
-    </details>
-    <details>
-        <summary>Logistique</summary>
-        <a href="validation_evenements.php">Validation événements</a>
-        <a href="catalog.php">Catalogue</a>
-        <a href="containers.php">Conteneurs</a>
-        <a href="planning.php">Plannings</a>
-    </details>
-    <a href="notifications.php">Notifications</a>
-    <a href="documents.php">Documents & Codes</a>
-    <a href="finance.php">Finances</a>
-</aside>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#users">Utilisateurs</a>
+    <a href="#actors">Acteurs</a>
+    <a href="#events">Validation événements</a>
+    <a href="#catalog">Catalogue</a>
+    <a href="#notifications">Notifications</a>
+    <a href="#containers">Conteneurs</a>
+    <a href="#documents">Documents & Codes</a>
+    <a href="#finance">Finances</a>
+    <a href="#planning">Plannings</a>
+</div>
