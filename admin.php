@@ -1,10 +1,21 @@
+<?php
+session_start();
+
+// Rediriger vers login si le token n'est pas présent
+if (!isset($_SESSION['token'])) {
+    header("Location: login.php");
+    exit();
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'include/head.php'; ?>
+<?php include 'includes/head.php'; ?>
 <body>
 <main class="admin-layout">
 
-    <?php include 'include/sidebar.php'; ?>
+<?php include 'includes/header.php'; ?>
+
+    <?php include 'includes/sidebar.php'; ?>
 
     <!-- CONTENT -->
     <section class="admin-content">
@@ -143,6 +154,10 @@
 
     </section>
 </main>
-<?php include 'include/footer.php'; ?>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>
+header("Location: admin/index.php");
+exit();
+<!-- header("Location: #index.php");
+exit(); -->
