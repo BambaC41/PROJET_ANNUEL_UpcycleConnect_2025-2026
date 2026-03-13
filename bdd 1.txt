@@ -158,10 +158,6 @@ INSERT INTO role (id_role, code, libelle) VALUES
 ON DUPLICATE KEY UPDATE
 code = VALUES(code),
 libelle = VALUES(libelle);
-ALTER TABLE utilisateur
-ADD COLUMN is_banned BOOLEAN DEFAULT FALSE,
-ADD COLUMN ban_reason TEXT,
-ADD COLUMN ban_until DATETIME NULL;
 INSERT INTO utilisateur (
     email,
     password_hash,
