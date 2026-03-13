@@ -40,6 +40,14 @@ function closeEditModal() {
   $("#editModal").classList.remove("open");
 }
 
+function openCreateUserModal() {
+  $("#createUserModal").classList.add("open");
+}
+
+function closeCreateUserModal() {
+  $("#createUserModal").classList.remove("open");
+}
+
 function openPasswordModal() {
   $("#passwordModal").classList.add("open");
 }
@@ -106,6 +114,8 @@ function runAutoSave() {
 // Expose globally for inline onclick handlers
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
+window.openCreateUserModal = openCreateUserModal;
+window.closeCreateUserModal = closeCreateUserModal;
 window.openPasswordModal = openPasswordModal;
 window.closePasswordModal = closePasswordModal;
 window.resetPasswordChoice = resetPasswordChoice;
