@@ -1,7 +1,5 @@
 <?php
 session_start();
-
-// Rediriger vers login si le token n'est pas présent
 if (!isset($_SESSION['token'])) {
     header("Location: login.php");
     exit();
@@ -159,5 +157,3 @@ if (!isset($_SESSION['token'])) {
 </html>
 header("Location: admin/index.php");
 exit();
-<!-- header("Location: #index.php");
-exit(); -->

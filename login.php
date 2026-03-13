@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Si déjà connecté, redirection vers l'admin
 if (isset($_SESSION['token'])) {
     header("Location: admin.php");
     exit();
@@ -13,7 +12,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    // Appel à l'API Go
     $url = "http://localhost:8081/login";
     $data = json_encode([
         "email" => $email,
@@ -35,7 +33,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (isset($result['token'])) {
             $_SESSION['token'] = $result['token'];
             header("Location: admin.php");
-            header("Location: admin/index.php");
             exit();
         }
     } else {
