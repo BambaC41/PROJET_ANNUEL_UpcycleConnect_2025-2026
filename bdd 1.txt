@@ -116,6 +116,10 @@ CREATE TABLE IF NOT EXISTS prestation (
     id_categorie INT NOT NULL,
     FOREIGN KEY (id_categorie) REFERENCES categorie_prestation(id_categorie)
 ) ENGINE=InnoDB;
+ALTER TABLE utilisateur
+ADD COLUMN is_banned BOOLEAN DEFAULT FALSE,
+ADD COLUMN ban_reason TEXT,
+ADD COLUMN ban_until DATETIME NULL;
 CREATE TABLE IF NOT EXISTS session (
     id_session INT AUTO_INCREMENT PRIMARY KEY,
     date_debut DATETIME,
