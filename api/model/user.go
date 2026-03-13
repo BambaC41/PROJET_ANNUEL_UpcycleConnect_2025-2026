@@ -17,6 +17,9 @@ type User struct {
 	Statut            string `json:"statut"`
 	CreatedAt         string `json:"created_at"`
 	RoleID            int    `json:"id_role"`
+	IsBanned          bool   `json:"is_banned"`
+	BanReason         string `json:"ban_reason"`
+	BanUntil          string `json:"ban_until"`
 }
 type RegisterRequest struct {
 	Email       string `json:"email"`
@@ -46,4 +49,15 @@ type UpdateUserRequest struct {
 	Bio               string `json:"bio"`
 	Statut            string `json:"statut"`
 	RoleID            int    `json:"id_role"`
+}
+type BanUserRequest struct {
+	BanReason string `json:"ban_reason"`
+	BanUntil  string `json:"ban_until"`
+}
+
+type PublicProfile struct {
+	ID          int    `json:"id_user"`
+	Pseudo      string `json:"pseudo"`
+	Bio         string `json:"bio"`
+	PhotoProfil string `json:"photo_profil"`
 }

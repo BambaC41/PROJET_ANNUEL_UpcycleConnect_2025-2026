@@ -109,6 +109,36 @@ func AdminCreateUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "admin user created"})
 }
+func normalizeBanUntil(input string) (string, error) {
+	layouts := []string{
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, input); err == nil {
+			if layout == "2006-01-02" {
+				t = t.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			}
+			return t.Format("2006-01-02 15:04:05"), nil
+		}
+	}
+	return "", http.ErrNotSupported
+}
+
+func isBanExpired(banUntil string) bool {
+	if banUntil == "" {
+		return false
+	}
+	layouts := []string{time.RFC3339, "2006-01-02 15:04:05", "2006-01-02"}
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, banUntil); err == nil {
+			return time.Now().After(t)
+		}
+	}
+	return false
+}
+
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -132,6 +162,26 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		[]byte(req.Password)); err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
+	}
+	if user.IsBanned {
+		if isBanExpired(user.BanUntil) {
+			if err := db.UnbanUser(user.ID); err != nil {
+				http.Error(w, "Database error", http.StatusInternalServerError)
+				return
+			}
+			user.IsBanned = false
+			user.BanReason = ""
+			user.BanUntil = ""
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":      "account is banned",
+				"ban_reason": user.BanReason,
+				"ban_until":  user.BanUntil,
+			})
+			return
+		}
 	}
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
@@ -295,4 +345,123 @@ func UserByIDHandler(w http.ResponseWriter, r *http.Request) {
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
+}
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "ok",
+		"message": "API is running",
+	})
+}
+
+func PublicProfilesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	profiles, err := db.GetPublicProfiles()
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(profiles)
+}
+
+func BanUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if _, ok := requireAdmin(w, r); !ok {
+		return
+	}
+
+	idStr := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/users/"), "/ban")
+	idStr = strings.TrimSuffix(idStr, "/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var req model.BanUserRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if req.BanReason == "" || req.BanUntil == "" {
+		http.Error(w, "ban_reason and ban_until are required", http.StatusBadRequest)
+		return
+	}
+
+	normalizedBanUntil, err := normalizeBanUntil(req.BanUntil)
+	if err != nil {
+		http.Error(w, "ban_until must be RFC3339, YYYY-MM-DD HH:MM:SS or YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	if err := db.BanUser(id, req.BanReason, normalizedBanUntil); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "user banned",
+	})
+}
+
+func UnbanUserHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if _, ok := requireAdmin(w, r); !ok {
+		return
+	}
+
+	idStr := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/users/"), "/unban")
+	idStr = strings.TrimSuffix(idStr, "/")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if err := db.UnbanUser(id); err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "user unbanned",
+	})
+}
+func UsersRouter(w http.ResponseWriter, r *http.Request) {
+
+	path := r.URL.Path
+
+	if strings.HasSuffix(path, "/ban") {
+		BanUserHandler(w, r)
+		return
+	}
+
+	if strings.HasSuffix(path, "/unban") {
+		UnbanUserHandler(w, r)
+		return
+	}
+
+	UserByIDHandler(w, r)
 }

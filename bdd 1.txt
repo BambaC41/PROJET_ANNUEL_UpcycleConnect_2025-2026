@@ -158,3 +158,71 @@ INSERT INTO role (id_role, code, libelle) VALUES
 ON DUPLICATE KEY UPDATE
 code = VALUES(code),
 libelle = VALUES(libelle);
+ALTER TABLE utilisateur
+ADD COLUMN is_banned BOOLEAN DEFAULT FALSE,
+ADD COLUMN ban_reason TEXT,
+ADD COLUMN ban_until DATETIME NULL;
+INSERT INTO utilisateur (
+    email,
+    password_hash,
+    pseudo,
+    prenom,
+    nom,
+    telephone,
+    adresse_rue,
+    adresse_ville,
+    adresse_code_postal,
+    adresse_pays,
+    photo_profil,
+    bio,
+    statut,
+    id_role
+) VALUES
+(
+    'user1@test.com',
+    '$2a$10$testhashpassword',
+    'recycleur92',
+    'Lucas',
+    'Martin',
+    '0611223344',
+    '12 rue des Fleurs',
+    'Paris',
+    '75012',
+    'France',
+    'https://picsum.photos/200?1',
+    'Passionné de recyclage et de bricolage.',
+    'ACTIF',
+    3
+),
+(
+    'user2@test.com',
+    '$2a$10$testhashpassword',
+    'eco_sarah',
+    'Sarah',
+    'Durand',
+    '0622334455',
+    '8 avenue Victor Hugo',
+    'Lyon',
+    '69003',
+    'France',
+    'https://picsum.photos/200?2',
+    'Je récupère et transforme des objets.',
+    'ACTIF',
+    3
+),
+(
+    'user3@test.com',
+    '$2a$10$testhashpassword',
+    'atelierbois',
+    'Thomas',
+    'Petit',
+    '0633445566',
+    '25 rue du Port',
+    'Marseille',
+    '13002',
+    'France',
+    'https://picsum.photos/200?3',
+    'Menuisier amateur et amateur d’upcycling.',
+    'ACTIF',
+    3
+);

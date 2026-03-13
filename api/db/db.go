@@ -33,7 +33,10 @@ func GetUsers() ([]model.User, error) {
 		       COALESCE(bio, ''),
 		       COALESCE(statut, ''),
 		       COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), ''),
-		       id_role
+		       id_role,
+		       COALESCE(is_banned, 0),
+		       COALESCE(ban_reason, ''),
+		       COALESCE(DATE_FORMAT(ban_until, '%Y-%m-%d %H:%i:%s'), '')
 		FROM utilisateur
 		ORDER BY id_user DESC
 	`)
@@ -46,33 +49,22 @@ func GetUsers() ([]model.User, error) {
 	for rows.Next() {
 		var user model.User
 		err := rows.Scan(
-			&user.ID,
-			&user.Email,
-			&user.PasswordHash,
-			&user.Pseudo,
-			&user.Prenom,
-			&user.Nom,
-			&user.Telephone,
-			&user.AdresseRue,
-			&user.AdresseVille,
-			&user.AdresseCodePostal,
-			&user.AdressePays,
-			&user.PhotoProfil,
-			&user.Bio,
-			&user.Statut,
-			&user.CreatedAt,
-			&user.RoleID,
+			&user.ID, &user.Email, &user.PasswordHash,
+			&user.Pseudo, &user.Prenom, &user.Nom,
+			&user.Telephone, &user.AdresseRue, &user.AdresseVille,
+			&user.AdresseCodePostal, &user.AdressePays,
+			&user.PhotoProfil, &user.Bio, &user.Statut,
+			&user.CreatedAt, &user.RoleID,
+			&user.IsBanned, &user.BanReason, &user.BanUntil,
 		)
 		if err != nil {
 			return nil, err
 		}
 		users = append(users, user)
 	}
-
 	return users, nil
 }
 func GetUserByID(id int) (*model.User, error) {
-
 	var user model.User
 
 	err := DB.QueryRow(`
@@ -89,70 +81,71 @@ func GetUserByID(id int) (*model.User, error) {
 		       COALESCE(bio, ''),
 		       COALESCE(statut, ''),
 		       COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), ''),
-		       id_role
+		       id_role,
+		       COALESCE(is_banned, 0),
+		       COALESCE(ban_reason, ''),
+		       COALESCE(DATE_FORMAT(ban_until, '%Y-%m-%d %H:%i:%s'), '')
 		FROM utilisateur
 		WHERE id_user = ?
-
 	`, id).Scan(
-		&user.ID,
-		&user.Email,
-		&user.PasswordHash,
-		&user.Pseudo,
-		&user.Prenom,
-		&user.Nom,
-		&user.Telephone,
-		&user.AdresseRue,
-		&user.AdresseVille,
-		&user.AdresseCodePostal,
-		&user.AdressePays,
-		&user.PhotoProfil,
-		&user.Bio,
-		&user.Statut,
-		&user.CreatedAt,
-		&user.RoleID,
+		&user.ID, &user.Email, &user.PasswordHash,
+		&user.Pseudo, &user.Prenom, &user.Nom,
+		&user.Telephone, &user.AdresseRue, &user.AdresseVille,
+		&user.AdresseCodePostal, &user.AdressePays,
+		&user.PhotoProfil, &user.Bio, &user.Statut,
+		&user.CreatedAt, &user.RoleID,
+		&user.IsBanned, &user.BanReason, &user.BanUntil,
 	)
+
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
-
 func GetUserByEmail(email string) (*model.User, error) {
 	var user model.User
+
 	err := DB.QueryRow(`
- SELECT id_user, email, password_hash,
- COALESCE(pseudo, ''),
- COALESCE(prenom, ''),
- COALESCE(nom, ''),
- COALESCE(telephone, ''),
- COALESCE(adresse_rue, ''),
- COALESCE(adresse_ville, ''),
- COALESCE(adresse_code_postal, ''),
- COALESCE(adresse_pays, ''),
- COALESCE(photo_profil, ''),
- COALESCE(bio, ''),
- COALESCE(statut, ''),
- COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), ''),
- id_role
- FROM utilisateur
- WHERE email = ?
- `, email).Scan(
-		&user.ID, &user.Email, &user.PasswordHash, &user.Pseudo,
-		&user.Prenom, &user.Nom,
+		SELECT id_user, email, password_hash,
+		       COALESCE(pseudo, ''),
+		       COALESCE(prenom, ''),
+		       COALESCE(nom, ''),
+		       COALESCE(telephone, ''),
+		       COALESCE(adresse_rue, ''),
+		       COALESCE(adresse_ville, ''),
+		       COALESCE(adresse_code_postal, ''),
+		       COALESCE(adresse_pays, ''),
+		       COALESCE(photo_profil, ''),
+		       COALESCE(bio, ''),
+		       COALESCE(statut, ''),
+		       COALESCE(DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'), ''),
+		       id_role,
+		       COALESCE(is_banned, 0),
+		       COALESCE(ban_reason, ''),
+		       COALESCE(DATE_FORMAT(ban_until, '%Y-%m-%d %H:%i:%s'), '')
+		FROM utilisateur
+		WHERE email = ?
+	`, email).Scan(
+		&user.ID, &user.Email, &user.PasswordHash,
+		&user.Pseudo, &user.Prenom, &user.Nom,
 		&user.Telephone, &user.AdresseRue, &user.AdresseVille,
-		&user.AdresseCodePostal,
-		&user.AdressePays, &user.PhotoProfil, &user.Bio, &user.Statut,
+		&user.AdresseCodePostal, &user.AdressePays,
+		&user.PhotoProfil, &user.Bio, &user.Statut,
 		&user.CreatedAt, &user.RoleID,
+		&user.IsBanned, &user.BanReason, &user.BanUntil,
 	)
+
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
+
 	return &user, nil
 }
 func CreateUser(req model.RegisterRequest, passwordHash string) error {
@@ -458,6 +451,74 @@ func DeleteEvent(id int) error {
 	affected, _ := result.RowsAffected()
 	if affected == 0 {
 		return errors.New("event not found")
+	}
+	return nil
+}
+func GetPublicProfiles() ([]model.PublicProfile, error) {
+	rows, err := DB.Query(`
+		SELECT id_user,
+		       COALESCE(pseudo, ''),
+		       COALESCE(bio, ''),
+		       COALESCE(photo_profil, '')
+		FROM utilisateur
+		ORDER BY id_user DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var profiles []model.PublicProfile
+	for rows.Next() {
+		var p model.PublicProfile
+		if err := rows.Scan(&p.ID, &p.Pseudo, &p.Bio, &p.PhotoProfil); err != nil {
+			return nil, err
+		}
+		profiles = append(profiles, p)
+	}
+	return profiles, nil
+}
+
+func BanUser(id int, reason string, until string) error {
+	result, err := DB.Exec(`
+		UPDATE utilisateur
+		SET is_banned = TRUE,
+		    ban_reason = ?,
+		    ban_until = ?
+		WHERE id_user = ?
+	`, reason, until, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func UnbanUser(id int) error {
+	result, err := DB.Exec(`
+		UPDATE utilisateur
+		SET is_banned = FALSE,
+		    ban_reason = NULL,
+		    ban_until = NULL
+		WHERE id_user = ?
+	`, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("user not found")
 	}
 	return nil
 }
