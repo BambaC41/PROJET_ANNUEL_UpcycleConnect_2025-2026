@@ -222,3 +222,229 @@ INSERT INTO utilisateur (
     'ACTIF',
     3
 );
+INSERT INTO objet (
+    titre,
+    description,
+    etat,
+    type_materiau,
+    poids,
+    volume,
+    photo_url,
+    id_user
+) VALUES
+(
+    'Chaise en bois',
+    'Chaise récupérée à restaurer',
+    'bon',
+    'bois',
+    5.50,
+    0.30,
+    'https://picsum.photos/300?1',
+    1
+),
+(
+    'Lampe vintage',
+    'Lampe ancienne à réparer',
+    'moyen',
+    'metal',
+    2.00,
+    0.15,
+    'https://picsum.photos/300?2',
+    2
+);
+INSERT INTO conteneur (
+    code,
+    adresse,
+    statut,
+    date_installation,
+    derniere_maintenance
+) VALUES
+(
+    'CONT_PARIS_01',
+    '10 rue de Rivoli Paris',
+    'actif',
+    '2025-01-10',
+    '2026-01-10'
+),
+(
+    'CONT_LYON_01',
+    '5 place Bellecour Lyon',
+    'actif',
+    '2025-02-01',
+    '2026-02-01'
+);
+
+INSERT INTO demande_depot (
+    statut,
+    validated_at,
+    deposited_at,
+    id_user,
+    id_objet,
+    id_conteneur
+) VALUES
+(
+    'valide',
+    NOW(),
+    NULL,
+    1,
+    1,
+    1
+),
+(
+    'en_attente',
+    NULL,
+    NULL,
+    2,
+    2,
+    2
+);
+
+INSERT INTO code_acces (
+    code,
+    expires_at,
+    id_demande
+) VALUES
+(
+    'CODE123456',
+    DATE_ADD(NOW(), INTERVAL 1 DAY),
+    1
+);
+INSERT INTO code_barre (
+    barcode_value,
+    statut,
+    id_demande
+) VALUES
+(
+    'BARCODE123456',
+    'actif',
+    1
+);
+
+INSERT INTO retrait (
+    collected_at,
+    notes,
+    id_user,
+    id_code_barre
+) VALUES
+(
+    NOW(),
+    'Objet récupéré pour recyclage',
+    3,
+    1
+);
+INSERT INTO annonce (
+    mode,
+    prix,
+    statut,
+    validated_at,
+    id_user,
+    id_objet,
+    id_validateur
+) VALUES
+(
+    'vente',
+    15.00,
+    'valide',
+    NOW(),
+    1,
+    1,
+    1
+);
+
+-- CATEGORIES PRESTATIONS
+INSERT INTO categorie_prestation (
+    nom,
+    description
+) VALUES
+(
+    'Atelier',
+    'Ateliers créatifs et recyclage'
+),
+(
+    'Réparation',
+    'Services de réparation d’objets'
+);
+INSERT INTO prestation (
+    titre,
+    description,
+    type,
+    prix,
+    is_active,
+    id_categorie
+) VALUES
+(
+    'Atelier couture',
+    'Apprendre à réparer des vêtements',
+    'atelier',
+    20.00,
+    TRUE,
+    1
+),
+(
+    'Réparation vélo',
+    'Service de réparation de vélos',
+    'service',
+    30.00,
+    TRUE,
+    2
+);
+INSERT INTO session (
+    date_debut,
+    date_fin,
+    lieu,
+    capacite_max,
+    statut,
+    id_prestation,
+    id_validateur
+) VALUES
+(
+    '2026-04-10 10:00:00',
+    '2026-04-10 12:00:00',
+    'Paris',
+    10,
+    'actif',
+    1,
+    1
+),
+(
+    '2026-04-12 14:00:00',
+    '2026-04-12 16:00:00',
+    'Lyon',
+    8,
+    'actif',
+    2,
+    1
+);
+INSERT INTO inscription (
+    statut,
+    id_user,
+    id_session
+) VALUES
+(
+    'confirme',
+    2,
+    1
+),
+(
+    'en_attente',
+    3,
+    2
+);
+INSERT INTO paiement (
+    provider,
+    payment_ref,
+    montant,
+    devise,
+    statut,
+    paid_at,
+    id_inscription
+) VALUES
+(
+    'stripe',
+    'PAY123456',
+    20.00,
+    'EUR',
+    'paye',
+    NOW(),
+    1
+);
