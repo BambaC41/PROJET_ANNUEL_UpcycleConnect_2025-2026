@@ -1,9 +1,24 @@
 <?php
 session_start();
+require_once 'includes/functions/users.php';
+
 if (!isset($_SESSION['token'])) {
     header("Location: login.php");
     exit();
 }
+
+$users = [];
+$api_error = '';
+
+$fetched_users = api_get_users($_SESSION['token']);
+
+if (!empty($fetched_users) && is_array($fetched_users)) {
+    $users = array_slice($fetched_users, 0, 6); // Limit to 6 users for the dashboard view
+} else {
+    $api_error = "Impossible de charger les utilisateurs depuis l'API.";
+}
+
+$roles = [ 1 => 'ADMIN', 2 => 'STAFF', 3 => 'USER', 4 => 'PRO' ];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -15,9 +30,7 @@ if (!isset($_SESSION['token'])) {
 
     <?php include 'includes/sidebar.php'; ?>
 
-    <!-- CONTENT -->
     <section class="admin-content">
-        <!-- DASHBOARD -->
         <section id="dashboard" class="admin-section">
             <h1>Dashboard Global</h1>
 
@@ -44,35 +57,47 @@ if (!isset($_SESSION['token'])) {
             </div>
         </section>
 
-        <!-- UTILISATEURS -->
         <section id="users" class="admin-section">
             <h2>Gestion complète des utilisateurs</h2>
+            <?php if (!empty($api_error)): ?>
+                <p class="error"><?= htmlspecialchars($api_error) ?></p>
+            <?php endif; ?>
             <table class="admin-table">
-                <tr>
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Rôle</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-                <tr>
-                    <td>Marie Dupont</td>
-                    <td>marie@mail.com</td>
-                    <td>Particulier</td>
-                    <td>Actif</td>
-                    <td><button class="btn-outline">Modifier</button></td>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($users)): ?>
+                        <tr>
+                            <td colspan="5" style="text-align: center;">Aucun utilisateur à afficher.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($users as $user): ?>
+                            <tr>
+                                <td><?= htmlspecialchars(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></td>
+                                <td><?= htmlspecialchars($user['email'] ?? '') ?></td>
+                                <td><span class="pill pill-gray"><?= htmlspecialchars($roles[$user['id_role']] ?? 'Inconnu') ?></span></td>
+                                <td><?= htmlspecialchars(ucfirst($user['statut'] ?? '')) ?></td>
+                                <td><a href="users.php?search=<?= urlencode($user['email'] ?? '') ?>" class="btn-outline">Modifier</a></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
             </table>
         </section>
 
-        <!-- ACTEURS -->
         <section id="actors" class="admin-section">
             <h2>Gestion des acteurs</h2>
             <p>Particuliers • Professionnels • Salariés</p>
             <button class="btn-primary">Voir détails acteurs</button>
         </section>
 
-        <!-- VALIDATION EVENEMENTS -->
         <section id="events" class="admin-section">
             <h2>Validation des événements</h2>
             <table class="admin-table">
@@ -94,21 +119,18 @@ if (!isset($_SESSION['token'])) {
             </table>
         </section>
 
-        <!-- CATALOGUE -->
         <section id="catalog" class="admin-section">
             <h2>Gestion du catalogue des offres</h2>
             <button class="btn-primary">Ajouter prestation</button>
             <button class="btn-outline">Gérer catégories</button>
         </section>
 
-        <!-- NOTIFICATIONS -->
         <section id="notifications" class="admin-section">
             <h2>Notifications</h2>
             <button class="btn-primary">Envoyer notification</button>
             <p>Historique des notifications envoyées aux particuliers et professionnels</p>
         </section>
 
-        <!-- CONTENEURS -->
         <section id="containers" class="admin-section">
             <h2>Gestion des conteneurs / box</h2>
             <div class="admin-card">
@@ -118,7 +140,6 @@ if (!isset($_SESSION['token'])) {
             </div>
         </section>
 
-        <!-- DOCUMENTS -->
         <section id="documents" class="admin-section">
             <h2>Documents & Codes</h2>
             <ul>
@@ -128,7 +149,6 @@ if (!isset($_SESSION['token'])) {
             </ul>
         </section>
 
-        <!-- FINANCES -->
         <section id="finance" class="admin-section">
             <h2>Gestion financière</h2>
 
@@ -143,7 +163,6 @@ if (!isset($_SESSION['token'])) {
                 </div>
             </div>
         </section>
-        <!-- PLANNING -->
         <section id="planning" class="admin-section">
             <h2>Accès aux plannings</h2>
             <button class="btn-outline">Planning salariés</button>
@@ -155,5 +174,3 @@ if (!isset($_SESSION['token'])) {
 <?php include 'includes/footer.php'; ?>
 </body>
 </html>
-header("Location: admin/index.php");
-exit();

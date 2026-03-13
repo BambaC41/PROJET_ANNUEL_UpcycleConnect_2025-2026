@@ -60,14 +60,42 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 }
 // -----------------------------------------
 
-// A. Traitement de la soumission du formulaire
+// A. Création d'un nouvel utilisateur (ADMIN / STAFF uniquement)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_user') {
+    $role_id = (int)($_POST['role_id'] ?? 0);
+    // Sécurité : ne permettre que ADMIN (1) et STAFF (2)
+    if (in_array($role_id, [1, 2], true)) {
+        $password = $_POST['password'] ?? '';
+        $password_confirm = $_POST['password_confirm'] ?? '';
+        if ($password !== '' && $password === $password_confirm) {
+            $payload = [
+                'email' => $_POST['email'] ?? '',
+                'password' => $password,
+                'pseudo' => $_POST['pseudo'] ?? '',
+                'prenom' => $_POST['prenom'] ?? '',
+                'nom' => $_POST['nom'] ?? '',
+                'photo_profil' => $_POST['photo_profil'] ?? '',
+                'bio' => $_POST['bio'] ?? '',
+                'role_id' => $role_id,
+            ];
+            $resCreate = api_admin_create_user($_SESSION['token'], $payload);
+            if ($resCreate['status'] === 200 || $resCreate['status'] === 201) {
+                header('Location: users.php');
+                exit();
+            }
+        }
+    }
+}
+
+// B. Traitement de la soumission du formulaire d'édition
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_user') {
     $id_user = $_POST['id_user'];
     $payload = [
+        // On respecte la structure exacte de la doc PUT /users/{id}
+        'email' => $_POST['email'] ?? '',
         'pseudo' => $_POST['pseudo'] ?? '',
         'prenom' => $_POST['prenom'] ?? '',
         'nom' => $_POST['nom'] ?? '',
-        'email' => $_POST['email'] ?? '',
         'telephone' => $_POST['telephone'] ?? '',
         'adresse_rue' => $_POST['adresse_rue'] ?? '',
         'adresse_ville' => $_POST['adresse_ville'] ?? '',
@@ -75,26 +103,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'adresse_pays' => $_POST['adresse_pays'] ?? '',
         'photo_profil' => $_POST['photo_profil'] ?? '',
         'bio' => $_POST['bio'] ?? '',
-        'id_role' => (int)$_POST['id_role'],
-        'statut' => $_POST['statut']
+        'statut' => $_POST['statut'],
+        'id_role' => (int)$_POST['id_role']
     ];
 
     $res = api_update_user($_SESSION['token'], $id_user, $payload);
 
+    // UX demandée : pas de messages visibles
     if ($res['status'] === 200 || $res['status'] === 204) {
-        $msg_success = "Utilisateur modifié avec succès.";
-        // Recharger la liste pour voir les changements
         $users = api_get_users($_SESSION['token']);
-    } else {
-        $details = '';
-        if (isset($res['data']) && !empty($res['data'])) {
-            if (is_array($res['data']) && isset($res['data']['message'])) {
-                $details = ' : ' . htmlspecialchars($res['data']['message']);
-            } else {
-                $details = ' : ' . htmlspecialchars(json_encode($res['data']));
-            }
-        }
-        $msg_error = "Erreur lors de la modification (code " . ($res['status'] ?? 'inconnu') . ")" . $details . ".";
     }
 }
 
@@ -134,19 +151,10 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
     <section class="admin-content">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <h1>Gestion des Utilisateurs</h1>
-            <a href="#" class="btn-primary">Ajouter un utilisateur</a>
+            <button type="button" class="btn-primary" onclick="openCreateUserModal()">Ajouter un utilisateur</button>
         </div>
 
-        <?php if ($msg_success): ?>
-            <p class="pill pill-green" style="display:block; text-align:center; margin-bottom:15px;"><?= htmlspecialchars($msg_success) ?></p>
-        <?php endif; ?>
-        <?php if ($msg_error): ?>
-            <p class="error" style="text-align:center; margin-bottom:15px;"><?= htmlspecialchars($msg_error) ?></p>
-        <?php endif; ?>
-        
-        <!-- Messages flash via GET -->
-        <?php if (isset($_GET['msg']) && $_GET['msg'] == 'deleted'): ?> <p class="pill pill-green" style="display:block; text-align:center; margin-bottom:15px;">Utilisateur supprimé.</p> <?php endif; ?>
-        <?php if (isset($_GET['msg']) && $_GET['msg'] == 'banned'): ?> <p class="pill pill-green" style="display:block; text-align:center; margin-bottom:15px;">Utilisateur banni.</p> <?php endif; ?>
+        <!-- Messages supprimés (UX clean). -->
 
 
         <!-- BARRE DE RECHERCHE ET FILTRES -->
@@ -192,6 +200,15 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                     <?php else: ?>
                         <?php foreach ($filteredUsers as $user): ?>
                             <tr>
+                                <?php
+                                    // L'API peut renvoyer des noms de clé différents pour l'identifiant
+                                    $uid = $user['id']
+                                        ?? $user['id_user']
+                                        ?? $user['user_id']
+                                        ?? $user['id_utilisateur']
+                                        ?? $user['utilisateur_id']
+                                        ?? '';
+                                ?>
                                 <td>
                                     <strong><?= htmlspecialchars($user['pseudo'] ?? '') ?></strong><br>
                                     <span class="muted" style="font-size: 0.9em;"><?= htmlspecialchars(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
@@ -208,7 +225,7 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                 <td style="text-align: right;">
                                     <button class="btn-outline" 
                                         onclick="openEditModal(this)"
-                                        data-id="<?= $user['id'] ?? '' ?>"
+                                        data-id="<?= htmlspecialchars((string)$uid) ?>"
                                         data-pseudo="<?= htmlspecialchars($user['pseudo'] ?? '') ?>"
                                         data-prenom="<?= htmlspecialchars($user['prenom'] ?? '') ?>"
                                         data-nom="<?= htmlspecialchars($user['nom'] ?? '') ?>"
@@ -226,8 +243,8 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                     <div class="dropdown" style="display: inline-block; margin-left: 5px;">
                                         <button class="btn-outline" onclick="toggleDropdown(this)">Options ▾</button>
                                         <div class="dropdown-content" style="min-width: 160px; right: 0;">
-                                            <a href="users.php?action=ban&id=<?= $user['id'] ?? 0 ?>" class="dropdown-item dropdown-item-warning">Bannir</a>
-                                            <a href="users.php?action=delete&id=<?= $user['id'] ?? 0 ?>" class="dropdown-item dropdown-item-danger" onclick="return confirm('Confirmer la suppression de cet utilisateur ?');">Supprimer</a>
+                                            <a href="users.php?action=ban&id=<?= urlencode((string)$uid) ?>" class="dropdown-item dropdown-item-warning">Bannir</a>
+                                            <a href="users.php?action=delete&id=<?= urlencode((string)$uid) ?>" class="dropdown-item dropdown-item-danger" onclick="return confirm('Confirmer la suppression de cet utilisateur ?');">Supprimer</a>
                                         </div>
                                     </div>
                                 </td>
@@ -316,7 +333,6 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
     </div>
 </div>
 
-<!-- MODAL RESET MOT DE PASSE -->
 <div id="passwordModal" class="modal-overlay">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -337,115 +353,35 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
             </button>
         </div>
 
+        <!-- Zone de formulaire pour reset direct -->
+        <div id="password-form" style="margin-top: 20px; display:none;">
+            <form method="POST" action="reset_password.php" class="form-block">
+                <input type="hidden" name="mode" value="form">
+                <input type="hidden" name="id_user" id="password_form_id_user">
+
+                <div class="form-group">
+                    <label>Nouveau mot de passe</label>
+                    <input type="password" name="password" class="input" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmer le mot de passe</label>
+                    <input type="password" name="password_confirm" class="input" required>
+                </div>
+
+                <div style="margin-top: 15px; display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" class="btn-secondary" onclick="hidePasswordForm()">Annuler</button>
+                    <button type="submit" class="btn-primary">Valider</button>
+                </div>
+            </form>
+        </div>
+
         <div style="margin-top: 20px; display:flex; justify-content:flex-end;">
             <button type="button" class="btn-secondary" onclick="closePasswordModal()">Fermer</button>
         </div>
     </div>
 </div>
 
-<script>
-let autoSaveTimeout = null;
-
-function openEditModal(btn) {
-    // Récupération des données depuis les attributs data- du bouton
-    const id = btn.dataset.id;
-    const pseudo = btn.dataset.pseudo;
-    const prenom = btn.dataset.prenom;
-    const nom = btn.dataset.nom;
-    const email = btn.dataset.email;
-    const role = btn.dataset.role;
-    const statut = btn.dataset.statut;
-    const photoProfil = btn.dataset.photo_profil;
-    const bio = btn.dataset.bio;
-
-    // Remplissage du formulaire
-    document.getElementById('modal_id_user').value = id;
-    document.getElementById('modal_pseudo').value = pseudo || '';
-    document.getElementById('modal_prenom').value = prenom;
-    document.getElementById('modal_nom').value = nom;
-    document.getElementById('modal_email').value = email;
-    document.getElementById('modal_role').value = role;
-    document.getElementById('modal_statut').value = statut;
-    document.getElementById('modal_photo_profil').value = photoProfil || '';
-    document.getElementById('modal_bio').value = bio || '';
-
-    // Affichage
-    document.getElementById('editModal').classList.add('open');
-
-    // Attache l'auto-save sur les champs du formulaire (une seule fois)
-    const form = document.querySelector('#editModal form');
-    if (form && !form.dataset.autosaveAttached) {
-        const handler = function() {
-            scheduleAutoSave();
-        };
-        form.addEventListener('input', handler);
-        form.addEventListener('change', handler);
-        form.dataset.autosaveAttached = '1';
-    }
-}
-
-function closeEditModal() {
-    document.getElementById('editModal').classList.remove('open');
-}
-
-function openPasswordModal() {
-    document.getElementById('passwordModal').classList.add('open');
-}
-
-function closePasswordModal() {
-    document.getElementById('passwordModal').classList.remove('open');
-}
-
-function resetPasswordChoice(mode) {
-    const userId = document.getElementById('modal_id_user').value;
-    if (!userId) {
-        return;
-    }
-    // Redirige vers une page dédiée de reset (à implémenter côté backend)
-    window.location.href = 'reset_password.php?mode=' + encodeURIComponent(mode) + '&id=' + encodeURIComponent(userId);
-}
-
-function toggleDropdown(btn) {
-    // Ferme tous les autres dropdowns
-    document.querySelectorAll('.dropdown').forEach(d => {
-        if (d !== btn.parentElement) d.classList.remove('active');
-    });
-    // Bascule celui-ci
-    btn.parentElement.classList.toggle('active');
-}
-
-// Fermer les dropdowns si on clique en dehors des menus
-window.addEventListener('click', function(event) {
-    // Si le clic n'est pas à l'intérieur d'un .dropdown, on ferme tout
-    if (!event.target.closest('.dropdown')) {
-        document.querySelectorAll('.dropdown').forEach(function(d) {
-            d.classList.remove('active');
-    });
-    }
-
-function scheduleAutoSave() {
-    if (autoSaveTimeout) {
-        clearTimeout(autoSaveTimeout);
-    }
-    autoSaveTimeout = setTimeout(runAutoSave, 500);
-}
-
-function runAutoSave() {
-    const form = document.querySelector('#editModal form');
-    if (!form) return;
-
-    const formData = new FormData(form);
-
-    fetch('users.php', {
-        method: 'POST',
-        body: formData,
-        credentials: 'same-origin'
-    }).catch(function(e) {
-        console.error('Erreur lors de la sauvegarde automatique', e);
-    });
-}
-});
-</script>
+<script src="scripts/users.js" defer></script>
 
 <?php include 'includes/footer.php'; ?>
 </body>

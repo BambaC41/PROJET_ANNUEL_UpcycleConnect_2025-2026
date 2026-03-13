@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'includes/functions/auth.php';
 
 if (isset($_SESSION['token'])) {
     header("Location: admin.php");
@@ -12,24 +13,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
-    $url = "http://localhost:8081/login";
-    $data = json_encode([
-        "email" => $email,
-        "password" => $password
-    ]);
+    // Appel propre via functions/auth.php
+    $result = api_login($email, $password);
 
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($http_code === 200) {
-        $result = json_decode($response, true);
+    if ($result['status'] === 200) {
+        // Le décodage JSON est déjà fait par api_core
+        $result = $result['data'];
         if (isset($result['token'])) {
             $_SESSION['token'] = $result['token'];
             header("Location: admin.php");

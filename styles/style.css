@@ -196,6 +196,7 @@ footer {
   text-decoration: none;
   font-weight: 600;
   cursor: pointer;
+  font-size: 14px;
 }
 
 /* améliore le rendu des <a> dans le header */
@@ -836,4 +837,101 @@ a.btn-outline:focus-visible,
   margin-top: 10px;
   opacity: 0.85;
   max-width: 620px;
+}
+
+/* ===== MENU DÉROULANT (DROPDOWN) ===== */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: white;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.1);
+  z-index: 1005;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.dropdown-content a {
+  padding: 10px 14px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  margin: 0 !important;
+  color: #111827 !important;
+}
+
+.dropdown-item::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: transparent;
+}
+
+.dropdown-item-warning {
+  color: #b45309 !important;
+}
+
+.dropdown-item-warning::before {
+  background-color: #f59e0b;
+}
+
+.dropdown-item-danger {
+  color: #b91c1c !important;
+}
+
+.dropdown-item-danger::before {
+  background-color: #ef4444;
+}
+
+.dropdown-content a:hover {
+  background-color: #f3f4f6;
+}
+
+.dropdown.active .dropdown-content {
+  display: block;
+}
+
+/* ===== MODAL (POPUP) ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 500px;
+  background: white;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  transform: translateY(20px);
+  transition: transform 0.2s ease;
+}
+
+.modal-overlay.open .modal-card {
+  transform: translateY(0);
 }

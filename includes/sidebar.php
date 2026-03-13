@@ -1,7 +1,7 @@
 <div class="admin-sidebar">
     <h2>Administration</h2>
     <a href="#dashboard">Dashboard</a>
-    <a href="#users">Utilisateurs</a>
+    <a href="users.php">Utilisateurs</a>
     <a href="#actors">Acteurs</a>
     <a href="#events">Validation événements</a>
     <a href="#catalog">Catalogue</a>
