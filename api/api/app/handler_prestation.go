@@ -9,38 +9,38 @@ import (
 	"strings"
 )
 
-func EventsHandler(w http.ResponseWriter, r *http.Request) {
+func PrestationsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-
-		events, err := db.GetEvents()
+		prestations, err := db.GetPrestations()
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(events)
+		json.NewEncoder(w).Encode(prestations)
 	case http.MethodPost:
-		if _, ok := requireAdminOrStaff(w, r); !ok {
+		if _, ok := requireApprovedPro(w, r); !ok {
 			return
 		}
-		var e model.Event
-		if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+		var p model.Prestation
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-		if err := db.CreateEvent(e); err != nil {
+		if err := db.CreatePrestation(p); err != nil {
 			http.Error(w, "Insert error", http.StatusInternalServerError)
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]string{"message": "event created"})
+		json.NewEncoder(w).Encode(map[string]string{"message": "prestation created"})
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-func EventByIDHandler(w http.ResponseWriter, r *http.Request) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/events/")
+
+func PrestationByIDHandler(w http.ResponseWriter, r *http.Request) {
+	idStr := strings.TrimPrefix(r.URL.Path, "/prestations/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
@@ -48,43 +48,42 @@ func EventByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		event, err := db.GetEventByID(id)
+		prestation, err := db.GetPrestationByID(id)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
-		if event == nil {
-			http.Error(w, "Event not found", http.StatusNotFound)
+		if prestation == nil {
+			http.Error(w, "Prestation not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(event)
+		json.NewEncoder(w).Encode(prestation)
 	case http.MethodPut:
 		if _, ok := requireAdminOrStaff(w, r); !ok {
 			return
-
 		}
-		var e model.Event
-		if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+		var p model.Prestation
+		if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-		if err := db.UpdateEvent(id, e); err != nil {
+		if err := db.UpdatePrestation(id, p); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"message": "event updated"})
+		json.NewEncoder(w).Encode(map[string]string{"message": "prestation updated"})
 	case http.MethodDelete:
 		if _, ok := requireAdminOrStaff(w, r); !ok {
 			return
 		}
-		if err := db.DeleteEvent(id); err != nil {
+		if err := db.DeletePrestation(id); err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]string{"message": "event deleted"})
+		json.NewEncoder(w).Encode(map[string]string{"message": "prestation deleted"})
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}

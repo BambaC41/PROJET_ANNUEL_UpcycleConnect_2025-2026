@@ -1,12 +1,14 @@
 DROP DATABASE IF EXISTS upcycleconnect;
 CREATE DATABASE IF NOT EXISTS upcycleconnect;
 USE upcycleconnect;
-CREATE TABLE IF NOT EXISTS role (
+
+CREATE TABLE role (
     id_role INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     libelle VARCHAR(100) NOT NULL
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS utilisateur (
+
+CREATE TABLE utilisateur (
     id_user INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
@@ -21,11 +23,16 @@ CREATE TABLE IF NOT EXISTS utilisateur (
     photo_profil VARCHAR(255),
     bio TEXT,
     statut VARCHAR(50),
+    is_banned BOOLEAN DEFAULT FALSE,
+    ban_reason TEXT,
+    ban_until DATETIME NULL,
+    is_approved BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     id_role INT NOT NULL,
     FOREIGN KEY (id_role) REFERENCES role(id_role)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS objet (
+
+CREATE TABLE objet (
     id_objet INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(150) NOT NULL,
     description TEXT,
@@ -38,7 +45,8 @@ CREATE TABLE IF NOT EXISTS objet (
     id_user INT NOT NULL,
     FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS conteneur (
+
+CREATE TABLE conteneur (
     id_conteneur INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
     adresse VARCHAR(255),
@@ -46,7 +54,8 @@ CREATE TABLE IF NOT EXISTS conteneur (
     date_installation DATE,
     derniere_maintenance DATE
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS demande_depot (
+
+CREATE TABLE demande_depot (
     id_demande INT AUTO_INCREMENT PRIMARY KEY,
     statut VARCHAR(50),
     requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -59,7 +68,8 @@ CREATE TABLE IF NOT EXISTS demande_depot (
     FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
     FOREIGN KEY (id_conteneur) REFERENCES conteneur(id_conteneur)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS code_acces (
+
+CREATE TABLE code_acces (
     id_code_acces INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(100) NOT NULL,
     expires_at DATETIME,
@@ -68,7 +78,8 @@ CREATE TABLE IF NOT EXISTS code_acces (
     id_demande INT UNIQUE,
     FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS code_barre (
+
+CREATE TABLE code_barre (
     id_code_barre INT AUTO_INCREMENT PRIMARY KEY,
     barcode_value VARCHAR(100) NOT NULL UNIQUE,
     statut VARCHAR(50),
@@ -77,7 +88,8 @@ CREATE TABLE IF NOT EXISTS code_barre (
     id_demande INT UNIQUE,
     FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS retrait (
+
+CREATE TABLE retrait (
     id_retrait INT AUTO_INCREMENT PRIMARY KEY,
     collected_at DATETIME,
     notes TEXT,
@@ -86,7 +98,8 @@ CREATE TABLE IF NOT EXISTS retrait (
     FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
     FOREIGN KEY (id_code_barre) REFERENCES code_barre(id_code_barre)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS annonce (
+
+CREATE TABLE annonce (
     id_annonce INT AUTO_INCREMENT PRIMARY KEY,
     mode VARCHAR(50),
     prix DECIMAL(10,2),
@@ -100,12 +113,14 @@ CREATE TABLE IF NOT EXISTS annonce (
     FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
     FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS categorie_prestation (
+
+CREATE TABLE categorie_prestation (
     id_categorie INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     description TEXT
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS prestation (
+
+CREATE TABLE prestation (
     id_prestation INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(150) NOT NULL,
     description TEXT,
@@ -114,13 +129,12 @@ CREATE TABLE IF NOT EXISTS prestation (
     is_active BOOLEAN DEFAULT TRUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     id_categorie INT NOT NULL,
-    FOREIGN KEY (id_categorie) REFERENCES categorie_prestation(id_categorie)
+    id_user INT NULL,
+    FOREIGN KEY (id_categorie) REFERENCES categorie_prestation(id_categorie),
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
-ALTER TABLE utilisateur
-ADD COLUMN is_banned BOOLEAN DEFAULT FALSE,
-ADD COLUMN ban_reason TEXT,
-ADD COLUMN ban_until DATETIME NULL;
-CREATE TABLE IF NOT EXISTS session (
+
+CREATE TABLE session (
     id_session INT AUTO_INCREMENT PRIMARY KEY,
     date_debut DATETIME,
     date_fin DATETIME,
@@ -133,7 +147,8 @@ CREATE TABLE IF NOT EXISTS session (
     FOREIGN KEY (id_prestation) REFERENCES prestation(id_prestation),
     FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS inscription (
+
+CREATE TABLE inscription (
     id_inscription INT AUTO_INCREMENT PRIMARY KEY,
     statut VARCHAR(50),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -142,7 +157,8 @@ CREATE TABLE IF NOT EXISTS inscription (
     FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
     FOREIGN KEY (id_session) REFERENCES session(id_session)
 ) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS paiement (
+
+CREATE TABLE paiement (
     id_paiement INT AUTO_INCREMENT PRIMARY KEY,
     provider VARCHAR(50),
     payment_ref VARCHAR(150),
@@ -154,14 +170,13 @@ CREATE TABLE IF NOT EXISTS paiement (
     id_inscription INT UNIQUE,
     FOREIGN KEY (id_inscription) REFERENCES inscription(id_inscription)
 ) ENGINE=InnoDB;
+
 INSERT INTO role (id_role, code, libelle) VALUES
-(1, 'ADMIN', 'Administrateur'),
-(2, 'STAFF', 'Staff'),
-(3, 'USER', 'Utilisateur classique'),
-(4, 'PRO', 'Professionnel')
-ON DUPLICATE KEY UPDATE
-code = VALUES(code),
-libelle = VALUES(libelle);
+(1,'ADMIN','Administrateur'),
+(2,'STAFF','Staff'),
+(3,'USER','Utilisateur classique'),
+(4,'PRO','Professionnel');
+
 INSERT INTO utilisateur (
     email,
     password_hash,
@@ -176,279 +191,22 @@ INSERT INTO utilisateur (
     photo_profil,
     bio,
     statut,
+    is_approved,
     id_role
 ) VALUES
-(
-    'user1@test.com',
-    '$2a$10$testhashpassword',
-    'recycleur92',
-    'Lucas',
-    'Martin',
-    '0611223344',
-    '12 rue des Fleurs',
-    'Paris',
-    '75012',
-    'France',
-    'https://picsum.photos/200?1',
-    'Passionné de recyclage et de bricolage.',
-    'ACTIF',
-    3
-),
-(
-    'user2@test.com',
-    '$2a$10$testhashpassword',
-    'eco_sarah',
-    'Sarah',
-    'Durand',
-    '0622334455',
-    '8 avenue Victor Hugo',
-    'Lyon',
-    '69003',
-    'France',
-    'https://picsum.photos/200?2',
-    'Je récupère et transforme des objets.',
-    'ACTIF',
-    3
-),
-(
-    'user3@test.com',
-    '$2a$10$testhashpassword',
-    'atelierbois',
-    'Thomas',
-    'Petit',
-    '0633445566',
-    '25 rue du Port',
-    'Marseille',
-    '13002',
-    'France',
-    'https://picsum.photos/200?3',
-    'Menuisier amateur et amateur d’upcycling.',
-    'ACTIF',
-    3
-);
-INSERT INTO objet (
-    titre,
-    description,
-    etat,
-    type_materiau,
-    poids,
-    volume,
-    photo_url,
-    id_user
-) VALUES
-(
-    'Chaise en bois',
-    'Chaise récupérée à restaurer',
-    'bon',
-    'bois',
-    5.50,
-    0.30,
-    'https://picsum.photos/300?1',
-    1
-),
-(
-    'Lampe vintage',
-    'Lampe ancienne à réparer',
-    'moyen',
-    'metal',
-    2.00,
-    0.15,
-    'https://picsum.photos/300?2',
-    2
-);
-INSERT INTO conteneur (
-    code,
-    adresse,
-    statut,
-    date_installation,
-    derniere_maintenance
-) VALUES
-(
-    'CONT_PARIS_01',
-    '10 rue de Rivoli Paris',
-    'actif',
-    '2025-01-10',
-    '2026-01-10'
-),
-(
-    'CONT_LYON_01',
-    '5 place Bellecour Lyon',
-    'actif',
-    '2025-02-01',
-    '2026-02-01'
-);
+('user1@test.com','$2a$10$testhashpassword','recycleur92','Lucas','Martin','0611223344','12 rue des Fleurs','Paris','75012','France','https://picsum.photos/200?1','Passionné de recyclage et bricolage','ACTIF',TRUE,3),
+('user2@test.com','$2a$10$testhashpassword','eco_sarah','Sarah','Durand','0622334455','8 avenue Victor Hugo','Lyon','69003','France','https://picsum.photos/200?2','Je récupère et transforme des objets','ACTIF',TRUE,3),
+('user3@test.com','$2a$10$testhashpassword','atelierbois','Thomas','Petit','0633445566','25 rue du Port','Marseille','13002','France','https://picsum.photos/200?3','Menuisier amateur et amateur d’upcycling','ACTIF',TRUE,3),
+('pro1@test.com','$2a$10$testhashpassword','atelier_pro','Camille','Bernard','0644556677','18 rue des Artisans','Nantes','44000','France','https://picsum.photos/200?4','Professionnel de la réparation et de la seconde main','ACTIF',FALSE,4);
 
-INSERT INTO demande_depot (
-    statut,
-    validated_at,
-    deposited_at,
-    id_user,
-    id_objet,
-    id_conteneur
-) VALUES
-(
-    'valide',
-    NOW(),
-    NULL,
-    1,
-    1,
-    1
-),
-(
-    'en_attente',
-    NULL,
-    NULL,
-    2,
-    2,
-    2
-);
+INSERT INTO categorie_prestation (nom,description) VALUES
+('Atelier','Ateliers créatifs et recyclage'),
+('Réparation','Services de réparation');
 
-INSERT INTO code_acces (
-    code,
-    expires_at,
-    id_demande
-) VALUES
-(
-    'CODE123456',
-    DATE_ADD(NOW(), INTERVAL 1 DAY),
-    1
-);
-INSERT INTO code_barre (
-    barcode_value,
-    statut,
-    id_demande
-) VALUES
-(
-    'BARCODE123456',
-    'actif',
-    1
-);
+INSERT INTO prestation (titre,description,type,prix,id_categorie,id_user) VALUES
+('Atelier couture','Apprendre à réparer des vêtements','atelier',20,1,NULL),
+('Réparation vélo','Service réparation vélo','service',30,2,NULL);
 
-INSERT INTO retrait (
-    collected_at,
-    notes,
-    id_user,
-    id_code_barre
-) VALUES
-(
-    NOW(),
-    'Objet récupéré pour recyclage',
-    3,
-    1
-);
-INSERT INTO annonce (
-    mode,
-    prix,
-    statut,
-    validated_at,
-    id_user,
-    id_objet,
-    id_validateur
-) VALUES
-(
-    'vente',
-    15.00,
-    'valide',
-    NOW(),
-    1,
-    1,
-    1
-);
-
--- CATEGORIES PRESTATIONS
-INSERT INTO categorie_prestation (
-    nom,
-    description
-) VALUES
-(
-    'Atelier',
-    'Ateliers créatifs et recyclage'
-),
-(
-    'Réparation',
-    'Services de réparation d’objets'
-);
-INSERT INTO prestation (
-    titre,
-    description,
-    type,
-    prix,
-    is_active,
-    id_categorie
-) VALUES
-(
-    'Atelier couture',
-    'Apprendre à réparer des vêtements',
-    'atelier',
-    20.00,
-    TRUE,
-    1
-),
-(
-    'Réparation vélo',
-    'Service de réparation de vélos',
-    'service',
-    30.00,
-    TRUE,
-    2
-);
-INSERT INTO session (
-    date_debut,
-    date_fin,
-    lieu,
-    capacite_max,
-    statut,
-    id_prestation,
-    id_validateur
-) VALUES
-(
-    '2026-04-10 10:00:00',
-    '2026-04-10 12:00:00',
-    'Paris',
-    10,
-    'actif',
-    1,
-    1
-),
-(
-    '2026-04-12 14:00:00',
-    '2026-04-12 16:00:00',
-    'Lyon',
-    8,
-    'actif',
-    2,
-    1
-);
-INSERT INTO inscription (
-    statut,
-    id_user,
-    id_session
-) VALUES
-(
-    'confirme',
-    2,
-    1
-),
-(
-    'en_attente',
-    3,
-    2
-);
-INSERT INTO paiement (
-    provider,
-    payment_ref,
-    montant,
-    devise,
-    statut,
-    paid_at,
-    id_inscription
-) VALUES
-(
-    'stripe',
-    'PAY123456',
-    20.00,
-    'EUR',
-    'paye',
-    NOW(),
-    1
-);
+INSERT INTO session (date_debut,date_fin,lieu,capacite_max,statut,id_prestation,id_validateur) VALUES
+('2026-04-10 10:00:00','2026-04-10 12:00:00','Paris',10,'actif',1,1),
+('2026-04-12 14:00:00','2026-04-12 16:00:00','Lyon',8,'actif',2,1);

@@ -18,6 +18,7 @@ func main() {
 	http.HandleFunc("/me/update", app.UpdateMeHandler)
 	http.HandleFunc("/users", app.UsersHandler)
 	http.HandleFunc("/users/", app.UsersRouter)
+	http.HandleFunc("/pros/pending", app.PendingProsHandler)
 	http.HandleFunc("/admin/users", app.AdminCreateUserHandler)
 	http.HandleFunc("/categories", app.CategoriesHandler)
 	http.HandleFunc("/categories/", app.CategoryByIDHandler)

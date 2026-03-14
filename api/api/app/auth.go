@@ -1,6 +1,7 @@
 package app
 
 import (
+	"api/db"
 	"net/http"
 	"strings"
 	"unicode"
@@ -61,6 +62,17 @@ func requireAdmin(w http.ResponseWriter, r *http.Request) (*Claims, bool) {
 	}
 	return claims, true
 }
+func requireStaff(w http.ResponseWriter, r *http.Request) (*Claims, bool) {
+	claims, ok := requireAuth(w, r)
+	if !ok {
+		return nil, false
+	}
+	if claims.RoleID != RoleStaff {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return nil, false
+	}
+	return claims, true
+}
 func requireAdminOrStaff(w http.ResponseWriter, r *http.Request) (*Claims,
 	bool) {
 	claims, ok := requireAuth(w, r)
@@ -91,4 +103,33 @@ func isValidPassword(password string) bool {
 		}
 	}
 	return hasLower && hasUpper && hasDigit && hasSpecial
+}
+
+func requireApprovedPro(w http.ResponseWriter, r *http.Request) (*Claims, bool) {
+	claims, ok := requireAuth(w, r)
+	if !ok {
+		return nil, false
+	}
+	if claims.RoleID != RolePro {
+		http.Error(w, "Only approved PRO can access this route", http.StatusForbidden)
+		return nil, false
+	}
+	user, err := db.GetUserByID(claims.UserID)
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return nil, false
+	}
+	if user == nil {
+		http.Error(w, "User not found", http.StatusUnauthorized)
+		return nil, false
+	}
+	if user.IsBanned {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return nil, false
+	}
+	if !user.IsApproved {
+		http.Error(w, "PRO account pending staff approval", http.StatusForbidden)
+		return nil, false
+	}
+	return claims, true
 }
