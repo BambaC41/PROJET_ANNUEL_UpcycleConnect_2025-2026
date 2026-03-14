@@ -16,7 +16,7 @@ $msg_error = "";
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $res = api_delete_category($_SESSION['token'], $_GET['id']);
     if ($res['status'] === 200 || $res['status'] === 204) {
-        header("Location: categories_prestation.php?msg=deleted");
+        header("Location: prestation_categories.php?msg=deleted");
         exit();
     } else {
         $msg_error = "Erreur lors de la suppression de la catégorie.";
@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && $_POST['action'] === 'create') {
         $res = api_create_category($_SESSION['token'], $payload);
         if ($res['status'] === 200 || $res['status'] === 201) {
-            header("Location: categories_prestation.php?msg=created");
+            header("Location: prestation_categories.php?msg=created");
             exit();
         } else {
             $msg_error = "Erreur lors de la création de la catégorie.";
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $_POST['id'];
         $res = api_update_category($_SESSION['token'], $id, $payload);
         if ($res['status'] === 200 || $res['status'] === 204) {
-            header("Location: categories_prestation.php?msg=updated");
+            header("Location: prestation_categories.php?msg=updated");
             exit();
         } else {
             $msg_error = "Erreur lors de la modification de la catégorie.";
@@ -63,7 +63,7 @@ $categories = api_get_categories($_SESSION['token']);
 
     <section class="admin-content">
         <div style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>Gestion des Catégories de Prestations</h1>
+            <h1>Gestion des Prestation Categories</h1>
             <button type="button" class="btn-primary" onclick="openCreateModal()">Ajouter une catégorie</button>
         </div>
 
@@ -110,7 +110,7 @@ $categories = api_get_categories($_SESSION['token']);
                                         data-nom="<?= htmlspecialchars($c['nom'] ?? '') ?>"
                                         data-desc="<?= htmlspecialchars($c['description'] ?? '') ?>"
                                     >Éditer</button>
-                                    <a href="categories_prestation.php?action=delete&id=<?= urlencode($c['id'] ?? '') ?>" class="btn-outline" style="border-color:#dc2626; color:#dc2626; margin-left: 5px;" onclick="return confirm('Attention: la suppression d\'une catégorie peut affecter les prestations liées. Continuer ?')">Supprimer</a>
+                                    <a href="prestation_categories.php?action=delete&id=<?= urlencode($c['id'] ?? '') ?>" class="btn-outline" style="border-color:#dc2626; color:#dc2626; margin-left: 5px;" onclick="return confirm('Attention: la suppression d\'une catégorie peut affecter les prestations liées. Continuer ?')">Supprimer</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

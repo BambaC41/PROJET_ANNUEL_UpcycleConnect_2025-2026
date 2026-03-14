@@ -3,9 +3,9 @@
     <a href="admin.php">Dashboard</a>
     <a href="users.php">Utilisateurs</a>
     <a href="prestations.php">Prestations</a>
-    <a href="categories_prestation.php">Catégories Prestations</a>
+    <a href="prestation_categories.php">Prestation Categories</a>
+    <a href="events.php">Evénements</a>
     <a href="actors.php">Acteurs</a>
-    <a href="events.php">Validation événements</a>
     <a href="notifications.php">Notifications</a>
     <a href="containers.php">Conteneurs</a>
     <a href="documents.php">Documents & Codes</a>
