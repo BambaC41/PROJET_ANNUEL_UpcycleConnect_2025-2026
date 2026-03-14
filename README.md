@@ -78,7 +78,7 @@ Rôles
 
 POST /register
 
-####### Description
+###### Description
 Créer un compte public.
 
 Cette route permet uniquement de créer :
