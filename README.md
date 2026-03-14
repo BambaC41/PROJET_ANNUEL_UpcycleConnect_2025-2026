@@ -1,16 +1,21 @@
-# Documentation de test API — UpcycleConnect
+# 📚 Documentation API — UpcycleConnect
 
-## Base URL
-http://localhost:8080
+Une API complète pour gérer la plateforme collaborative d'upcycling **UpcycleConnect**.
 
-### Préparation
+---
 
-#### Base de données
-La base de données doit déjà être créée et initialisée.
+## 🚀 Configuration Initiale
 
-##### Insérer l’admin de base
-Exécuter cette requête SQL dans MySQL pour créer le premier administrateur du site.
+### 📦 Prérequis
+- Base de données MySQL créée et initialisée
+- Go installé sur votre machine
+- Postman ou un client HTTP pour tester les routes
 
+### 🔐 Initialisation de l'Admin
+
+Exécutez cette requête SQL pour créer le premier administrateur :
+
+```sql
 INSERT INTO utilisateur (
     email,
     password_hash,
@@ -30,72 +35,74 @@ INSERT INTO utilisateur (
     TRUE,
     1
 );
+```
 
-Identifiants admin
+**Identifiants par défaut :**
+| Champ | Valeur |
+|-------|--------|
+| **Email** | admin@upcycleconnect.fr |
+| **Mot de passe** | Password123! |
 
-Email  
-admin@upcycleconnect.fr
+### ▶️ Démarrage de l'API
 
-Mot de passe  
-Password123!
-
-###### Lancer l’API
 ```bash
 go run .
 ```
 
-###### Résultat attendu
-```text
+**Résultat attendu :**
+```
 Server running on http://localhost:8080
 ```
 
-##### Authentification
+---
 
-Header pour routes protégées
+## 🌐 Configuration Générale
 
-Authorization: Bearer TOKEN
+### Base URL
+```
+http://localhost:8080
+```
 
-Rôles
+### 🔑 Authentification
 
-| id_role | rôle |
-|---|---|
-| 1 | ADMIN |
-| 2 | STAFF |
-| 3 | USER |
-| 4 | PRO |
+Toutes les routes protégées requièrent un token JWT dans le header :
 
-##### Fonctionnalités de l’API
+```
+Authorization: Bearer <JWT_TOKEN>
+```
 
-- authentification
-- profils utilisateurs
-- utilisateurs
-- approbation des PRO
-- catégories
-- prestations
-- événements
+### 👥 Système de Rôles
 
-###### Routes API
+| ID | Rôle | Description |
+|-----|------|-------------|
+| 1 | 🔴 **ADMIN** | Accès complet à l'administration |
+| 2 | 🟠 **STAFF** | Modération et approbation des PROs |
+| 3 | 🟢 **USER** | Utilisateur standard |
+| 4 | 🔵 **PRO** | Prestataire (services et événements) |
 
-POST /register
+---
 
-####### Description
-Créer un compte public.
+## 📋 Routes API
 
-Cette route permet uniquement de créer :
-- USER
-- PRO
+### 🔐 Authentification
 
-Comportement spécial :
-- un USER est créé avec `is_approved = true`
-- un PRO est créé avec `is_approved = false`
-- un PRO devra être approuvé par un STAFF avant de pouvoir se connecter
+#### POST `/register`
 
-URL  
+**Description :** Créer un compte utilisateur public.
+
+**Accès :** Public  
+**Rôles créables :** USER, PRO
+
+**Comportement spécial :**
+- Les USER sont automatiquement approuvés
+- Les PRO doivent être approuvés par un STAFF avant de se connecter
+
+**URL :**
+```http
 POST http://localhost:8080/register
+```
 
-Body JSON
-
-Exemple inscription USER
+**Exemple 1 : Inscription USER**
 ```json
 {
   "email": "user@test.com",
@@ -109,7 +116,7 @@ Exemple inscription USER
 }
 ```
 
-Exemple inscription PRO
+**Exemple 2 : Inscription PRO**
 ```json
 {
   "email": "pro@test.com",
@@ -123,31 +130,36 @@ Exemple inscription PRO
 }
 ```
 
-###### Réponse attendue
+**Réponse (201) :**
 ```json
 {
   "message": "user created"
 }
 ```
 
-##### POST /login
+---
 
-Description  
-Connexion avec email et mot de passe.
+#### POST `/login`
 
-Retourne :
-- un token JWT
-- le `role_id`
-- le `user_id`
-- le statut `is_approved`
+**Description :** S'authentifier et obtenir un token JWT.
 
-Comportement spécial :
-- un PRO non approuvé ne peut pas se connecter
+**Accès :** Public
 
-URL  
+**Retourne :**
+- `token` : Token JWT pour les requêtes authentifiées
+- `role_id` : ID du rôle utilisateur
+- `user_id` : ID unique de l'utilisateur
+- `is_approved` : État d'approbation (PRO seulement)
+
+**⚠️ Restriction :** Les PROs non approuvés ne peuvent pas se connecter.
+
+**URL :**
+```http
 POST http://localhost:8080/login
+```
 
-Exemple login admin
+**Exemples :**
+
 ```json
 {
   "email": "admin@upcycleconnect.fr",
@@ -155,7 +167,6 @@ Exemple login admin
 }
 ```
 
-Exemple login user
 ```json
 {
   "email": "user@test.com",
@@ -163,7 +174,6 @@ Exemple login user
 }
 ```
 
-Exemple login pro
 ```json
 {
   "email": "pro@test.com",
@@ -171,41 +181,55 @@ Exemple login pro
 }
 ```
 
-##### Réponse attendue
+**Réponse (200) :**
 ```json
 {
-  "token": "JWT_TOKEN",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "role_id": 4,
   "user_id": 12,
   "is_approved": true
 }
 ```
 
-Si le compte PRO n’est pas encore approuvé, la connexion est refusée.
+---
 
-##### GET /me
+### 👤 Profil Utilisateur
 
-Description  
-Voir les informations du compte connecté.
+#### GET `/me`
 
-URL  
+**Description :** Récupérer les informations de l'utilisateur connecté.
+
+**Accès :** Authentifié
+
+**URL :**
+```http
 GET http://localhost:8080/me
+```
 
-Header  
-Authorization: Bearer TOKEN
+**Headers :**
+```
+Authorization: Bearer <TOKEN>
+```
 
-##### PUT /me/update
+---
 
-Description  
-Modifier le profil du compte connecté.
+#### PUT `/me/update`
 
-URL  
+**Description :** Modifier le profil de l'utilisateur connecté.
+
+**Accès :** Authentifié
+
+**URL :**
+```http
 PUT http://localhost:8080/me/update
+```
 
-Header  
-Authorization: Bearer TOKEN
+**Headers :**
+```
+Authorization: Bearer <TOKEN>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "pseudo": "newPseudo",
@@ -221,41 +245,44 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "profile updated"
 }
 ```
 
-###### GET /profile/{id}
+---
 
-Description  
-Voir le profil public d’un utilisateur.
+#### GET `/profile/{id}`
 
-Données retournées
-- pseudo
-- bio
-- photo_profil
+**Description :** Consulter le profil public d'un utilisateur.
 
-URL  
+**Accès :** Public
+
+**Données retournées :** pseudo, bio, photo_profil
+
+**URL :**
+```http
 GET http://localhost:8080/profile/1
+```
 
-###### GET /profiles
+---
 
-Description  
-Voir la liste des profils publics des utilisateurs.
+#### GET `/profiles`
 
-Données retournées
-- id_user
-- pseudo
-- bio
-- photo_profil
+**Description :** Lister tous les profils publics utilisateurs.
 
-URL  
+**Accès :** Public
+
+**Utilisation :** Afficher une page communauté ou une liste de membres.
+
+**URL :**
+```http
 GET http://localhost:8080/profiles
+```
 
-Réponse exemple
+**Réponse (200) :**
 ```json
 [
   {
@@ -273,55 +300,63 @@ Réponse exemple
 ]
 ```
 
-Utilisation  
-Cette route permet d’afficher la liste des profils publics dans l’application  
-(par exemple une page communauté ou une liste de membres).
+---
 
-GET /users
+### 👨‍💼 Gestion des Utilisateurs (Admin/Staff)
 
-Description  
-Voir tous les utilisateurs.
+#### GET `/users`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Lister tous les utilisateurs.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 GET http://localhost:8080/users
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-###### GET /users/{id}
+---
 
-Description  
-Voir un utilisateur précis.
+#### GET `/users/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Récupérer les détails d'un utilisateur spécifique.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 GET http://localhost:8080/users/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-PUT /users/{id}
+---
 
-Description  
-Modifier un utilisateur.
+#### PUT `/users/{id}`
 
-Accès
-- ADMIN
+**Description :** Modifier les informations d'un utilisateur.
 
-URL  
+**Accès :** ADMIN uniquement
+
+**URL :**
+```http
 PUT http://localhost:8080/users/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "email": "user@test.com",
@@ -340,35 +375,45 @@ Body JSON
 }
 ```
 
-###### DELETE /users/{id}
+---
 
-Description  
-Supprimer un utilisateur.
+#### DELETE `/users/{id}`
 
-Accès
-- ADMIN
+**Description :** Supprimer un utilisateur de la plateforme.
 
-URL  
+**Accès :** ADMIN uniquement
+
+**URL :**
+```http
 DELETE http://localhost:8080/users/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN>
+```
 
-###### PUT /users/{id}/ban
+---
 
-Description  
-Permet de bannir un utilisateur.
+### 🚫 Modération
 
-Accès
-- ADMIN
+#### PUT `/users/{id}/ban`
 
-URL  
+**Description :** Bannir un utilisateur de la plateforme.
+
+**Accès :** ADMIN uniquement
+
+**URL :**
+```http
 PUT http://localhost:8080/users/2/ban
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "ban_reason": "comportement inapproprié",
@@ -376,78 +421,97 @@ Body JSON
 }
 ```
 
-Champs
+| Champ | Description |
+|-------|-------------|
+| `ban_reason` | Raison du bannissement |
+| `ban_until` | Date/heure de fin du bannissement |
 
-ban_reason  
-raison du bannissement
-
-ban_until  
-date de fin du bannissement
-
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "user banned"
 }
 ```
 
-###### PUT /users/{id}/unban
+**Vérification :**
+```http
+GET http://localhost:8080/users/2
+```
+Vous devriez voir `"is_banned": true` et `"ban_reason": "comportement inapproprié"`.
 
-Description  
-Permet de retirer le bannissement d’un utilisateur.
+---
 
-Accès
-- ADMIN
+#### PUT `/users/{id}/unban`
 
-URL  
+**Description :** Retirer le bannissement d'un utilisateur.
+
+**Accès :** ADMIN uniquement
+
+**URL :**
+```http
 PUT http://localhost:8080/users/2/unban
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN>
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "user unbanned"
 }
 ```
 
-###### PUT /users/{id}/approve
+**Vérification :** `"is_banned": false` et `"ban_reason": null`
 
-Description  
-Permet à un STAFF d’approuver un compte PRO en attente.
+---
 
-Accès
-- STAFF
+### ✅ Approbation des PROs
 
-URL  
+#### PUT `/users/{id}/approve`
+
+**Description :** Approuver un compte PRO en attente.
+
+**Accès :** STAFF uniquement
+
+**URL :**
+```http
 PUT http://localhost:8080/users/2/approve
+```
 
-Header  
-Authorization: Bearer TOKEN_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_STAFF>
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "user approved"
 }
 ```
 
-###### GET /pros/pending
+---
 
-Description  
-Voir la liste des comptes PRO en attente d’approbation.
+#### GET `/pros/pending`
 
-Accès
-- STAFF
+**Description :** Lister les comptes PRO en attente d'approbation.
 
-URL  
+**Accès :** STAFF uniquement
+
+**URL :**
+```http
 GET http://localhost:8080/pros/pending
+```
 
-Header  
-Authorization: Bearer TOKEN_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_STAFF>
+```
 
-Réponse exemple
+**Réponse (200) :**
 ```json
 [
   {
@@ -458,69 +522,27 @@ Réponse exemple
 ]
 ```
 
-###### Vérification du bannissement
+---
 
-Après avoir banni un utilisateur, vérifier avec :
+#### POST `/admin/users`
 
-GET http://localhost:8080/users/2
+**Description :** Créer un utilisateur via l'interface admin.
 
-Dans la réponse JSON on doit voir :
+**Accès :** ADMIN uniquement
 
-```json
-"is_banned": true
-```
+Permet de créer les 4 types de comptes : ADMIN, STAFF, USER, PRO.
 
-et
-
-```json
-"ban_reason": "comportement inapproprié"
-```
-
-###### Vérification du débannissement
-
-Après un appel à :
-
-PUT /users/{id}/unban
-
-refaire :
-
-GET http://localhost:8080/users/{id}
-
-Le résultat attendu est :
-
-```json
-"is_banned": false
-```
-
-et
-
-```json
-"ban_reason": null
-```
-
-###### POST /admin/users
-
-Description  
-Créer un utilisateur via l’API admin.
-
-Accès
-- ADMIN
-
-Cette route permet à un administrateur de créer un compte de type :
-- ADMIN
-- STAFF
-- USER
-- PRO
-
-URL  
+**URL :**
+```http
 POST http://localhost:8080/admin/users
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN>
+```
 
-Body JSON
-
-Exemple création STAFF
+**Exemple : Créer un STAFF**
 ```json
 {
   "email": "staff@upcycleconnect.fr",
@@ -534,7 +556,7 @@ Exemple création STAFF
 }
 ```
 
-Exemple création ADMIN
+**Exemple : Créer un ADMIN**
 ```json
 {
   "email": "admin2@upcycleconnect.fr",
@@ -548,43 +570,42 @@ Exemple création ADMIN
 }
 ```
 
-Exemple création PRO
-```json
-{
-  "email": "pro@upcycleconnect.fr",
-  "password": "Password123!",
-  "pseudo": "pro_upcycleconnect",
-  "prenom": "Prestataire",
-  "nom": "Pro",
-  "photo_profil": "",
-  "bio": "Compte professionnel",
-  "role_id": 4
-}
-```
-
-Réponse attendue
+**Réponse (201) :**
 ```json
 {
   "message": "admin user created"
 }
 ```
 
-###### GET /categories
+---
 
-Description  
-Voir la liste des catégories.
+### 🏷️ Catégories
 
+#### GET `/categories`
+
+**Description :** Lister toutes les catégories.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/categories
+```
 
-###### GET /categories/{id}
+---
 
-Description  
-Voir une catégorie précise.
+#### GET `/categories/{id}`
 
-URL  
+**Description :** Récupérer une catégorie spécifique.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/categories/1
+```
 
-Réponse exemple
+**Réponse (200) :**
 ```json
 {
   "id": 1,
@@ -593,22 +614,25 @@ Réponse exemple
 }
 ```
 
-###### POST /categories
+---
 
-Description  
-Créer une catégorie.
+#### POST `/categories`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Créer une nouvelle catégorie.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 POST http://localhost:8080/categories
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "nom": "Atelier",
@@ -616,22 +640,25 @@ Body JSON
 }
 ```
 
-###### PUT /categories/{id}
+---
 
-Description  
-Modifier une catégorie.
+#### PUT `/categories/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Modifier une catégorie.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 PUT http://localhost:8080/categories/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "nom": "Atelier modifié",
@@ -639,69 +666,90 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "category updated"
 }
 ```
 
-##### DELETE /categories/{id}
+---
 
-Description  
-Supprimer une catégorie.
+#### DELETE `/categories/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Supprimer une catégorie.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 DELETE http://localhost:8080/categories/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "category deleted"
 }
 ```
 
-###### GET /prestations
+---
 
-Description  
-Voir la liste des prestations.
+### 🛠️ Prestations
 
+#### GET `/prestations`
+
+**Description :** Lister toutes les prestations disponibles.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/prestations
+```
 
-##### GET /prestations/{id}
+---
 
-Description  
-Voir une prestation précise.
+#### GET `/prestations/{id}`
 
+**Description :** Récupérer les détails d'une prestation.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/prestations/1
+```
 
-##### POST /prestations
+---
 
-Description  
-Créer une prestation.
+#### POST `/prestations`
 
-Accès
-- PRO approuvé uniquement
+**Description :** Créer une nouvelle prestation.
 
-Conditions
-- être connecté
-- avoir `role_id = 4`
-- avoir `is_approved = true`
+**Accès :** PRO approuvé uniquement
 
-URL  
+**Conditions :**
+- ✅ Être authentifié
+- ✅ Avoir `role_id = 4` (PRO)
+- ✅ Avoir `is_approved = true`
+
+**URL :**
+```http
 POST http://localhost:8080/prestations
+```
 
-Header  
-Authorization: Bearer TOKEN_PRO_APPROUVE
+**Headers :**
+```
+Authorization: Bearer <TOKEN_PRO_APPROUVE>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "titre": "Atelier couture",
@@ -713,29 +761,32 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (201) :**
 ```json
 {
   "message": "prestation created"
 }
 ```
 
-##### PUT /prestations/{id}
+---
 
-Description  
-Modifier une prestation.
+#### PUT `/prestations/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Modifier une prestation.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 PUT http://localhost:8080/prestations/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "titre": "Atelier couture avancé",
@@ -747,51 +798,67 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "prestation updated"
 }
 ```
 
-##### DELETE /prestations/{id}
+---
 
-Description  
-Supprimer une prestation.
+#### DELETE `/prestations/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Supprimer une prestation.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 DELETE http://localhost:8080/prestations/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "prestation deleted"
 }
 ```
 
-##### GET /events
+---
 
-Description  
-Voir la liste des événements.
+### 📅 Événements
 
+#### GET `/events`
+
+**Description :** Lister tous les événements.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/events
+```
 
-##### GET /events/{id}
+---
 
-Description  
-Voir un événement précis.
+#### GET `/events/{id}`
 
-URL  
+**Description :** Récupérer les détails d'un événement.
+
+**Accès :** Public
+
+**URL :**
+```http
 GET http://localhost:8080/events/1
+```
 
-Réponse exemple
+**Réponse (200) :**
 ```json
 {
   "id": 1,
@@ -805,26 +872,30 @@ Réponse exemple
 }
 ```
 
-##### POST /events
+---
 
-Description  
-Créer un événement.
+#### POST `/events`
 
-Accès
-- PRO approuvé uniquement
+**Description :** Créer un nouvel événement.
 
-Conditions
-- être connecté
-- avoir `role_id = 4`
-- avoir `is_approved = true`
+**Accès :** PRO approuvé uniquement
 
-URL  
+**Conditions :**
+- ✅ Être authentifié
+- ✅ Avoir `role_id = 4` (PRO)
+- ✅ Avoir `is_approved = true`
+
+**URL :**
+```http
 POST http://localhost:8080/events
+```
 
-Header  
-Authorization: Bearer TOKEN_PRO_APPROUVE
+**Headers :**
+```
+Authorization: Bearer <TOKEN_PRO_APPROUVE>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "date_debut": "2026-03-10 10:00:00",
@@ -836,29 +907,32 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (201) :**
 ```json
 {
   "message": "event created"
 }
 ```
 
-###### PUT /events/{id}
+---
 
-Description  
-Modifier un événement.
+#### PUT `/events/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Modifier un événement.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 PUT http://localhost:8080/events/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Body JSON
+**Body :**
 ```json
 {
   "date_debut": "2026-03-10 14:00:00",
@@ -871,123 +945,132 @@ Body JSON
 }
 ```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "event updated"
 }
 ```
 
-###### DELETE /events/{id}
+---
 
-Description  
-Supprimer un événement.
+#### DELETE `/events/{id}`
 
-Accès
-- ADMIN
-- STAFF
+**Description :** Supprimer un événement.
 
-URL  
+**Accès :** ADMIN, STAFF
+
+**URL :**
+```http
 DELETE http://localhost:8080/events/1
+```
 
-Header  
-Authorization: Bearer TOKEN_ADMIN_OU_STAFF
+**Headers :**
+```
+Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "message": "event deleted"
 }
 ```
 
-###### GET /health
+---
 
-Description  
-Permet de vérifier que l’API fonctionne correctement.
+### 🏥 Santé de l'API
 
-Cette route est utilisée pour les tests rapides ou les systèmes de monitoring.
+#### GET `/health`
 
-URL  
+**Description :** Vérifier l'état de l'API.
+
+Utile pour les tests rapides et le monitoring.
+
+**URL :**
+```http
 GET http://localhost:8080/health
+```
 
-Réponse attendue
+**Réponse (200) :**
 ```json
 {
   "status": "ok"
 }
 ```
 
-Utilisation  
-Permet de vérifier que :
-- l’API est bien lancée
-- le serveur HTTP fonctionne
+---
+
+## 🧪 Plan de Test Recommandé
+
+Suivez cet ordre pour tester l'API de manière systématique :
+
+### Phase 1️⃣ : Initialisation
+- [ ] Insérer l'admin de base via SQL
+- [ ] Lancer l'API avec `go run .`
+- [ ] Tester `GET /health`
+
+### Phase 2️⃣ : Authentification Admin
+- [ ] `POST /login` avec l'admin
+- [ ] Copier le token généré
+
+### Phase 3️⃣ : Création d'Utilisateurs Admin
+- [ ] `POST /admin/users` pour créer un STAFF
+- [ ] `POST /admin/users` pour créer un PRO admin
+- [ ] `POST /admin/users` pour créer un ADMIN secondaire
+
+### Phase 4️⃣ : Inscription Publique
+- [ ] `POST /register` pour créer un USER
+- [ ] `POST /register` pour créer un PRO public
+- [ ] `POST /login` avec ce PRO (doit être refusé, non approuvé)
+
+### Phase 5️⃣ : Approbation PRO
+- [ ] `GET /pros/pending` avec le STAFF (vérifier le PRO)
+- [ ] `PUT /users/{id}/approve` avec le STAFF
+- [ ] `POST /login` avec le PRO (doit fonctionner maintenant)
+
+### Phase 6️⃣ : Profil Utilisateur
+- [ ] `GET /me`
+- [ ] `PUT /me/update`
+- [ ] `GET /profiles`
+- [ ] `GET /profile/{id}`
+
+### Phase 7️⃣ : Gestion des Utilisateurs (Admin)
+- [ ] `GET /users`
+- [ ] `GET /users/{id}`
+- [ ] `PUT /users/{id}`
+- [ ] `PUT /users/{id}/ban` avec raison
+- [ ] Vérifier que `is_banned = true`
+- [ ] `PUT /users/{id}/unban`
+- [ ] Vérifier que `is_banned = false`
+- [ ] `DELETE /users/{id}`
+
+### Phase 8️⃣ : Catégories
+- [ ] `POST /categories`
+- [ ] `GET /categories`
+- [ ] `GET /categories/{id}`
+- [ ] `PUT /categories/{id}`
+- [ ] `DELETE /categories/{id}`
+
+### Phase 9️⃣ : Prestations (PRO approuvé)
+- [ ] `POST /prestations` avec le PRO approuvé
+- [ ] `GET /prestations`
+- [ ] `GET /prestations/{id}`
+- [ ] `PUT /prestations/{id}` avec un ADMIN
+- [ ] `DELETE /prestations/{id}` avec un ADMIN
+
+### Phase 🔟 : Événements (PRO approuvé)
+- [ ] `POST /events` avec le PRO approuvé
+- [ ] `GET /events`
+- [ ] `GET /events/{id}`
+- [ ] `PUT /events/{id}` avec un ADMIN
+- [ ] `DELETE /events/{id}` avec un ADMIN
 
 ---
 
-###### Vérification complémentaire des routes admin
-Après connexion admin, il est recommandé de tester aussi :
+## 📝 Notes Importantes
 
-- POST /admin/users
-- GET /categories/{id}
-- PUT /categories/{id}
-- DELETE /categories/{id}
-- GET /prestations/{id}
-- PUT /prestations/{id}
-- DELETE /prestations/{id}
-- GET /events/{id}
-- PUT /events/{id}
-- DELETE /events/{id}
-- PUT /users/{id}/ban
-- PUT /users/{id}/unban
-
----
-
-###### Vérification complémentaire du workflow PRO
-Après inscription d’un PRO, il est recommandé de tester :
-
-- POST /register avec `role_id = 4`
-- POST /login avec ce PRO avant approbation → doit être refusé
-- GET /pros/pending avec un STAFF
-- PUT /users/{id}/approve avec un STAFF
-- POST /login avec ce PRO après approbation → doit fonctionner
-- POST /prestations avec ce PRO → doit fonctionner
-- POST /events avec ce PRO → doit fonctionner
-
----
-
-###### Ordre recommandé de test
-
-- insérer l’admin de base en SQL
-- lancer l’API
-- POST /login avec l’admin
-- copier le token admin
-- POST /admin/users pour créer un staff, un pro ou un admin
-- POST /register pour créer un user public
-- POST /register pour créer un pro public
-- tester POST /login avec le pro non approuvé
-- tester GET /pros/pending avec le staff
-- tester PUT /users/{id}/approve avec le staff
-- retester POST /login avec le pro approuvé
-- tester GET /me
-- tester PUT /me/update
-- tester GET /profiles
-- tester GET /profile/{id}
-- tester GET /users
-- tester GET /users/{id}
-- tester PUT /users/{id}
-- tester PUT /users/{id}/ban
-- tester PUT /users/{id}/unban
-- tester DELETE /users/{id}
-- créer une catégorie
-- tester GET /categories/{id}
-- tester PUT /categories/{id}
-- tester DELETE /categories/{id}
-- créer une prestation avec un PRO approuvé
-- tester GET /prestations/{id}
-- tester PUT /prestations/{id}
-- tester DELETE /prestations/{id}
-- créer un événement avec un PRO approuvé
-- tester GET /events/{id}
-- tester PUT /events/{id}
-- tester DELETE /events/{id}
-- tester GET /health
+### Workflow PRO
+```
+PRO non approuvé → ❌ Impossible de se connecter
+                ](#)
