@@ -28,7 +28,7 @@ $currentUser = [];
 $msg_success = "";
 $msg_error = "";
 
-// --- GESTION DES ACTIONS (BAN / DELETE) ---
+// --- GESTION DES ACTIONS (UNBAN / DELETE) ---
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $act = $_GET['action'];
     $uid = $_GET['id'];
@@ -41,22 +41,25 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         exit();
     }
 
-    // 2. Bannissement (Modification du statut)
-    if ($act === 'ban') {
-        // On récupère l'utilisateur actuel pour garder ses infos
-        $target = null;
-        foreach ($users as $u) { if ($u['id'] == $uid) { $target = $u; break; } }
-
-        if ($target) {
-            $payload = [
-                'prenom' => $target['prenom'], 'nom' => $target['nom'], 'email' => $target['email'],
-                'id_role' => (int)$target['id_role'], 'statut' => 'banni'
-            ];
-            api_update_user($_SESSION['token'], $uid, $payload);
-            header("Location: users.php?msg=banned");
-            exit();
-        }
+    // 2. Débannissement (Nouvelle API)
+    if ($act === 'unban') {
+        callAPI('PUT', '/users/' . $uid . '/unban', $_SESSION['token']);
+        header("Location: users.php?msg=unbanned");
+        exit();
     }
+}
+
+// --- BANNISSEMENT (POST avec Raison et Date) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'ban_user') {
+    $uid = $_POST['id_user'];
+    $ban_until = date('Y-m-d H:i:s', strtotime($_POST['ban_until']));
+    $payload = [
+        'ban_reason' => $_POST['ban_reason'] ?? '',
+        'ban_until' => $ban_until
+    ];
+    callAPI('PUT', '/users/' . $uid . '/ban', $_SESSION['token'], $payload);
+    header("Location: users.php?msg=banned");
+    exit();
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_user') {
@@ -234,6 +237,8 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                         data-adresse="<?= htmlspecialchars(trim(($user['adresse_rue'] ?? '') . ' ' . ($user['adresse_code_postal'] ?? '') . ' ' . ($user['adresse_ville'] ?? '') . ' ' . ($user['adresse_pays'] ?? ''))) ?>"
                                         data-role="<?= htmlspecialchars($rolesMap[$user['id_role']] ?? 'Inconnu') ?>"
                                         data-statut="<?= htmlspecialchars(ucfirst($user['statut'] ?? 'actif')) ?>"
+                                        data-is_banned="<?= !empty($user['is_banned']) ? 'true' : 'false' ?>"
+                                        data-ban_reason="<?= htmlspecialchars($user['ban_reason'] ?? '') ?>"
                                         data-photo_profil="<?= htmlspecialchars($user['photo_profil'] ?? '') ?>"
                                         data-bio="<?= htmlspecialchars($user['bio'] ?? '') ?>"
                                         style="color: #16a34a; text-decoration: none; font-size: 1.1em; transition: color 0.2s;">
@@ -249,7 +254,17 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                     ?>
                                     <span class="pill <?= $badgeClass ?>"><?= htmlspecialchars($rolesMap[$user['id_role']] ?? 'Inconnu') ?></span>
                                 </td>
-                                <td><?= htmlspecialchars(ucfirst($user['statut'] ?? 'actif')) ?></td>
+                                <td>
+                                    <?php if (!empty($user['is_banned'])): ?>
+                                        <span class="pill" style="background: #fef2f2; color: #dc2626; border: 1px solid #f87171;">Banni</span>
+                                    <?php else: ?>
+                                        <?php 
+                                            $statutText = ucfirst($user['statut'] ?? 'actif');
+                                            $statutClass = (strtolower($statutText) === 'actif') ? 'pill-green' : 'pill-gray';
+                                        ?>
+                                        <span class="pill <?= $statutClass ?>"><?= htmlspecialchars($statutText) ?></span>
+                                    <?php endif; ?>
+                                </td>
                                 <td style="text-align: right;">
                                     <button class="btn-outline" 
                                         onclick="openEditModal(this)"
@@ -271,7 +286,11 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                     <div class="dropdown" style="display: inline-block; margin-left: 5px;">
                                         <button class="btn-outline" onclick="toggleDropdown(this)">Options ▾</button>
                                         <div class="dropdown-content" style="min-width: 160px; right: 0;">
-                                            <a href="users.php?action=ban&id=<?= urlencode((string)$uid) ?>" class="dropdown-item dropdown-item-warning">Bannir</a>
+                                            <?php if (!empty($user['is_banned'])): ?>
+                                                <a href="users.php?action=unban&id=<?= urlencode((string)$uid) ?>" class="dropdown-item" style="color: #16a34a !important;">Débannir</a>
+                                            <?php else: ?>
+                                                <a href="#" onclick="openBanModal(event, '<?= htmlspecialchars((string)$uid) ?>')" class="dropdown-item dropdown-item-warning">Bannir</a>
+                                            <?php endif; ?>
                                             <a href="users.php?action=delete&id=<?= urlencode((string)$uid) ?>" class="dropdown-item dropdown-item-danger" onclick="return confirm('Confirmer la suppression de cet utilisateur ?');">Supprimer</a>
                                         </div>
                                     </div>
@@ -479,6 +498,36 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
     </div>
 </div>
 
+<!-- MODAL BANNISSEMENT -->
+<div id="banModal" class="modal-overlay">
+    <div class="modal-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Bannir l'utilisateur</h3>
+            <button onclick="closeBanModal()" style="background:none; border:none; font-size:20px; cursor:pointer;">&times;</button>
+        </div>
+        
+        <form method="POST" action="users.php" class="form-block">
+            <input type="hidden" name="action" value="ban_user">
+            <input type="hidden" name="id_user" id="ban_id_user">
+
+            <div class="form-group">
+                <label>Raison du bannissement</label>
+                <input type="text" name="ban_reason" class="input" placeholder="Ex: Comportement inapproprié, Spam..." required>
+            </div>
+
+            <div class="form-group">
+                <label>Banni jusqu'au</label>
+                <input type="datetime-local" name="ban_until" class="input" required>
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn-secondary" onclick="closeBanModal()">Annuler</button>
+                <button type="submit" class="btn-primary" style="background: #dc2626;">Confirmer le ban</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- MODAL VUE DÉTAILLÉE -->
 <div id="viewModal" class="modal-overlay">
     <div class="modal-card" style="max-width: 600px;">
@@ -554,7 +603,16 @@ function openViewModal(e, link) {
     document.getElementById('view_telephone').innerText = link.dataset.telephone || 'Non renseigné';
     document.getElementById('view_adresse').innerText = link.dataset.adresse || 'Non renseignée';
     document.getElementById('view_role').innerText = link.dataset.role;
-    document.getElementById('view_statut').innerText = link.dataset.statut;
+    
+    const isBanned = link.dataset.is_banned === 'true';
+    if (isBanned) {
+        document.getElementById('view_statut').innerHTML = '<span style="color: #dc2626; font-weight: bold;">Banni</span><br><span class="muted small" style="display:block; margin-top:4px;">Raison: ' + (link.dataset.ban_reason || 'Non précisée') + '</span>';
+    } else {
+        const statutVal = link.dataset.statut || 'Actif';
+        const pillClass = (statutVal.toLowerCase() === 'actif') ? 'pill-green' : 'pill-gray';
+        document.getElementById('view_statut').innerHTML = '<span class="pill ' + pillClass + '">' + statutVal + '</span>';
+    }
+
     document.getElementById('view_bio').innerText = link.dataset.bio || 'Aucune biographie renseignée.';
     
     const photoUrl = link.dataset.photo_profil;
@@ -577,6 +635,16 @@ function openViewModal(e, link) {
 
 function closeViewModal() {
     document.getElementById('viewModal').classList.remove('open');
+}
+
+function openBanModal(e, id) {
+    e.preventDefault();
+    document.getElementById('ban_id_user').value = id;
+    document.getElementById('banModal').classList.add('open');
+}
+
+function closeBanModal() {
+    document.getElementById('banModal').classList.remove('open');
 }
 </script>
 

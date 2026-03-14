@@ -21,7 +21,7 @@ function openEditModal(btn) {
   $("#modal_nom").value = nom;
   $("#modal_email").value = email;
   $("#modal_role").value = role;
-  $("#modal_statut").value = statut;
+  $("#modal_statut").value = statut ? statut.toLowerCase() : "";
   $("#modal_photo_profil").value = photoProfil;
   $("#modal_bio").value = bio;
 
@@ -87,7 +87,9 @@ function toggleDropdown(btn) {
 
 window.addEventListener("click", function (event) {
   if (!event.target.closest(".dropdown")) {
-    document.querySelectorAll(".dropdown").forEach((d) => d.classList.remove("active"));
+    document
+      .querySelectorAll(".dropdown")
+      .forEach((d) => d.classList.remove("active"));
   }
 });
 
@@ -121,4 +123,3 @@ window.closePasswordModal = closePasswordModal;
 window.resetPasswordChoice = resetPasswordChoice;
 window.toggleDropdown = toggleDropdown;
 window.hidePasswordForm = hidePasswordForm;
-
