@@ -22,4 +22,16 @@ function api_update_prestation($token, $id, $data) {
 function api_delete_prestation($token, $id) {
     return callAPI('DELETE', '/prestations/' . $id, $token);
 }
+
+function api_create_category($token, $data) {
+    return callAPI('POST', '/categories', $token, $data);
+}
+
+function api_update_category($token, $id, $data) {
+    return callAPI('PUT', '/categories/' . $id, $token, $data);
+}
+
+function api_delete_category($token, $id) {
+    return callAPI('DELETE', '/categories/' . $id, $token);
+}
 ?>

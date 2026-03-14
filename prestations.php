@@ -28,11 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $id = $_POST['id'];
     $payload = [
         'titre' => $_POST['titre'] ?? '',
-        'categorie' => $_POST['categorie'] ?? '',
+        'id_categorie' => (int)($_POST['id_categorie'] ?? 0),
         'description' => $_POST['description'] ?? '',
+        'type' => $_POST['type'] ?? 'atelier',
         'prix' => (float)$_POST['prix'],
         'image' => $_POST['image'] ?? '',
-        'statut' => $_POST['statut'] ?? 'actif'
+        'is_active' => (($_POST['statut'] ?? 'actif') === 'actif') ? true : false
     ];
     $res = api_update_prestation($_SESSION['token'], $id, $payload);
     if ($res['status'] === 200 || $res['status'] === 204) {
@@ -52,10 +53,13 @@ $categoryFilter = $_GET['categorie'] ?? '';
 $categories = [];
 $fetchedCategories = api_get_categories($_SESSION['token']);
 foreach ($fetchedCategories as $c) {
-    // On s'adapte au format de l'API (chaîne de caractères ou objet avec une clé 'nom', 'titre', etc.)
-    $catName = is_array($c) ? ($c['nom'] ?? $c['titre'] ?? $c['name'] ?? $c['categorie'] ?? '') : $c;
-    if (!empty($catName)) {
-        $categories[$catName] = $catName;
+    if (is_array($c) && isset($c['id'])) {
+        $categories[$c['id']] = $c['nom'] ?? 'Inconnu';
+    } else {
+        $catName = is_array($c) ? ($c['nom'] ?? $c['titre'] ?? $c['name'] ?? $c['categorie'] ?? '') : $c;
+        if (!empty($catName)) {
+            $categories[$catName] = $catName;
+        }
     }
 }
 ksort($categories);
@@ -70,8 +74,10 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
     }
 
     $matchesCategory = true;
-    if (!empty($categoryFilter) && ($p['categorie'] ?? '') !== $categoryFilter) {
-        $matchesCategory = false;
+    if (!empty($categoryFilter)) {
+        if (($p['id_categorie'] ?? '') != $categoryFilter && ($p['categorie'] ?? '') != $categoryFilter) {
+            $matchesCategory = false;
+        }
     }
 
     return $matchesSearch && $matchesCategory;
@@ -111,8 +117,8 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
                     <label for="categorie">Catégorie</label>
                     <select name="categorie" id="categorie" class="input" style="width: 100%;">
                         <option value="">Toutes les catégories</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= htmlspecialchars($cat) ?>" <?= $categoryFilter === $cat ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
+                        <?php foreach ($categories as $catId => $catName): ?>
+                            <option value="<?= htmlspecialchars($catId) ?>" <?= $categoryFilter == $catId ? 'selected' : '' ?>><?= htmlspecialchars($catName) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -129,7 +135,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">Img</th>
                         <th>Titre</th>
                         <th>Catégorie</th>
                         <th>Description</th>
@@ -144,34 +149,49 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
                     <?php else: ?>
                         <?php foreach ($filteredList as $p): ?>
                             <tr>
+                                <?php 
+                                    $catDisplay = 'Non catégorisé';
+                                    if (!empty($p['id_categorie']) && isset($categories[$p['id_categorie']])) {
+                                        $catDisplay = $categories[$p['id_categorie']];
+                                    } elseif (!empty($p['categorie'])) {
+                                        $catDisplay = $p['categorie'];
+                                    }
+                                    $pid = $p['id'] ?? $p['id_prestation'] ?? '';
+                                ?>
                                 <td>
-                                    <?php if(!empty($p['image'])): ?>
-                                        <img src="<?= htmlspecialchars($p['image']) ?>" alt="img" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px;">
-                                    <?php else: ?>
-                                        <div style="width: 40px; height: 40px; background: #eee; border-radius: 6px;"></div>
-                                    <?php endif; ?>
+                                    <a href="#" onclick="openViewModal(event, this)"
+                                        data-titre="<?= htmlspecialchars($p['titre'] ?? '') ?>"
+                                        data-categorie="<?= htmlspecialchars($catDisplay) ?>"
+                                        data-desc="<?= htmlspecialchars($p['description'] ?? '') ?>"
+                                        data-prix="<?= $p['prix'] ?? 0 ?>"
+                                        data-type="<?= htmlspecialchars($p['type'] ?? 'atelier') ?>"
+                                        data-statut="<?= !empty($p['is_active']) ? 'Actif' : 'Inactif' ?>"
+                                        data-image="<?= htmlspecialchars($p['image'] ?? '') ?>"
+                                        style="color: #16a34a; text-decoration: none; font-size: 1.1em; transition: color 0.2s;">
+                                        <strong><?= htmlspecialchars($p['titre'] ?? '') ?></strong>
+                                    </a>
                                 </td>
-                                <td><strong><?= htmlspecialchars($p['titre'] ?? '') ?></strong></td>
-                                <td><span class="pill pill-gray"><?= htmlspecialchars($p['categorie'] ?? 'Non catégorisé') ?></span></td>
+                                <td><span class="pill pill-gray"><?= htmlspecialchars($catDisplay) ?></span></td>
                                 <td><span class="muted small"><?= htmlspecialchars(substr($p['description'] ?? '', 0, 50)) ?>...</span></td>
                                 <td><?= number_format($p['prix'] ?? 0, 2) ?> €</td>
                                 <td>
-                                    <span class="pill <?= ($p['statut'] == 'actif') ? 'pill-green' : 'pill-gray' ?>">
-                                        <?= htmlspecialchars(ucfirst($p['statut'] ?? 'actif')) ?>
+                                <span class="pill <?= (!empty($p['is_active'])) ? 'pill-green' : 'pill-gray' ?>">
+                                    <?= !empty($p['is_active']) ? 'Actif' : 'Inactif' ?>
                                     </span>
                                 </td>
                                 <td style="text-align: right;">
                                     <button class="btn-outline" 
                                         onclick="openEditModal(this)"
-                                        data-id="<?= $p['id'] ?>"
+                                        data-id="<?= htmlspecialchars($pid) ?>"
                                         data-titre="<?= htmlspecialchars($p['titre'] ?? '') ?>"
-                                        data-categorie="<?= htmlspecialchars($p['categorie'] ?? '') ?>"
+                                        data-categorie="<?= htmlspecialchars($p['id_categorie'] ?? '') ?>"
                                         data-desc="<?= htmlspecialchars($p['description'] ?? '') ?>"
                                         data-prix="<?= $p['prix'] ?? 0 ?>"
+                                        data-type="<?= htmlspecialchars($p['type'] ?? 'atelier') ?>"
+                                        data-statut="<?= !empty($p['is_active']) ? 'actif' : 'inactif' ?>"
                                         data-image="<?= htmlspecialchars($p['image'] ?? '') ?>"
-                                        data-statut="<?= $p['statut'] ?? 'actif' ?>"
                                     >Éditer</button>
-                                    <a href="prestations.php?action=delete&id=<?= $p['id'] ?>" class="btn-outline" style="border-color:#dc2626; color:#dc2626; margin-left: 5px;" onclick="return confirm('Supprimer cette prestation ?')">Supprimer</a>
+                                    <a href="prestations.php?action=delete&id=<?= urlencode($pid) ?>" class="btn-outline" style="border-color:#dc2626; color:#dc2626; margin-left: 5px;" onclick="return confirm('Supprimer cette prestation ?')">Supprimer</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -197,10 +217,10 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
                 <div class="form-group"><label>Titre</label><input type="text" name="titre" id="edit_titre" class="input" required></div>
                 <div class="form-group">
                     <label>Catégorie</label>
-                    <select name="categorie" id="edit_categorie" class="input">
+                    <select name="id_categorie" id="edit_categorie" class="input" required>
                         <option value="">Sélectionner une catégorie</option>
-                        <?php foreach ($categories as $cat): ?>
-                            <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+                        <?php foreach ($categories as $catId => $catName): ?>
+                            <option value="<?= htmlspecialchars($catId) ?>"><?= htmlspecialchars($catName) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -215,7 +235,15 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
                     </select>
                 </div>
             </div>
-            <div class="form-group"><label>Image (URL)</label><input type="text" name="image" id="edit_image" class="input"></div>
+            <div class="grid-2">
+                <div class="form-group"><label>Type</label><input type="text" name="type" id="edit_type" class="input" required></div>
+                <div class="form-group"><label>Image (URL)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="image" id="edit_image" class="input" style="flex: 1;">
+                        <button type="button" class="btn-outline" onclick="previewEditImage()">Voir</button>
+                    </div>
+                </div>
+            </div>
             <div class="form-group"><label>Description</label><textarea name="description" id="edit_desc" class="input textarea" required></textarea></div>
             
             <div style="margin-top:20px; text-align:right;">
@@ -223,6 +251,48 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
                 <button type="submit" class="btn-primary">Enregistrer</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- MODAL VUE DÉTAILLÉE PRESTATION -->
+<div id="viewModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 600px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            <div>
+                <h3 style="margin:0; font-size: 22px;" id="view_titre"></h3>
+                <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                    <span class="pill pill-gray" id="view_categorie"></span>
+                    <span class="pill pill-green" id="view_statut"></span>
+                </div>
+            </div>
+            <button onclick="closeModal('viewModal')" style="background:none; border:none; font-size:24px; cursor:pointer; color: #6b7280;">&times;</button>
+        </div>
+        
+        <div id="view_image_container" style="width: 100%; height: 200px; background: #e5e7eb; border-radius: 12px; margin-bottom: 20px; display: none; overflow: hidden;">
+            <img id="view_image" src="" alt="Image prestation" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+
+        <div class="card-lite" style="margin-bottom: 15px; background: #f9fafb;">
+            <div class="grid-2">
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Prix</p>
+                    <p style="margin: 0; font-weight: 500;" id="view_prix"></p>
+                </div>
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Type</p>
+                    <p style="margin: 0; font-weight: 500;" id="view_type"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-lite" style="background: #f9fafb;">
+            <p class="muted small" style="margin: 0 0 4px 0;">Description</p>
+            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #374151;" id="view_desc"></p>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-secondary" onclick="closeModal('viewModal')">Fermer</button>
+        </div>
     </div>
 </div>
 
@@ -236,9 +306,41 @@ function openEditModal(btn) {
     document.getElementById('edit_categorie').value = btn.dataset.categorie;
     document.getElementById('edit_prix').value = btn.dataset.prix;
     document.getElementById('edit_desc').value = btn.dataset.desc;
-    document.getElementById('edit_image').value = btn.dataset.image;
+    document.getElementById('edit_type').value = btn.dataset.type;
     document.getElementById('edit_statut').value = btn.dataset.statut;
+    document.getElementById('edit_image').value = btn.dataset.image;
     openModal('editModal');
+}
+
+function openViewModal(e, link) {
+    e.preventDefault();
+    document.getElementById('view_titre').innerText = link.dataset.titre;
+    document.getElementById('view_categorie').innerText = link.dataset.categorie;
+    document.getElementById('view_statut').innerText = link.dataset.statut;
+    document.getElementById('view_prix').innerText = link.dataset.prix + ' €';
+    document.getElementById('view_type').innerText = link.dataset.type;
+    document.getElementById('view_desc').innerText = link.dataset.desc;
+
+    const imgUrl = link.dataset.image;
+    const imgContainer = document.getElementById('view_image_container');
+    const imgEl = document.getElementById('view_image');
+
+    if (imgUrl && imgUrl.trim() !== '') {
+        imgEl.src = imgUrl;
+        imgContainer.style.display = 'block';
+    } else {
+        imgContainer.style.display = 'none';
+    }
+    openModal('viewModal');
+}
+
+function previewEditImage() {
+    const url = document.getElementById('edit_image').value;
+    if (url && url.trim() !== '') {
+        window.open(url, '_blank');
+    } else {
+        alert('Aucune URL d\'image renseignée.');
+    }
 }
 </script>
 <?php include 'includes/footer.php'; ?>

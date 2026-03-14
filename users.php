@@ -74,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 'nom' => $_POST['nom'] ?? '',
                 'photo_profil' => $_POST['photo_profil'] ?? '',
                 'bio' => $_POST['bio'] ?? '',
-                'id_role' => $id_role,
+                'role_id' => $id_role,
             ];
             $resCreate = api_admin_create_user($_SESSION['token'], $payload);
             if ($resCreate['status'] === 200 || $resCreate['status'] === 201) {
