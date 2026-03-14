@@ -1,6 +1,6 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.5.2 Chrome/142.0.7444.265 Electron/39.6.1 Safari/537.36" version="29.5.2">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0" version="29.6.0">
   <diagram name="Page-1" id="NSmhePJDGepEXSh2Cj3F">
-    <mxGraphModel dx="2637" dy="2803" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1600" math="0" shadow="0">
+    <mxGraphModel dx="2197" dy="2433" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1600" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -54,24 +54,11 @@
             <mxPoint y="-1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="0fejf5sPey9JG0nLQUvZ-4" edge="1" parent="1" source="PYG_j0xEZXJyN0rz4yD7-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;" target="PYG_j0xEZXJyN0rz4yD7-110">
-          <mxGeometry relative="1" as="geometry" />
+        <mxCell id="PYG_j0xEZXJyN0rz4yD7-1" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" value="UTILISATEUR" vertex="1">
+          <mxGeometry height="280" width="170" x="160" y="110" as="geometry" />
         </mxCell>
-        <mxCell id="0fejf5sPey9JG0nLQUvZ-8" connectable="0" parent="0fejf5sPey9JG0nLQUvZ-4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="(1,n)" vertex="1">
-          <mxGeometry relative="1" x="-0.6868" y="-1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="0fejf5sPey9JG0nLQUvZ-9" connectable="0" parent="0fejf5sPey9JG0nLQUvZ-4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="(0,n)" vertex="1">
-          <mxGeometry relative="1" x="0.8132" y="-1" as="geometry">
-            <mxPoint as="offset" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="PYG_j0xEZXJyN0rz4yD7-1" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=0;whiteSpace=wrap;html=1;" value="UTILISATEUR" vertex="1">
-          <mxGeometry height="300" width="170" x="160" y="110" as="geometry" />
-        </mxCell>
-        <mxCell id="PYG_j0xEZXJyN0rz4yD7-2" parent="PYG_j0xEZXJyN0rz4yD7-1" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;whiteSpace=wrap;" value="&lt;h5&gt;id_user (PK)&lt;br&gt;email&lt;br&gt;password_hash&lt;br&gt;prenom&lt;br&gt;nom&lt;br&gt;telephone&lt;br&gt;adresse_rue&lt;br&gt;adresse_ville&lt;br&gt;adresse_code_postal&lt;br&gt;adresse_pays&lt;br&gt;statut&lt;br&gt;created_at&lt;br&gt;pseudo&lt;br&gt;bio&lt;br&gt;photo_profil&lt;br&gt;is_approved&lt;br&gt;is_banned&lt;br&gt;is_banned&lt;br&gt;ban_until&lt;/h5&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
-          <mxGeometry height="250" width="170" y="50" as="geometry" />
+        <mxCell id="PYG_j0xEZXJyN0rz4yD7-2" parent="PYG_j0xEZXJyN0rz4yD7-1" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;whiteSpace=wrap;" value="id_user (PK)&lt;br&gt;email&lt;br&gt;password_hash&lt;br&gt;prenom&lt;br&gt;nom&lt;br&gt;telephone&lt;br&gt;adresse_rue&lt;br&gt;adresse_ville&lt;br&gt;adresse_code_postal&lt;br&gt;adresse_pays&lt;br&gt;statut&lt;br&gt;created_at&lt;div&gt;pseudo&lt;/div&gt;&lt;div&gt;bio&lt;/div&gt;&lt;div&gt;photo_profil&lt;/div&gt;" vertex="1">
+          <mxGeometry height="230" width="170" y="50" as="geometry" />
         </mxCell>
         <mxCell id="PYG_j0xEZXJyN0rz4yD7-3" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" value="ROLE" vertex="1">
           <mxGeometry height="120" width="160" x="660" y="150" as="geometry" />
@@ -333,7 +320,7 @@
             <mxPoint y="1" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="PYG_j0xEZXJyN0rz4yD7-107" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=5;whiteSpace=wrap;html=1;" value="&lt;h5&gt;&lt;span style=&quot;font-size: 12px; text-align: left;&quot;&gt;CATEGORIE_&lt;/span&gt;PRESTATION&lt;/h5&gt;" vertex="1">
+        <mxCell id="PYG_j0xEZXJyN0rz4yD7-107" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" value="&lt;span style=&quot;font-size: 12px; text-align: left;&quot;&gt;CATEGORIE_PRESTATION&lt;/span&gt;" vertex="1">
           <mxGeometry height="120" width="150" x="230" y="-420" as="geometry" />
         </mxCell>
         <mxCell id="PYG_j0xEZXJyN0rz4yD7-108" parent="PYG_j0xEZXJyN0rz4yD7-107" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;whiteSpace=wrap;" value="id_categorie (PK)&lt;br&gt;nom&lt;br&gt;description" vertex="1">
@@ -347,7 +334,7 @@
             <mxPoint x="5" y="-2" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="PYG_j0xEZXJyN0rz4yD7-109" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" value="PRESTATION" vertex="1">
+        <mxCell id="PYG_j0xEZXJyN0rz4yD7-109" parent="1" style="swimlane;childLayout=stackLayout;horizontal=1;startSize=50;horizontalStack=0;rounded=1;fontSize=14;fontStyle=0;strokeWidth=2;resizeParent=0;resizeLast=1;shadow=0;dashed=0;align=center;arcSize=4;whiteSpace=wrap;html=1;" value="PRESENTATION" vertex="1">
           <mxGeometry height="170" width="160" x="620" y="-260" as="geometry" />
         </mxCell>
         <mxCell id="PYG_j0xEZXJyN0rz4yD7-110" parent="PYG_j0xEZXJyN0rz4yD7-109" style="align=left;strokeColor=none;fillColor=none;spacingLeft=4;spacingRight=4;fontSize=12;verticalAlign=top;resizable=0;rotatable=0;part=1;html=1;whiteSpace=wrap;" value="id_prestation (PK)&lt;br&gt;titre&lt;br&gt;description&lt;br&gt;type&lt;br&gt;prix&lt;br&gt;is_active&lt;br&gt;created_at" vertex="1">
@@ -443,12 +430,6 @@
         </mxCell>
         <mxCell id="PYG_j0xEZXJyN0rz4yD7-151" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;" value="&lt;font style=&quot;font-size: 11px;&quot;&gt;VALIDE_SESSION&lt;/font&gt;" vertex="1">
           <mxGeometry height="40" width="100" x="120" y="-80" as="geometry" />
-        </mxCell>
-        <mxCell id="0fejf5sPey9JG0nLQUvZ-2" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;" value="CREE" vertex="1">
-          <mxGeometry height="40" width="100" x="400" y="-10" as="geometry" />
-        </mxCell>
-        <mxCell id="0fejf5sPey9JG0nLQUvZ-7" parent="1" style="ellipse;whiteSpace=wrap;html=1;align=center;fontStyle=4;" value="CREE" vertex="1">
-          <mxGeometry height="40" width="100" x="280" y="-80" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
