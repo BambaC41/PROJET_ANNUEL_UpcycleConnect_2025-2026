@@ -6,6 +6,11 @@ function api_get_prestations($token) {
     return ($res['status'] === 200 && is_array($res['data'])) ? $res['data'] : [];
 }
 
+function api_get_categories($token) {
+    $res = callAPI('GET', '/categories', $token);
+    return ($res['status'] === 200 && is_array($res['data'])) ? $res['data'] : [];
+}
+
 function api_create_prestation($token, $data) {
     return callAPI('POST', '/prestations', $token, $data);
 }

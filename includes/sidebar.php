@@ -1,6 +1,6 @@
 <div class="admin-sidebar">
     <h2>Administration</h2>
-    <a href="#dashboard">Dashboard</a>
+    <a href="admin.php">Dashboard</a>
     <a href="users.php">Utilisateurs</a>
     <a href="prestations.php">Prestations</a>
     <a href="#actors">Acteurs</a>

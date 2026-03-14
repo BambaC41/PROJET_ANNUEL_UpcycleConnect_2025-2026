@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $id = $_POST['id'];
     $payload = [
         'titre' => $_POST['titre'] ?? '',
+        'categorie' => $_POST['categorie'] ?? '',
         'description' => $_POST['description'] ?? '',
         'prix' => (float)$_POST['prix'],
         'image' => $_POST['image'] ?? '',
@@ -45,13 +46,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // --- RECUPERATION DONNEES ---
 $prestations = api_get_prestations($_SESSION['token']);
 $search = $_GET['search'] ?? '';
+$categoryFilter = $_GET['categorie'] ?? '';
+
+// Récupération des catégories via l'API
+$categories = [];
+$fetchedCategories = api_get_categories($_SESSION['token']);
+foreach ($fetchedCategories as $c) {
+    // On s'adapte au format de l'API (chaîne de caractères ou objet avec une clé 'nom', 'titre', etc.)
+    $catName = is_array($c) ? ($c['nom'] ?? $c['titre'] ?? $c['name'] ?? $c['categorie'] ?? '') : $c;
+    if (!empty($catName)) {
+        $categories[$catName] = $catName;
+    }
+}
+ksort($categories);
 
 // Filtrage
-$filteredList = array_filter($prestations, function($p) use ($search) {
-    if (empty($search)) return true;
-    $term = strtolower($search);
-    return strpos(strtolower($p['titre'] ?? ''), $term) !== false 
-        || strpos(strtolower($p['description'] ?? ''), $term) !== false;
+$filteredList = array_filter($prestations, function($p) use ($search, $categoryFilter) {
+    $matchesSearch = true;
+    if (!empty($search)) {
+        $term = strtolower($search);
+        $matchesSearch = strpos(strtolower($p['titre'] ?? ''), $term) !== false 
+            || strpos(strtolower($p['description'] ?? ''), $term) !== false;
+    }
+
+    $matchesCategory = true;
+    if (!empty($categoryFilter) && ($p['categorie'] ?? '') !== $categoryFilter) {
+        $matchesCategory = false;
+    }
+
+    return $matchesSearch && $matchesCategory;
 });
 ?>
 <!DOCTYPE html>
@@ -83,8 +106,19 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
                     <label for="search">Rechercher</label>
                     <input type="text" name="search" class="input" placeholder="Titre, description..." value="<?= htmlspecialchars($search) ?>" style="width: 100%;">
                 </div>
+                
+                <div class="form-group" style="width: 200px;">
+                    <label for="categorie">Catégorie</label>
+                    <select name="categorie" id="categorie" class="input" style="width: 100%;">
+                        <option value="">Toutes les catégories</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat) ?>" <?= $categoryFilter === $cat ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
                 <button type="submit" class="btn-primary" style="height: 42px;">Filtrer</button>
-                <?php if($search): ?>
+                <?php if($search || $categoryFilter): ?>
                     <a href="prestations.php" class="btn-outline" style="height: 42px; display: flex; align-items: center;">Réinitialiser</a>
                 <?php endif; ?>
             </form>
@@ -97,6 +131,7 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
                     <tr>
                         <th style="width: 60px;">Img</th>
                         <th>Titre</th>
+                        <th>Catégorie</th>
                         <th>Description</th>
                         <th>Prix</th>
                         <th>Statut</th>
@@ -105,7 +140,7 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
                 </thead>
                 <tbody>
                     <?php if (empty($filteredList)): ?>
-                        <tr><td colspan="6" style="text-align:center; padding:20px;">Aucune prestation trouvée.</td></tr>
+                        <tr><td colspan="7" style="text-align:center; padding:20px;">Aucune prestation trouvée.</td></tr>
                     <?php else: ?>
                         <?php foreach ($filteredList as $p): ?>
                             <tr>
@@ -117,6 +152,7 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
                                     <?php endif; ?>
                                 </td>
                                 <td><strong><?= htmlspecialchars($p['titre'] ?? '') ?></strong></td>
+                                <td><span class="pill pill-gray"><?= htmlspecialchars($p['categorie'] ?? 'Non catégorisé') ?></span></td>
                                 <td><span class="muted small"><?= htmlspecialchars(substr($p['description'] ?? '', 0, 50)) ?>...</span></td>
                                 <td><?= number_format($p['prix'] ?? 0, 2) ?> €</td>
                                 <td>
@@ -129,6 +165,7 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
                                         onclick="openEditModal(this)"
                                         data-id="<?= $p['id'] ?>"
                                         data-titre="<?= htmlspecialchars($p['titre'] ?? '') ?>"
+                                        data-categorie="<?= htmlspecialchars($p['categorie'] ?? '') ?>"
                                         data-desc="<?= htmlspecialchars($p['description'] ?? '') ?>"
                                         data-prix="<?= $p['prix'] ?? 0 ?>"
                                         data-image="<?= htmlspecialchars($p['image'] ?? '') ?>"
@@ -156,7 +193,18 @@ $filteredList = array_filter($prestations, function($p) use ($search) {
             <input type="hidden" name="action" value="update">
             <input type="hidden" name="id" id="edit_id">
             
-            <div class="form-group"><label>Titre</label><input type="text" name="titre" id="edit_titre" class="input" required></div>
+            <div class="grid-2">
+                <div class="form-group"><label>Titre</label><input type="text" name="titre" id="edit_titre" class="input" required></div>
+                <div class="form-group">
+                    <label>Catégorie</label>
+                    <select name="categorie" id="edit_categorie" class="input">
+                        <option value="">Sélectionner une catégorie</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat) ?>"><?= htmlspecialchars($cat) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
             <div class="grid-2">
                 <div class="form-group"><label>Prix (€)</label><input type="number" step="0.01" name="prix" id="edit_prix" class="input" required></div>
                 <div class="form-group">
@@ -185,6 +233,7 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 function openEditModal(btn) {
     document.getElementById('edit_id').value = btn.dataset.id;
     document.getElementById('edit_titre').value = btn.dataset.titre;
+    document.getElementById('edit_categorie').value = btn.dataset.categorie;
     document.getElementById('edit_prix').value = btn.dataset.prix;
     document.getElementById('edit_desc').value = btn.dataset.desc;
     document.getElementById('edit_image').value = btn.dataset.image;
