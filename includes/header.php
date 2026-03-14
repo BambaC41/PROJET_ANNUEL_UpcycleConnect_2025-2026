@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
         <a href="admin.php">Accueil</a>
         <?php if (isset($_SESSION['token'])): ?>
             <div class="dropdown">
-                <a href="" class="dropbtn">Admin ▾</a>
+                <a href="#" class="dropbtn" onclick="toggleHeaderDropdown(event, this)">Admin ▾</a>
                 <div class="dropdown-content">
                     <a href="admin.php">Tableau de bord</a>
                     <a href="#profile">Mon compte</a>
@@ -23,4 +23,5 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
             <a href="login.php">Connexion</a>
         <?php endif; ?>
     </nav>
+    <script src="scripts/header.js" defer></script>
 </header>

@@ -58,13 +58,11 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
         }
     }
 }
-// -----------------------------------------
 
-// A. Création d'un nouvel utilisateur (ADMIN / STAFF uniquement)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_user') {
-    $role_id = (int)($_POST['role_id'] ?? 0);
-    // Sécurité : ne permettre que ADMIN (1) et STAFF (2)
-    if (in_array($role_id, [1, 2], true)) {
+    $id_role = (int)($_POST['id_role'] ?? 0);
+    
+    if (in_array($id_role, [1, 2], true)) {
         $password = $_POST['password'] ?? '';
         $password_confirm = $_POST['password_confirm'] ?? '';
         if ($password !== '' && $password === $password_confirm) {
@@ -76,14 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 'nom' => $_POST['nom'] ?? '',
                 'photo_profil' => $_POST['photo_profil'] ?? '',
                 'bio' => $_POST['bio'] ?? '',
-                'role_id' => $role_id,
+                'id_role' => $id_role,
             ];
             $resCreate = api_admin_create_user($_SESSION['token'], $payload);
             if ($resCreate['status'] === 200 || $resCreate['status'] === 201) {
                 header('Location: users.php');
                 exit();
+            } else {
+                $msg_error = "Erreur création : " . ($resCreate['data']['message'] ?? 'Erreur inconnue');
             }
+        } else {
+            $msg_error = "Les mots de passe ne correspondent pas.";
         }
+    } else {
+        $msg_error = "Rôle invalide.";
     }
 }
 
@@ -155,6 +159,9 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
         </div>
 
         <!-- Messages supprimés (UX clean). -->
+        <?php if ($msg_error): ?>
+            <p class="error" style="text-align: center; margin-bottom: 20px;"><?= htmlspecialchars($msg_error) ?></p>
+        <?php endif; ?>
 
 
         <!-- BARRE DE RECHERCHE ET FILTRES -->
@@ -175,8 +182,13 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                     </select>
                 </div>
 
+                <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px; height: 42px; padding: 0 10px; border: 1px solid #d1d5db; border-radius: 10px; background: white;">
+                    <input type="checkbox" id="pro_pending" name="pro_pending" value="1" <?= isset($_GET['pro_pending']) ? 'checked' : '' ?> style="padding: 0; margin: 0;">
+                    <label for="pro_pending" style="margin: 0; font-weight: 600; font-size: 14px; cursor: pointer;">Pros en attente</label>
+                </div>
+
                 <button type="submit" class="btn-primary" style="height: 42px;">Filtrer</button>
-                <?php if($search || $roleFilter): ?>
+                <?php if($search || $roleFilter || isset($_GET['pro_pending'])): ?>
                     <a href="users.php" class="btn-outline" style="height: 42px; display: flex; align-items: center;">Réinitialiser</a>
                 <?php endif; ?>
             </form>
@@ -187,6 +199,7 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th style="width: 60px;">ID</th>
                         <th>Identité</th>
                         <th>Email</th>
                         <th>Rôle</th>
@@ -196,7 +209,7 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                 </thead>
                 <tbody>
                     <?php if (empty($filteredUsers)): ?>
-                        <tr><td colspan="5" style="text-align: center; padding: 20px;">Aucun utilisateur trouvé.</td></tr>
+                        <tr><td colspan="6" style="text-align: center; padding: 20px;">Aucun utilisateur trouvé.</td></tr>
                     <?php else: ?>
                         <?php foreach ($filteredUsers as $user): ?>
                             <tr>
@@ -209,8 +222,23 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
                                         ?? $user['utilisateur_id']
                                         ?? '';
                                 ?>
+                                <td><span class="muted" style="font-size: 0.9em;">#<?= htmlspecialchars((string)$uid) ?></span></td>
                                 <td>
-                                    <strong><?= htmlspecialchars($user['pseudo'] ?? '') ?></strong><br>
+                                    <a href="#" onclick="openViewModal(event, this)"
+                                        data-id="<?= htmlspecialchars((string)$uid) ?>"
+                                        data-pseudo="<?= htmlspecialchars($user['pseudo'] ?? '') ?>"
+                                        data-prenom="<?= htmlspecialchars($user['prenom'] ?? '') ?>"
+                                        data-nom="<?= htmlspecialchars($user['nom'] ?? '') ?>"
+                                        data-email="<?= htmlspecialchars($user['email'] ?? '') ?>"
+                                        data-telephone="<?= htmlspecialchars($user['telephone'] ?? '') ?>"
+                                        data-adresse="<?= htmlspecialchars(trim(($user['adresse_rue'] ?? '') . ' ' . ($user['adresse_code_postal'] ?? '') . ' ' . ($user['adresse_ville'] ?? '') . ' ' . ($user['adresse_pays'] ?? ''))) ?>"
+                                        data-role="<?= htmlspecialchars($rolesMap[$user['id_role']] ?? 'Inconnu') ?>"
+                                        data-statut="<?= htmlspecialchars(ucfirst($user['statut'] ?? 'actif')) ?>"
+                                        data-photo_profil="<?= htmlspecialchars($user['photo_profil'] ?? '') ?>"
+                                        data-bio="<?= htmlspecialchars($user['bio'] ?? '') ?>"
+                                        style="color: #16a34a; text-decoration: none; font-size: 1.1em; transition: color 0.2s;">
+                                        <strong><?= htmlspecialchars($user['pseudo'] ?? '') ?></strong>
+                                    </a><br>
                                     <span class="muted" style="font-size: 0.9em;"><?= htmlspecialchars(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></span>
                                 </td>
                                 <td><?= htmlspecialchars($user['email'] ?? '') ?></td>
@@ -387,8 +415,8 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
             </div>
 
             <div class="form-group">
-                <label>Rôle (seulement ADMIN ou STAFF)</label>
-                <select name="role_id" class="input" required>
+                <label>Rôle</label>
+                <select name="id_role" class="input" required>
                     <option value="">Choisir un rôle</option>
                     <option value="1">ADMIN</option>
                     <option value="2">STAFF</option>
@@ -451,7 +479,106 @@ $filteredUsers = array_filter($users, function($u) use ($search, $roleFilter) {
     </div>
 </div>
 
+<!-- MODAL VUE DÉTAILLÉE -->
+<div id="viewModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 600px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            <div style="display:flex; gap:15px; align-items:center;">
+                <div id="view_photo_container" style="width: 60px; height: 60px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #9ca3af; overflow: hidden;">
+                    <img id="view_photo" src="" alt="Photo de profil" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    <span id="view_initials"></span>
+                </div>
+                <div>
+                    <h3 style="margin:0; font-size: 22px;" id="view_pseudo"></h3>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                        <span class="muted" id="view_fullname" style="font-size: 14px;"></span>
+                        <span class="pill pill-gray" id="view_id_badge" style="font-size: 11px; padding: 2px 6px;"></span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeViewModal()" style="background:none; border:none; font-size:24px; cursor:pointer; color: #6b7280;">&times;</button>
+        </div>
+        
+        <div class="card-lite" style="margin-bottom: 15px; background: #f9fafb;">
+            <div class="grid-2">
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Email</p>
+                    <p style="margin: 0; font-weight: 500; word-break: break-all;" id="view_email"></p>
+                </div>
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Téléphone</p>
+                    <p style="margin: 0; font-weight: 500;" id="view_telephone"></p>
+                </div>
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Rôle</p>
+                    <p style="margin: 0; font-weight: 500;">
+                        <span id="view_role" class="pill pill-green"></span>
+                    </p>
+                </div>
+                <div>
+                    <p class="muted small" style="margin: 0 0 4px 0;">Statut</p>
+                    <p style="margin: 0; font-weight: 500;" id="view_statut"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-lite" style="margin-bottom: 15px; background: #f9fafb;">
+            <p class="muted small" style="margin: 0 0 4px 0;">Adresse complète</p>
+            <p style="margin: 0; font-weight: 500;" id="view_adresse"></p>
+        </div>
+
+        <div class="card-lite" style="background: #f9fafb;">
+            <p class="muted small" style="margin: 0 0 4px 0;">Biographie</p>
+            <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #374151;" id="view_bio"></p>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-secondary" onclick="closeViewModal()">Fermer</button>
+        </div>
+    </div>
+</div>
+
 <script src="scripts/users.js" defer></script>
+<script>
+function openViewModal(e, link) {
+    e.preventDefault();
+    
+    const pseudo = link.dataset.pseudo || 'N/A';
+    const prenom = link.dataset.prenom || '';
+    const nom = link.dataset.nom || '';
+    
+    document.getElementById('view_pseudo').innerText = pseudo;
+    document.getElementById('view_fullname').innerText = (prenom + ' ' + nom).trim() || 'Nom inconnu';
+    document.getElementById('view_id_badge').innerText = 'ID: ' + (link.dataset.id || 'N/A');
+    document.getElementById('view_email').innerText = link.dataset.email || 'N/A';
+    document.getElementById('view_telephone').innerText = link.dataset.telephone || 'Non renseigné';
+    document.getElementById('view_adresse').innerText = link.dataset.adresse || 'Non renseignée';
+    document.getElementById('view_role').innerText = link.dataset.role;
+    document.getElementById('view_statut').innerText = link.dataset.statut;
+    document.getElementById('view_bio').innerText = link.dataset.bio || 'Aucune biographie renseignée.';
+    
+    const photoUrl = link.dataset.photo_profil;
+    const photoEl = document.getElementById('view_photo');
+    const initialsEl = document.getElementById('view_initials');
+    
+    if (photoUrl && photoUrl.trim() !== '') {
+        photoEl.src = photoUrl;
+        photoEl.style.display = 'block';
+        initialsEl.style.display = 'none';
+    } else {
+        photoEl.style.display = 'none';
+        initialsEl.style.display = 'block';
+        // Affiche les deux premières lettres du pseudo si pas de photo
+        initialsEl.innerText = pseudo.substring(0, 2).toUpperCase();
+    }
+
+    document.getElementById('viewModal').classList.add('open');
+}
+
+function closeViewModal() {
+    document.getElementById('viewModal').classList.remove('open');
+}
+</script>
 
 <?php include 'includes/footer.php'; ?>
 </body>
