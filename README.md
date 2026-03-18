@@ -10,7 +10,7 @@ L'infrastructure est déployée sur un serveur Ubuntu et gérée via des contene
 | Service | Technologie | URL / Adresse IP | Port | État Sécurité |
 | :--- | :--- | :--- | :--- | :--- |
 | **Site Client** | Nginx / HTML | `https://92.222.243.38` | `443` | 🔒 HTTPS (Auto-signé) |
-| **Panel Admin** | PHP 8.2 / Apache | `https://92.222.243.38:8081/login.php` | `8081` | 🔒 HTTPS (Auto-signé) |
+| **Panel Admin** | PHP 8.2 / Apache | `https://92.222.243.38:8081` | `8081` | 🔒 HTTPS (Auto-signé) |
 | **API Backend** | Golang 1.22 | `http://92.222.243.38:8080` | `8080` | 🔓 HTTP |
 | **Base de Données** | MariaDB | `upcycle-db` (Réseau Docker interne) | `3306` | 🛡️ Protégé (Interne) |
 
