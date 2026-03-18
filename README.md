@@ -12,7 +12,7 @@ Cette couche représente les fondations de notre environnement de laboratoire et
 | Service | Rôle | URL / Accès | Identifiants par défaut |
 | :--- | :--- | :--- | :--- |
 | **Proxmox VE** | Hyperviseur (Bare-metal) hébergeant les VMs | `https:/92.222.243.38:8006` | `root` / *mdp_clasique* |
-| **EVE-NG** | Émulateur réseau (Laboratoire) | `http://92.222.243.38` | `admin` / `eve` |
+| **EVE-NG** | Émulateur réseau (Laboratoire) | `http://92.222.243.38` | `admin` / *mdp_clasique* |
 | **Serveur Ubuntu** | Machine Virtuelle Linux hébergeant Docker | `ssh adix@192.168.229.135` (Local) ou `92.222.243.38` (Public) | `adix` / *votre_mdp* |
 
 ---
