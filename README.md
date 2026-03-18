@@ -21,9 +21,9 @@ Cette couche représente les fondations de notre environnement de laboratoire et
 
 La gestion de nos conteneurs applicatifs est centralisée et simplifiée grâce à Portainer.
 
-| Service | Rôle | URL / Accès | Port |
+| Service | Rôle | URL / Accès | Port | Identifiants par défaut |
 | :--- | :--- | :--- | :--- |
-| **Portainer** | Interface Web de gestion Docker | `https://92.222.243.38:9443` (ou port `9000`) | `9443` |
+| **Portainer** | Interface Web de gestion Docker | `https://92.222.243.38:9443` (ou port `9000`) | `9443` | `admin` / *mdp_clasique* |
 
 *Depuis Portainer, vous avez accès à la stack `upcycle-final` qui orchestre l'ensemble des services applicatifs ci-dessous.*
 
