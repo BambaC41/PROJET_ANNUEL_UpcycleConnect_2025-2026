@@ -1,0 +1,212 @@
+DROP DATABASE IF EXISTS upcycleconnect;
+CREATE DATABASE IF NOT EXISTS upcycleconnect;
+USE upcycleconnect;
+
+CREATE TABLE role (
+    id_role INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    libelle VARCHAR(100) NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE utilisateur (
+    id_user INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    pseudo VARCHAR(100),
+    prenom VARCHAR(100),
+    nom VARCHAR(100),
+    telephone VARCHAR(20),
+    adresse_rue VARCHAR(150),
+    adresse_ville VARCHAR(100),
+    adresse_code_postal VARCHAR(20),
+    adresse_pays VARCHAR(100),
+    photo_profil VARCHAR(255),
+    bio TEXT,
+    statut VARCHAR(50),
+    is_banned BOOLEAN DEFAULT FALSE,
+    ban_reason TEXT,
+    ban_until DATETIME NULL,
+    is_approved BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_role INT NOT NULL,
+    FOREIGN KEY (id_role) REFERENCES role(id_role)
+) ENGINE=InnoDB;
+
+CREATE TABLE objet (
+    id_objet INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(150) NOT NULL,
+    description TEXT,
+    etat VARCHAR(50),
+    type_materiau VARCHAR(100),
+    poids DECIMAL(8,2),
+    volume DECIMAL(8,2),
+    photo_url VARCHAR(255),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE conteneur (
+    id_conteneur INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    adresse VARCHAR(255),
+    statut VARCHAR(50),
+    date_installation DATE,
+    derniere_maintenance DATE
+) ENGINE=InnoDB;
+
+CREATE TABLE demande_depot (
+    id_demande INT AUTO_INCREMENT PRIMARY KEY,
+    statut VARCHAR(50),
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    validated_at DATETIME,
+    deposited_at DATETIME,
+    id_user INT NOT NULL,
+    id_objet INT NOT NULL,
+    id_conteneur INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
+    FOREIGN KEY (id_conteneur) REFERENCES conteneur(id_conteneur)
+) ENGINE=InnoDB;
+
+CREATE TABLE code_acces (
+    id_code_acces INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(100) NOT NULL,
+    expires_at DATETIME,
+    used_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_demande INT UNIQUE,
+    FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
+) ENGINE=InnoDB;
+
+CREATE TABLE code_barre (
+    id_code_barre INT AUTO_INCREMENT PRIMARY KEY,
+    barcode_value VARCHAR(100) NOT NULL UNIQUE,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    used_at DATETIME,
+    id_demande INT UNIQUE,
+    FOREIGN KEY (id_demande) REFERENCES demande_depot(id_demande)
+) ENGINE=InnoDB;
+
+CREATE TABLE retrait (
+    id_retrait INT AUTO_INCREMENT PRIMARY KEY,
+    collected_at DATETIME,
+    notes TEXT,
+    id_user INT NOT NULL,
+    id_code_barre INT UNIQUE,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_code_barre) REFERENCES code_barre(id_code_barre)
+) ENGINE=InnoDB;
+
+CREATE TABLE annonce (
+    id_annonce INT AUTO_INCREMENT PRIMARY KEY,
+    mode VARCHAR(50),
+    prix DECIMAL(10,2),
+    statut VARCHAR(50),
+    validated_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    id_objet INT UNIQUE,
+    id_validateur INT,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
+    FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE categorie_prestation (
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(100) NOT NULL,
+    description TEXT
+) ENGINE=InnoDB;
+
+CREATE TABLE prestation (
+    id_prestation INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(150) NOT NULL,
+    description TEXT,
+    type VARCHAR(50),
+    prix DECIMAL(10,2),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_categorie INT NOT NULL,
+    id_user INT NULL,
+    FOREIGN KEY (id_categorie) REFERENCES categorie_prestation(id_categorie),
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE session (
+    id_session INT AUTO_INCREMENT PRIMARY KEY,
+    date_debut DATETIME,
+    date_fin DATETIME,
+    lieu VARCHAR(150),
+    capacite_max INT,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_prestation INT NOT NULL,
+    id_validateur INT,
+    FOREIGN KEY (id_prestation) REFERENCES prestation(id_prestation),
+    FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+CREATE TABLE inscription (
+    id_inscription INT AUTO_INCREMENT PRIMARY KEY,
+    statut VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_user INT NOT NULL,
+    id_session INT NOT NULL,
+    FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
+    FOREIGN KEY (id_session) REFERENCES session(id_session)
+) ENGINE=InnoDB;
+
+CREATE TABLE paiement (
+    id_paiement INT AUTO_INCREMENT PRIMARY KEY,
+    provider VARCHAR(50),
+    payment_ref VARCHAR(150),
+    montant DECIMAL(10,2),
+    devise VARCHAR(10),
+    statut VARCHAR(50),
+    paid_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_inscription INT UNIQUE,
+    FOREIGN KEY (id_inscription) REFERENCES inscription(id_inscription)
+) ENGINE=InnoDB;
+
+INSERT INTO role (id_role, code, libelle) VALUES
+(1,'ADMIN','Administrateur'),
+(2,'STAFF','Staff'),
+(3,'USER','Utilisateur classique'),
+(4,'PRO','Professionnel');
+
+INSERT INTO utilisateur (
+    email,
+    password_hash,
+    pseudo,
+    prenom,
+    nom,
+    telephone,
+    adresse_rue,
+    adresse_ville,
+    adresse_code_postal,
+    adresse_pays,
+    photo_profil,
+    bio,
+    statut,
+    is_approved,
+    id_role
+) VALUES
+('user1@test.com','$2a$10$testhashpassword','recycleur92','Lucas','Martin','0611223344','12 rue des Fleurs','Paris','75012','France','https://picsum.photos/200?1','Passionné de recyclage et bricolage','ACTIF',TRUE,3),
+('user2@test.com','$2a$10$testhashpassword','eco_sarah','Sarah','Durand','0622334455','8 avenue Victor Hugo','Lyon','69003','France','https://picsum.photos/200?2','Je récupère et transforme des objets','ACTIF',TRUE,3),
+('user3@test.com','$2a$10$testhashpassword','atelierbois','Thomas','Petit','0633445566','25 rue du Port','Marseille','13002','France','https://picsum.photos/200?3','Menuisier amateur et amateur d’upcycling','ACTIF',TRUE,3),
+('pro1@test.com','$2a$10$testhashpassword','atelier_pro','Camille','Bernard','0644556677','18 rue des Artisans','Nantes','44000','France','https://picsum.photos/200?4','Professionnel de la réparation et de la seconde main','ACTIF',FALSE,4);
+
+INSERT INTO categorie_prestation (nom,description) VALUES
+('Atelier','Ateliers créatifs et recyclage'),
+('Réparation','Services de réparation');
+
+INSERT INTO prestation (titre,description,type,prix,id_categorie,id_user) VALUES
+('Atelier couture','Apprendre à réparer des vêtements','atelier',20,1,NULL),
+('Réparation vélo','Service réparation vélo','service',30,2,NULL);
+
+INSERT INTO session (date_debut,date_fin,lieu,capacite_max,statut,id_prestation,id_validateur) VALUES
+('2026-04-10 10:00:00','2026-04-10 12:00:00','Paris',10,'actif',1,1),
+('2026-04-12 14:00:00','2026-04-12 16:00:00','Lyon',8,'actif',2,1);
