@@ -1,68 +1,65 @@
-# 🌍 Architecture & Accès — UpcycleConnect
+# 🌍 Architecture Globale & Accès — UpcycleConnect
 
-Ce document récapitule l'ensemble de l'infrastructure Dockerisée du projet **UpcycleConnect** (Projet Annuel 2025-2026). 
-L'infrastructure est déployée sur un serveur Ubuntu et gérée via des conteneurs Docker (orchestrés avec Portainer / Docker Compose).
+Ce document récapitule l'ensemble de l'infrastructure du projet **UpcycleConnect** (Projet Annuel 2025-2026). 
+L'architecture est construite en plusieurs couches : de la virtualisation (Proxmox), à l'émulation réseau (EVE-NG), jusqu'à l'orchestration des conteneurs (Portainer/Docker).
 
 ---
 
-## 📊 Tableau Récapitulatif des Accès
+## 🏗️ 1. Couche Infrastructure & Réseau
 
-| Service | Technologie | URL / Adresse IP | Port | État Sécurité |
+Cette couche représente les fondations de notre environnement de laboratoire et de production.
+
+| Service | Rôle | URL / Accès | Identifiants par défaut |
+| :--- | :--- | :--- | :--- |
+| **Proxmox VE** | Hyperviseur (Bare-metal) hébergeant les VMs | `https://VOTRE_IP_PROXMOX:8006` | `root` / *votre_mdp* |
+| **EVE-NG** | Émulateur réseau (Laboratoire) | `http://VOTRE_IP_EVE_NG` | `admin` / `eve` |
+| **Serveur Ubuntu** | Machine Virtuelle Linux hébergeant Docker | `ssh adix@192.168.229.135` (Local) ou `92.222.243.38` (Public) | `adix` / *votre_mdp* |
+
+---
+
+## 🐳 2. Couche Orchestration (Docker)
+
+La gestion de nos conteneurs applicatifs est centralisée et simplifiée grâce à Portainer.
+
+| Service | Rôle | URL / Accès | Port |
+| :--- | :--- | :--- | :--- |
+| **Portainer** | Interface Web de gestion Docker | `https://92.222.243.38:9443` (ou port `9000`) | `9443` |
+
+*Depuis Portainer, vous avez accès à la stack `upcycle-final` qui orchestre l'ensemble des services applicatifs ci-dessous.*
+
+---
+
+## 🚀 3. Couche Applicative (Services UpcycleConnect)
+
+Ces services tournent à l'intérieur de la VM Ubuntu, orchestrés par Docker.
+
+| Service | Technologie | URL Publique / Adresse | Port externe | État Sécurité |
 | :--- | :--- | :--- | :--- | :--- |
 | **Site Client** | Nginx / HTML | `https://92.222.243.38` | `443` | 🔒 HTTPS (Auto-signé) |
-| **Panel Admin** | PHP 8.2 / Apache | `https://92.222.243.38:8081` | `8081` | 🔒 HTTPS (Auto-signé) |
+| **Panel Admin** | PHP 8.2 / Apache | `https://92.222.243.38:8081/login.php` | `8081` | 🔒 HTTPS (Auto-signé) |
 | **API Backend** | Golang 1.22 | `http://92.222.243.38:8080` | `8080` | 🔓 HTTP |
-| **Base de Données** | MariaDB | `upcycle-db` (Réseau Docker interne) | `3306` | 🛡️ Protégé (Interne) |
-
-*(Note : Si vous testez en réseau local depuis votre machine virtuelle VMware, remplacez l'IP `92.222.243.38` par l'IP de votre VM, ex: `192.168.229.135`).*
+| **Base de Données**| MariaDB | `upcycle-db` (Réseau Docker interne) | `3306` | 🛡️ Protégé (Interne) |
 
 ---
 
-## 🖥️ Détails par Service
+## 🔑 4. Comptes de Test (Pré-injectés en BDD)
 
-### 1. Site Client (Front-End)
-- **Rôle** : Vitrine publique du projet pour les utilisateurs finaux.
-- **Accès** : [https://92.222.243.38](https://92.222.243.38)
-- **Configuration** : Redirection des ports `443:443`. Les certificats SSL (`nginx-selfsigned.crt` et `.key`) sont montés via un volume Docker.
+La base de données s'auto-initialise avec le script `init.sql`. Voici les comptes disponibles pour tester le Panel Admin et l'API :
 
-### 2. Panel d'Administration (Front-Admin)
-- **Rôle** : Interface de gestion (CRUD) pour les administrateurs et le staff.
-- **Accès** : [https://92.222.243.38:8081/login.php](https://92.222.243.38:8081/login.php)
-- **Configuration** : Le port externe `8081` pointe vers le port interne sécurisé `443` d'Apache. Le module SSL d'Apache a été activé manuellement dans le `Dockerfile`.
-
-### 3. API Backend (Golang)
-- **Rôle** : Cœur logique de l'application. Traite les requêtes du Panel Admin et du Site Client, et interagit avec la base de données.
-- **Accès Base** : `http://92.222.243.38:8080`
-- **Configuration** : Le système CORS est activé pour autoriser les requêtes provenant du Panel Admin.
-
-### 4. Base de Données (MariaDB)
-- **Rôle** : Stockage persistant de toutes les données du projet.
-- **Identifiants de connexion** :
-  - **Hôte** : `upcycle-db` (ou `localhost` si accès depuis le conteneur BDD lui-même)
-  - **Utilisateur** : `root`
-  - **Mot de passe** : `eve_password`
-  - **Nom de la base** : `upcycleconnect`
-- **Initialisation** : La base se construit toute seule au premier démarrage grâce à une image Docker personnalisée contenant le script `init.sql`.
+| Rôle | Pseudo | Email | Mot de passe (clair) |
+| :--- | :--- | :--- | :--- |
+| **Admin** | recycleur92 | `user1@test.com` | *A définir selon vos tests* |
+| **Staff** | eco_sarah | `user2@test.com` | *A définir selon vos tests* |
+| **User** | atelierbois | `user3@test.com` | *A définir selon vos tests* |
+| **Pro** | atelier_pro | `pro1@test.com` | *A définir selon vos tests* |
 
 ---
 
-## 🔑 Comptes de Test (Pré-injectés en BDD)
+## 🛠️ 5. Commandes de Maintenance Utiles
 
-Une fois la base de données initialisée, vous pouvez vous connecter au Panel Admin avec ces comptes de test :
+En cas de besoin de dépannage directement en SSH sur le serveur Ubuntu :
 
-| Rôle | Email | Mot de passe (Hash en BDD) |
-| :--- | :--- | :--- |
-| **Admin** | `user1@test.com` | *Voir configuration PHP* |
-| **Staff** | `user2@test.com` | *Voir configuration PHP* |
-| **User** | `user3@test.com` | *Voir configuration PHP* |
-| **Pro** | `pro1@test.com` | *Voir configuration PHP* |
-
----
-
-## 🛠️ Commandes de Maintenance Rapides
-
-Pour administrer le serveur en ligne de commande (SSH sur l'IP du serveur) :
-
-**Voir les conteneurs en cours d'exécution :**
+**Mettre à jour l'infrastructure applicative depuis Portainer/Docker :**
 ```bash
-docker ps
+docker-compose pull
+docker-compose up -d
