@@ -1,17 +1,17 @@
-# 📚 Documentation API — UpcycleConnect
+#  Documentation API — UpcycleConnect
 
 Une API complète pour gérer la plateforme collaborative d'upcycling **UpcycleConnect**.
 
 ---
 
-## 🚀 Configuration Initiale
+##  Configuration Initiale
 
-### 📦 Prérequis
+###  Prérequis
 - Base de données MySQL créée et initialisée
 - Go installé sur votre machine
 - Postman ou un client HTTP pour tester les routes
 
-### 🔐 Initialisation de l'Admin
+###  Initialisation de l'Admin
 
 Exécutez cette requête SQL pour créer le premier administrateur :
 
@@ -43,7 +43,7 @@ INSERT INTO utilisateur (
 | **Email** | admin@upcycleconnect.fr |
 | **Mot de passe** | Password123! |
 
-### ▶️ Démarrage de l'API
+###  Démarrage de l'API
 
 ```bash
 go run .
@@ -56,14 +56,14 @@ Server running on http://localhost:8080
 
 ---
 
-## 🌐 Configuration Générale
+##  Configuration Générale
 
 ### Base URL
 ```
 http://localhost:8080
 ```
 
-### 🔑 Authentification
+###  Authentification
 
 Toutes les routes protégées requièrent un token JWT dans le header :
 
@@ -71,20 +71,20 @@ Toutes les routes protégées requièrent un token JWT dans le header :
 Authorization: Bearer <JWT_TOKEN>
 ```
 
-### 👥 Système de Rôles
+###  Système de Rôles
 
 | ID | Rôle | Description |
 |-----|------|-------------|
-| 1 | 🔴 **ADMIN** | Accès complet à l'administration |
-| 2 | 🟠 **STAFF** | Modération et approbation des PROs |
-| 3 | 🟢 **USER** | Utilisateur standard |
-| 4 | 🔵 **PRO** | Prestataire (services et événements) |
+| 1 |  **ADMIN** | Accès complet à l'administration |
+| 2 |  **STAFF** | Modération et approbation des PROs |
+| 3 |  **USER** | Utilisateur standard |
+| 4 |  **PRO** | Prestataire (services et événements) |
 
 ---
 
-## 📋 Routes API
+##  Routes API
 
-### 🔐 Authentification
+###  Authentification
 
 #### POST `/register`
 
@@ -151,7 +151,7 @@ POST http://localhost:8080/register
 - `user_id` : ID unique de l'utilisateur
 - `is_approved` : État d'approbation (PRO seulement)
 
-**⚠️ Restriction :** Les PROs non approuvés ne peuvent pas se connecter.
+** Restriction :** Les PROs non approuvés ne peuvent pas se connecter.
 
 **URL :**
 ```http
@@ -193,7 +193,7 @@ POST http://localhost:8080/login
 
 ---
 
-### 👤 Profil Utilisateur
+###  Profil Utilisateur
 
 #### GET `/me`
 
@@ -302,7 +302,7 @@ GET http://localhost:8080/profiles
 
 ---
 
-### 👨‍💼 Gestion des Utilisateurs (Admin/Staff)
+###  Gestion des Utilisateurs (Admin/Staff)
 
 #### GET `/users`
 
@@ -395,7 +395,7 @@ Authorization: Bearer <TOKEN_ADMIN>
 
 ---
 
-### 🚫 Modération
+###  Modération
 
 #### PUT `/users/{id}/ban`
 
@@ -468,7 +468,7 @@ Authorization: Bearer <TOKEN_ADMIN>
 
 ---
 
-### ✅ Approbation des PROs
+###  Approbation des PROs
 
 #### PUT `/users/{id}/approve`
 
@@ -579,7 +579,7 @@ Authorization: Bearer <TOKEN_ADMIN>
 
 ---
 
-### 🏷️ Catégories
+###  Catégories
 
 #### GET `/categories`
 
@@ -735,9 +735,9 @@ GET http://localhost:8080/prestations/1
 **Accès :** PRO approuvé uniquement
 
 **Conditions :**
-- ✅ Être authentifié
-- ✅ Avoir `role_id = 4` (PRO)
-- ✅ Avoir `is_approved = true`
+-  Être authentifié
+-  Avoir `role_id = 4` (PRO)
+-  Avoir `is_approved = true`
 
 **URL :**
 ```http
@@ -832,7 +832,7 @@ Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
 
 ---
 
-### 📅 Événements
+###  Événements
 
 #### GET `/events`
 
@@ -881,9 +881,9 @@ GET http://localhost:8080/events/1
 **Accès :** PRO approuvé uniquement
 
 **Conditions :**
-- ✅ Être authentifié
-- ✅ Avoir `role_id = 4` (PRO)
-- ✅ Avoir `is_approved = true`
+-  Être authentifié
+-  Avoir `role_id = 4` (PRO)
+-  Avoir `is_approved = true`
 
 **URL :**
 ```http
@@ -979,7 +979,7 @@ Authorization: Bearer <TOKEN_ADMIN_OU_STAFF>
 
 ---
 
-### 🏥 Santé de l'API
+###  Santé de l'API
 
 #### GET `/health`
 
@@ -1001,41 +1001,41 @@ GET http://localhost:8080/health
 
 ---
 
-## 🧪 Plan de Test Recommandé
+##  Plan de Test Recommandé
 
 Suivez cet ordre pour tester l'API de manière systématique :
 
-### Phase 1️⃣ : Initialisation
+### Phase 1️ : Initialisation
 - [ ] Insérer l'admin de base via SQL
 - [ ] Lancer l'API avec `go run .`
 - [ ] Tester `GET /health`
 
-### Phase 2️⃣ : Authentification Admin
+### Phase 2️ : Authentification Admin
 - [ ] `POST /login` avec l'admin
 - [ ] Copier le token généré
 
-### Phase 3️⃣ : Création d'Utilisateurs Admin
+### Phase 3️ : Création d'Utilisateurs Admin
 - [ ] `POST /admin/users` pour créer un STAFF
 - [ ] `POST /admin/users` pour créer un PRO admin
 - [ ] `POST /admin/users` pour créer un ADMIN secondaire
 
-### Phase 4️⃣ : Inscription Publique
+### Phase 4️ : Inscription Publique
 - [ ] `POST /register` pour créer un USER
 - [ ] `POST /register` pour créer un PRO public
 - [ ] `POST /login` avec ce PRO (doit être refusé, non approuvé)
 
-### Phase 5️⃣ : Approbation PRO
+### Phase 5️ : Approbation PRO
 - [ ] `GET /pros/pending` avec le STAFF (vérifier le PRO)
 - [ ] `PUT /users/{id}/approve` avec le STAFF
 - [ ] `POST /login` avec le PRO (doit fonctionner maintenant)
 
-### Phase 6️⃣ : Profil Utilisateur
+### Phase 6️ : Profil Utilisateur
 - [ ] `GET /me`
 - [ ] `PUT /me/update`
 - [ ] `GET /profiles`
 - [ ] `GET /profile/{id}`
 
-### Phase 7️⃣ : Gestion des Utilisateurs (Admin)
+### Phase 7️ : Gestion des Utilisateurs (Admin)
 - [ ] `GET /users`
 - [ ] `GET /users/{id}`
 - [ ] `PUT /users/{id}`
@@ -1045,21 +1045,21 @@ Suivez cet ordre pour tester l'API de manière systématique :
 - [ ] Vérifier que `is_banned = false`
 - [ ] `DELETE /users/{id}`
 
-### Phase 8️⃣ : Catégories
+### Phase 8️ : Catégories
 - [ ] `POST /categories`
 - [ ] `GET /categories`
 - [ ] `GET /categories/{id}`
 - [ ] `PUT /categories/{id}`
 - [ ] `DELETE /categories/{id}`
 
-### Phase 9️⃣ : Prestations (PRO approuvé)
+### Phase 9️ : Prestations (PRO approuvé)
 - [ ] `POST /prestations` avec le PRO approuvé
 - [ ] `GET /prestations`
 - [ ] `GET /prestations/{id}`
 - [ ] `PUT /prestations/{id}` avec un ADMIN
 - [ ] `DELETE /prestations/{id}` avec un ADMIN
 
-### Phase 🔟 : Événements (PRO approuvé)
+### Phase  : Événements (PRO approuvé)
 - [ ] `POST /events` avec le PRO approuvé
 - [ ] `GET /events`
 - [ ] `GET /events/{id}`
@@ -1068,9 +1068,9 @@ Suivez cet ordre pour tester l'API de manière systématique :
 
 ---
 
-## 📝 Notes Importantes
+##  Notes Importantes
 
 ### Workflow PRO
 ```
-PRO non approuvé → ❌ Impossible de se connecter
+PRO non approuvé →  Impossible de se connecter
                 ](#)
