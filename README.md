@@ -1,4 +1,4 @@
-#  Architecture Globale & Accès — UpcycleConnect
+#  Architecture Globale & Accès UpcycleConnect
 
 Ce document récapitule l'ensemble de l'infrastructure du projet **UpcycleConnect** (Projet Annuel 2025-2026). 
 L'architecture est construite en plusieurs couches : de la virtualisation (Proxmox), à l'émulation réseau (EVE-NG), jusqu'à l'orchestration des conteneurs (Portainer/Docker).
