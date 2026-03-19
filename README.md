@@ -1,11 +1,11 @@
-# 🌍 Architecture Globale & Accès — UpcycleConnect
+#  Architecture Globale & Accès — UpcycleConnect
 
 Ce document récapitule l'ensemble de l'infrastructure du projet **UpcycleConnect** (Projet Annuel 2025-2026). 
 L'architecture est construite en plusieurs couches : de la virtualisation (Proxmox), à l'émulation réseau (EVE-NG), jusqu'à l'orchestration des conteneurs (Portainer/Docker).
 
 ---
 
-## 🏗️ 1. Couche Infrastructure & Réseau
+##  1. Couche Infrastructure & Réseau
 
 Cette couche représente les fondations de notre environnement de laboratoire et de production.
 
@@ -17,7 +17,7 @@ Cette couche représente les fondations de notre environnement de laboratoire et
 
 ---
 
-## 🐳 2. Couche Orchestration (Docker)
+##  2. Couche Orchestration (Docker)
 
 La gestion de nos conteneurs applicatifs est centralisée et simplifiée grâce à Portainer.
 
@@ -29,7 +29,7 @@ La gestion de nos conteneurs applicatifs est centralisée et simplifiée grâce 
 
 ---
 
-## 🚀 3. Couche Applicative (Services UpcycleConnect)
+##  3. Couche Applicative (Services UpcycleConnect)
 
 Ces services tournent à l'intérieur de la VM Ubuntu, orchestrés par Docker.
 
@@ -42,7 +42,7 @@ Ces services tournent à l'intérieur de la VM Ubuntu, orchestrés par Docker.
 
 ---
 
-## 🔑 4. Comptes de Test (Pré-injectés en BDD)
+##  4. Comptes de Test (Pré-injectés en BDD)
 
 La base de données s'auto-initialise avec le script `init.sql`. Voici les comptes disponibles pour tester le Panel Admin et l'API :
 
@@ -55,7 +55,7 @@ La base de données s'auto-initialise avec le script `init.sql`. Voici les compt
 
 ---
 
-## 🛠️ 5. Commandes de Maintenance Utiles
+##  5. Commandes de Maintenance Utiles
 
 En cas de besoin de dépannage directement en SSH sur le serveur Ubuntu :
 
