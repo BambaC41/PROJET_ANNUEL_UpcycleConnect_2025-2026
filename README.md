@@ -1,18 +1,18 @@
-# 🗄️ Base de Données — UpcycleConnect
+#  Base de Données  UpcycleConnect
 
 Bienvenue sur la branche dédiée à la **Base de Données** du projet **UpcycleConnect**. 
 Cette branche contient tout le nécessaire pour déployer et initialiser automatiquement une base de données **MariaDB** pré-configurée grâce à **Docker**.
 
 ---
 
-## 🎯 Objectif de cette branche
+##  Objectif de cette branche
 
 L'objectif est de fournir une image Docker autonome de notre base de données. 
 Au premier démarrage du conteneur, les tables se créent automatiquement et des données de test (utilisateurs, rôles, prestations) sont injectées pour permettre de tester l'API et le Panel Admin immédiatement.
 
 ---
 
-## 📂 Contenu du dossier
+##  Contenu du dossier
 
 - **`Script_SQL.txt`** : Le script SQL complet d'initialisation. Il contient :
   - La création de la base de données `upcycleconnect`.
@@ -22,7 +22,7 @@ Au premier démarrage du conteneur, les tables se créent automatiquement et des
 
 ---
 
-## 🏗️ Structure de la Base de Données
+##  Structure de la Base de Données
 
 Le modèle de données s'articule autour de plusieurs axes :
 1. **Gestion des Utilisateurs & Rôles** (`utilisateur`, `role`) : Admin, Staff, User, Pro.
@@ -32,7 +32,7 @@ Le modèle de données s'articule autour de plusieurs axes :
 
 ---
 
-## 🚀 Comment construire et lancer l'image ?
+##  Comment construire et lancer l'image ?
 
 Assurez-vous d'avoir **Docker** installé sur votre machine ou votre serveur.
 
