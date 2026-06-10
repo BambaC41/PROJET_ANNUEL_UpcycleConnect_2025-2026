@@ -16,11 +16,11 @@ function api_create_prestation($token, $data) {
 }
 
 function api_update_prestation($token, $id, $data) {
-    return callAPI('PUT', '/prestations/' . $id, $token, $data);
+    return callAPI('PUT', '/prestations/' . (int)$id, $token, $data);
 }
 
 function api_delete_prestation($token, $id) {
-    return callAPI('DELETE', '/prestations/' . $id, $token);
+    return callAPI('DELETE', '/prestations/' . (int)$id, $token);
 }
 
 function api_create_category($token, $data) {

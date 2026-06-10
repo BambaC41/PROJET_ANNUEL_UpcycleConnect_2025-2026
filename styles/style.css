@@ -8,25 +8,36 @@ body {
   font-family: "Inter", sans-serif;
   background-color: #f5f7f6;
   color: #1f2937;
-  padding-top: 90px;
 }
 
-.navbar {
-  position: fixed;
-  top: 0;
-  left: 0;
+.navbar,
+.app-nav,
+.role-nav,
+.top-nav {
+  position: relative;
   width: 100%;
   z-index: 1000;
   background: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 60px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+}
+
+.navbar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
 }
 
 .navbar nav a {
-  margin: 0 15px;
+  margin: 0;
   text-decoration: none;
   color: #374151;
 }
@@ -204,6 +215,24 @@ footer {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    padding: 12px 16px;
+  }
+  .navbar nav a {
+    margin: 0;
+  }
+  .logo {
+    width: 100%;
+  }
+  .auth-buttons {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 /* user box quand connecté */
@@ -934,4 +963,117 @@ a.btn-outline:focus-visible,
 
 .modal-overlay.open .modal-card {
   transform: translateY(0);
+}
+
+/* --- Page layout helpers (soutenance / espaces role) --- */
+.page-shell,
+.page-container {
+  max-width: 1400px;
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-card {
+  margin-bottom: 20px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+}
+
+.employee-shell {
+  max-width: 1100px;
+  width: min(100%, 1100px);
+  margin: 0 auto;
+}
+
+.container {
+  width: 100%;
+}
+
+.page-header,
+.page-card h1,
+.page-card h2 {
+  margin: 0 0 18px;
+  font-size: clamp(1.8rem, 2.4vw, 2.4rem);
+  line-height: 1.1;
+  font-weight: 800;
+  color: #111827;
+}
+
+.table-wrap {
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  margin-top: 20px;
+  background: white;
+}
+
+.page-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.flash-banner {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin: 12px 0;
+}
+
+.flash-banner.success {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+  border: 1px solid rgba(22, 163, 74, 0.35);
+}
+
+.flash-banner.error {
+  background: rgba(185, 28, 28, 0.08);
+  color: #991b1b;
+  border: 1px solid rgba(185, 28, 28, 0.35);
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.status-badge.status-ok {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+  border: 1px solid rgba(22, 163, 74, 0.28);
+}
+
+.status-badge.status-warn {
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.status-badge.status-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+}
+
+.status-badge.status-muted {
+  background: rgba(107, 114, 128, 0.12);
+  color: #4b5563;
+  border: 1px solid rgba(107, 114, 128, 0.25);
+}
+
+.status-badge.status-info {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+  border: 1px solid rgba(59, 130, 246, 0.28);
 }

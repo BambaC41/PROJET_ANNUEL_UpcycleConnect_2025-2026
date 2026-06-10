@@ -1,0 +1,618 @@
+openapi: 3.0.3
+info:
+  title: UpcycleConnect API
+  version: 1.0.0
+  description: API REST pour UpcycleConnect (admin, pro, particulier)
+servers:
+  - url: http://localhost:8080
+paths:
+  /login:
+    post:
+      summary: Authentifier un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        '200': { description: Connexion réussie }
+        '401': { description: Mot de passe incorrect }
+        '403': { description: Compte non approuvé ou banni }
+  /users:
+    get:
+      summary: Lister les utilisateurs (admin/staff)
+      responses:
+        '200': { description: OK }
+  /pros/pending:
+    get:
+      summary: Lister les professionnels en attente
+      responses:
+        '200': { description: OK }
+  /users/{id}/approve:
+    put:
+      summary: Approuver un compte pro
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Compte approuvé }
+  /annonces:
+    get:
+      summary: Lister les annonces publiques validées
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Créer une annonce
+      responses:
+        '201': { description: Créée }
+  /admin/annonces/pending:
+    get:
+      summary: Lister annonces en attente de validation
+      responses:
+        '200': { description: OK }
+  /annonces/{id}/validate:
+    put:
+      summary: Valider/Rejeter une annonce
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [statut]
+              properties:
+                statut:
+                  type: string
+                  enum: [validee, rejetee]
+      responses:
+        '200': { description: Modérée }
+  /conteneurs:
+    get:
+      summary: Lister conteneurs
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Créer conteneur (admin/staff)
+      responses:
+        '201': { description: Créé }
+  /conteneurs/{id}:
+    put:
+      summary: Mettre à jour conteneur (admin/staff)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Mis à jour }
+    delete:
+      summary: Supprimer conteneur (admin/staff)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Supprimé }
+  /inscriptions/{id}/pay:
+    post:
+      summary: Payer une inscription avec carte
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                card_number: { type: string, example: '4242424242424242' }
+                card_holder: { type: string, example: 'PACO ROBINET' }
+                expiry: { type: string, example: '12/29' }
+                cvc: { type: string, example: '123' }
+      responses:
+        '201': { description: Paiement validé }
+        '400': { description: Carte non valide }
+
+  /conseils:
+    get:
+      tags: [Conseils]
+      summary: Lister les conseils/news publiés
+      description: Retourne uniquement les contenus avec is_active=true (catalogue public).
+      security: []
+      responses:
+        '200':
+          description: Liste des conseils publiés
+        '500':
+          description: Erreur serveur
+    post:
+      tags: [Conseils]
+      summary: Créer un conseil/news
+      description: |
+        Staff/admin peut publier directement (is_active=true).
+        Salarié (role_id=5) : is_active forcé à false côté serveur (brouillon), id_auteur = utilisateur connecté.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConseilInput'
+      responses:
+        '201':
+          description: Conseil créé
+        '400':
+          description: Champs invalides (titre/contenu requis)
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle non autorisé
+        '500':
+          description: Erreur serveur
+
+  /conseils/{id}:
+    get:
+      tags: [Conseils]
+      summary: Lire un conseil/news publié
+      security: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: OK }
+        '404': { description: Non trouvé ou non publié }
+        '500': { description: Erreur serveur }
+    put:
+      tags: [Conseils]
+      summary: Mettre à jour un conseil/news
+      description: |
+        Salarié : uniquement ses brouillons (is_active reste false).
+        Staff/admin : peut publier (is_active=true) ou repasser en brouillon.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConseilInput'
+      responses:
+        '200': { description: Mis à jour }
+        '400': { description: Données invalides }
+        '401': { description: Non authentifié }
+        '403': { description: Interdit (auteur, publication, etc.) }
+        '404': { description: Non trouvé }
+        '500': { description: Erreur serveur }
+    delete:
+      tags: [Conseils]
+      summary: Supprimer un conseil/news
+      description: Staff/admin supprime tout contenu. Salarié supprime uniquement ses brouillons.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Supprimé }
+        '401': { description: Non authentifié }
+        '403': { description: Interdit }
+        '404': { description: Non trouvé }
+        '500': { description: Erreur serveur }
+
+  /admin/conseils:
+    get:
+      tags: [Conseils, Admin]
+      summary: Liste admin de tous les conseils/news
+      description: |
+        Brouillons et publiés, avec auteur. Réservé admin (role 1) et staff (role 2).
+        Filtres query : status (draft|published), author (id_auteur), q, date_from, date_to, page, per_page.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [draft, published, brouillon, publie, active] }
+        - in: query
+          name: author
+          schema: { type: integer }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: date_from
+          schema: { type: string, format: date }
+        - in: query
+          name: date_to
+          schema: { type: string, format: date }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 25 }
+      responses:
+        '200':
+          description: Liste paginée (items, total, page, per_page)
+        '401': { description: Non authentifié }
+        '403': { description: Réservé admin/staff }
+        '500': { description: Erreur serveur }
+
+  /events:
+    get:
+      summary: Lister les sessions / événements
+      responses:
+        '200': { description: OK }
+    post:
+      summary: Créer une session (staff/salarié EMP)
+      description: Le salarié (role 5) crée toujours en statut en_attente avec id_createur.
+      responses:
+        '201': { description: Créé }
+        '401': { description: Unauthorized }
+        '403': { description: Forbidden }
+
+  /events/{id}:
+    put:
+      summary: Mettre à jour une session (admin/staff ou salarié sur ses en_attente)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Mis à jour }
+        '403': { description: Forbidden }
+    delete:
+      summary: Supprimer une session (admin/staff ou salarié sur ses en_attente)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Supprimé }
+        '403': { description: Forbidden }
+
+  /me/events:
+    get:
+      summary: Mes événements (salarié / créateur)
+      description: Sessions où id_createur = utilisateur connecté.
+      responses:
+        '200': { description: OK }
+        '401': { description: Unauthorized }
+
+  /me/conseils:
+    get:
+      tags: [Conseils]
+      summary: Mes conseils/news (brouillons et publiés de l'auteur)
+      description: Salarié ou tout auteur connecté — uniquement ses propres contenus.
+      security:
+        - bearerAuth: []
+      responses:
+        '200': { description: OK }
+        '401': { description: Non authentifié }
+        '500': { description: Erreur serveur }
+
+  /forum/categories:
+    get:
+      tags: [Forum]
+      summary: Lister les catégories forum
+      description: Salarié voit les catégories actives ; admin/staff voient toutes.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK }
+        '401': { description: Non authentifié }
+        '403': { description: Interdit }
+    post:
+      tags: [Forum, Admin]
+      summary: Créer une catégorie (admin/staff)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForumCategoryInput' }
+      responses:
+        '201': { description: Créée }
+        '400': { description: Données invalides }
+        '401': { description: Non authentifié }
+        '403': { description: Interdit }
+
+  /forum/categories/{id}:
+    put:
+      tags: [Forum, Admin]
+      summary: Modifier une catégorie
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+        '404': { description: Non trouvée }
+    delete:
+      tags: [Forum, Admin]
+      summary: Supprimer une catégorie
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+        '404': { description: Non trouvée }
+
+  /forum/topics:
+    get:
+      tags: [Forum]
+      summary: Lister les sujets
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: category_id, schema: { type: integer } }
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer } }
+        - { in: query, name: per_page, schema: { type: integer } }
+      responses:
+        '200': { description: Liste paginée }
+        '401': { description: Non authentifié }
+    post:
+      tags: [Forum]
+      summary: Créer un sujet (premier message inclus)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForumTopicCreate' }
+      responses:
+        '201': { description: Créé }
+        '400': { description: Invalides }
+        '401': { description: Non authentifié }
+        '403': { description: Interdit }
+
+  /forum/topics/{id}:
+    get:
+      tags: [Forum]
+      summary: Détail sujet + messages
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '404': { description: Non trouvé }
+    put:
+      tags: [Forum]
+      summary: Modifier un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+    delete:
+      tags: [Forum]
+      summary: Supprimer un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+
+  /forum/topics/{id}/posts:
+    get:
+      tags: [Forum]
+      summary: Messages d'un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+    post:
+      tags: [Forum]
+      summary: Répondre à un sujet ouvert
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+      responses:
+        '201': { description: Créé }
+        '403': { description: Sujet verrouillé/fermé }
+
+  /forum/posts/{id}:
+    put:
+      tags: [Forum]
+      summary: Modifier son message
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+    delete:
+      tags: [Forum]
+      summary: Supprimer un message
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+
+  /forum/posts/{id}/report:
+    post:
+      tags: [Forum]
+      summary: Signaler un message
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ForumReportInput' }
+      responses:
+        '201': { description: Signalement créé }
+        '404': { description: Message introuvable }
+
+  /admin/forum/reports:
+    get:
+      tags: [Forum, Admin]
+      summary: Liste des signalements
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: status, schema: { type: string, enum: [pending, reviewed, dismissed] } }
+        - { in: query, name: page, schema: { type: integer } }
+      responses:
+        '200': { description: OK }
+        '403': { description: Admin/staff uniquement }
+
+  /admin/forum/reports/{id}:
+    put:
+      tags: [Forum, Admin]
+      summary: Traiter un signalement
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+
+  /admin/forum/posts/{id}/hide:
+    put:
+      tags: [Forum, Admin]
+      summary: Masquer un message
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+
+  /admin/forum/posts/{id}/restore:
+    put:
+      tags: [Forum, Admin]
+      summary: Restaurer un message masqué
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+  /admin/forum/topics/{id}/lock:
+    put:
+      tags: [Forum, Admin]
+      summary: Verrouiller un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+  /admin/forum/topics/{id}/unlock:
+    put:
+      tags: [Forum, Admin]
+      summary: Déverrouiller un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+  /admin/forum/topics/{id}/hide:
+    put:
+      tags: [Forum, Admin]
+      summary: Masquer un sujet
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+  /admin/forum/topics/{id}/restore:
+    put:
+      tags: [Forum, Admin]
+      summary: Restaurer un sujet masqué
+      security: [{ bearerAuth: [] }]
+      parameters: [{ in: path, name: id, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: OK }
+
+  /admin/forum/moderation-logs:
+    get:
+      tags: [Forum, Admin]
+      summary: Journal de modération forum
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - { in: query, name: page, schema: { type: integer } }
+        - { in: query, name: per_page, schema: { type: integer } }
+      responses:
+        '200': { description: OK }
+        '403': { description: Interdit }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT obtenu via POST /login
+  schemas:
+    ConseilInput:
+      type: object
+      required: [titre, contenu]
+      properties:
+        titre: { type: string, maxLength: 150 }
+        contenu: { type: string }
+        categorie: { type: string, maxLength: 100 }
+        image_url: { type: string, maxLength: 255 }
+        is_active:
+          type: boolean
+          description: Ignoré pour salarié (forcé false). Utilisé par staff/admin pour publier.
+    Conseil:
+      type: object
+      properties:
+        id_conseil: { type: integer }
+        titre: { type: string }
+        contenu: { type: string }
+        categorie: { type: string }
+        image_url: { type: string }
+        is_active: { type: boolean }
+        id_auteur: { type: integer }
+        statut: { type: string, enum: [brouillon, publie] }
+        auteur_pseudo: { type: string }
+        auteur_email: { type: string }
+        created_at: { type: string, format: date-time }
+    ForumCategoryInput:
+      type: object
+      required: [name, slug]
+      properties:
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        sort_order: { type: integer }
+        is_active: { type: boolean }
+    ForumTopicCreate:
+      type: object
+      required: [category_id, title, content]
+      properties:
+        category_id: { type: integer }
+        title: { type: string }
+        content: { type: string }
+    ForumReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string }
+        details: { type: string }

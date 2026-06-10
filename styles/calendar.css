@@ -1,0 +1,63 @@
+.schedule {
+  background: #fff;
+  border: 1px solid #d9e2ea;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: 70px repeat(7, minmax(0, 1fr));
+  grid-template-rows: 40px repeat(30, 24px);
+  position: relative;
+}
+
+.schedule-time-head,
+.schedule-day-head {
+  background: #1f79a9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.schedule-time {
+  background: #1f79a9;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px dashed rgba(255, 255, 255, 0.4);
+}
+
+.schedule-cell {
+  border-top: 1px solid #edf1f4;
+  border-right: 1px solid #edf1f4;
+  background: #f8fafb;
+}
+
+.schedule-event {
+  position: absolute;
+  z-index: 2;
+  background: #ecea8a;
+  border: 1px solid #cfd36e;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: #1f2937;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.schedule-event strong {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}

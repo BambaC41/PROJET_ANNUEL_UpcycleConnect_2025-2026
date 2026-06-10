@@ -1,228 +1,65 @@
 <?php
-session_start();
-require_once 'includes/functions/users.php';
-require_once 'includes/functions/prestations.php';
-require_once 'includes/functions/events.php';
+require_once 'includes/admin_bootstrap.php';
+require_once 'includes/notifications.php';
 
-if (!isset($_SESSION['token'])) {
-    header("Location: login.php");
-    exit();
-}
-
-$users = [];
-$api_error = '';
-
-$fetched_users = api_get_users($_SESSION['token']);
-
-if (!empty($fetched_users) && is_array($fetched_users)) {
-    $users = array_slice($fetched_users, 0, 6); // Limit to 6 users for the dashboard view
-} else {
-    $api_error = "Impossible de charger les utilisateurs depuis l'API.";
-}
-
-$roles = [ 1 => 'ADMIN', 2 => 'STAFF', 3 => 'USER', 4 => 'PRO' ];
-
-// Chargement des prestations
-$prestations = [];
-$prestationsMap = [];
-$api_error_prest = '';
-$fetched_prestations = api_get_prestations($_SESSION['token']);
-if (!empty($fetched_prestations) && is_array($fetched_prestations)) {
-    $prestations = array_slice($fetched_prestations, 0, 6);
-    foreach ($fetched_prestations as $p) {
-        if (isset($p['id'])) {
-            $prestationsMap[$p['id']] = $p['titre'] ?? 'Inconnu';
-        }
-    }
-} else {
-    $api_error_prest = "Impossible de charger les prestations depuis l'API.";
-}
-
-// Chargement des catégories
-$categories = [];
-$fetchedCategories = api_get_categories($_SESSION['token']);
-if (is_array($fetchedCategories)) {
-    foreach ($fetchedCategories as $c) {
-        if (is_array($c) && isset($c['id'])) {
-            $categories[$c['id']] = $c['nom'] ?? 'Inconnu';
-        }
-    }
-}
-
-// Chargement des événements
-$events = [];
-$fetched_events = api_get_events($_SESSION['token']);
-if (!empty($fetched_events) && is_array($fetched_events)) {
-    $events = array_slice($fetched_events, 0, 6);
-}
+$users = api_get_users($_SESSION['token']);
+$events = api_get_events($_SESSION['token']);
+$pendingProsRes = api_get_pending_pros($_SESSION['token']);
+$pendingPros = (($pendingProsRes['status'] ?? 0) === 200 && is_array($pendingProsRes['data'] ?? null)) ? $pendingProsRes['data'] : [];
+$pendingAnnoncesRes = api_get_pending_annonces();
+$pendingAnnonces = (($pendingAnnoncesRes['status'] ?? 0) === 200 && is_array($pendingAnnoncesRes['data'] ?? null)) ? $pendingAnnoncesRes['data'] : [];
+$paiementsRes = api_get_all_paiements();
+$paiements = (($paiementsRes['status'] ?? 0) === 200 && is_array($paiementsRes['data'] ?? null)) ? $paiementsRes['data'] : [];
+$demandesRes = api_get_all_demandes_depot();
+$demandes = (($demandesRes['status'] ?? 0) === 200 && is_array($demandesRes['data'] ?? null)) ? $demandesRes['data'] : [];
+$revenu = array_reduce($paiements, fn($c, $p) => $c + (float)($p['montant'] ?? 0), 0);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <?php include 'includes/head.php'; ?>
-<body>
-<main class="admin-layout">
-
+<body class="admin-page">
 <?php include 'includes/header.php'; ?>
-
-    <?php include 'includes/sidebar.php'; ?>
-
-    <section class="admin-content">
-        <section id="dashboard" class="admin-section">
-            <h1>Dashboard Global</h1>
-
-            <div class="admin-kpis">
-                <div class="admin-card">
-                    <h3>Utilisateurs</h3>
-                    <p><?= is_array($fetched_users) ? count($fetched_users) : '...' ?></p>
-                </div>
-
-                <div class="admin-card">
-                    <h3>Professionnels</h3>
-                    <p>
-                        <?php
-                        $pro_count = is_array($fetched_users) ? count(array_filter($fetched_users, function($u) {
-                            return isset($u['id_role']) && $u['id_role'] == 4;
-                        })) : '...';
-                        echo $pro_count;
-                        ?>
-                    </p>
-                </div>
-
-                <div class="admin-card">
-                    <h3>Événements</h3>
-                    <p><?= is_array($fetched_events) ? count($fetched_events) : '...' ?></p>
-                </div>
-
-                <div class="admin-card">
-                    <h3>Revenus mensuels</h3>
-                    <p>8 420€</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="users" class="admin-section">
-            <h2>Gestion complète des utilisateurs</h2>
-            <?php if (!empty($api_error)): ?>
-                <p class="error"><?= htmlspecialchars($api_error) ?></p>
-            <?php endif; ?>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Email</th>
-                        <th>Rôle</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($users)): ?>
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Aucun utilisateur à afficher.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($users as $user): ?>
-                            <tr>
-                                <td><?= htmlspecialchars(($user['prenom'] ?? '') . ' ' . ($user['nom'] ?? '')) ?></td>
-                                <td><?= htmlspecialchars($user['email'] ?? '') ?></td>
-                                <td><span class="pill pill-gray"><?= htmlspecialchars($roles[$user['id_role']] ?? 'Inconnu') ?></span></td>
-                                <td><?= htmlspecialchars(ucfirst($user['statut'] ?? '')) ?></td>
-                                <td><a href="users.php?search=<?= urlencode($user['email'] ?? '') ?>" class="btn-outline">Modifier</a></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </section>
-
-        <section id="catalog" class="admin-section">
-            <h2>Gestion des Préstations</h2>
-            <?php if (!empty($api_error_prest)): ?>
-                <p class="error"><?= htmlspecialchars($api_error_prest) ?></p>
-            <?php endif; ?>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Titre</th>
-                        <th>Catégorie</th>
-                        <th>Prix</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($prestations)): ?>
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Aucune prestation à afficher.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($prestations as $p): ?>
-                            <tr>
-                                <?php 
-                                    $catDisplay = 'Non catégorisé';
-                                    if (!empty($p['id_categorie']) && isset($categories[$p['id_categorie']])) {
-                                        $catDisplay = $categories[$p['id_categorie']];
-                                    } elseif (!empty($p['categorie'])) {
-                                        $catDisplay = $p['categorie'];
-                                    }
-                                ?>
-                                <td><strong><?= htmlspecialchars($p['titre'] ?? '') ?></strong></td>
-                                <td><span class="pill pill-gray"><?= htmlspecialchars($catDisplay) ?></span></td>
-                                <td><?= number_format($p['prix'] ?? 0, 2) ?> €</td>
-                                <td>
-                                    <span class="pill <?= (!empty($p['is_active'])) ? 'pill-green' : 'pill-gray' ?>">
-                                        <?= !empty($p['is_active']) ? 'Actif' : 'Inactif' ?>
-                                    </span>
-                                </td>
-                                <td><a href="prestations.php?search=<?= urlencode($p['titre'] ?? '') ?>" class="btn-outline">Modifier</a></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-                <a href="prestation_categories.php" class="btn-outline">Gérer les catégories</a>
-            </div>
-        </section>
-
-        <section id="events" class="admin-section">
-            <h2>Gestion des événements</h2>
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Titre</th>
-                        <th>Lieu</th>
-                        <th>Date</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($events)): ?>
-                        <tr>
-                            <td colspan="5" style="text-align: center;">Aucun événement à afficher.</td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($events as $e): ?>
-                            <tr>
-                                <td><strong><?= htmlspecialchars($prestationsMap[$e['id_prestation'] ?? ''] ?? 'Événement Inconnu') ?></strong></td>
-                                <td><?= htmlspecialchars($e['lieu'] ?? '') ?></td>
-                                <td><?= date('d/m/Y H:i', strtotime($e['date_debut'] ?? 'now')) ?></td>
-                                <td>
-                                    <span class="pill <?= ($e['statut'] == 'actif') ? 'pill-green' : 'pill-gray' ?>">
-                                        <?= htmlspecialchars(ucfirst($e['statut'] ?? 'attente')) ?>
-                                    </span>
-                                </td>
-                                <td><a href="events.php" class="btn-outline">Modifier</a></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </section>
-
+<main class="admin-layout">
+<?php include 'includes/sidebar.php'; ?>
+<section class="admin-content">
+    <section class="admin-section">
+        <h1>Administration générale - Dashboard</h1>
+        <div class="admin-kpis">
+            <div class="admin-card"><h3>Utilisateurs</h3><p><?= e(is_array($users) ? count($users) : 0) ?></p></div>
+            <div class="admin-card"><h3>PRO en attente</h3><p><?= e(count($pendingPros)) ?></p></div>
+            <div class="admin-card"><h3>Annonces en attente</h3><p><?= e(count($pendingAnnonces)) ?></p></div>
+            <div class="admin-card"><h3>Événements</h3><p><?= e(is_array($events) ? count($events) : 0) ?></p></div>
+        </div>
+        <div class="admin-kpis" style="margin-top:14px;">
+            <div class="admin-card"><h3>Dépôts conteneur</h3><p><?= e(count($demandes)) ?></p></div>
+            <div class="admin-card"><h3>Paiements</h3><p><?= e(count($paiements)) ?></p></div>
+            <div class="admin-card"><h3>Revenus</h3><p><?= e(number_format($revenu, 2, ',', ' ')) ?>€</p></div>
+            <div class="admin-card"><h3>Modules actifs</h3><p>8</p></div>
+        </div>
     </section>
+
+    <section class="admin-section">
+        <h2>Accès rapide modules</h2>
+        <div class="admin-kpis">
+            <a class="admin-card" href="admin_users.php"><h3>👥 Utilisateurs & validation PRO</h3><p>✅</p></a>
+            <a class="admin-card" href="admin_annonces.php"><h3>📦 Validation annonces</h3><p>🧾</p></a>
+            <a class="admin-card" href="admin_events.php"><h3>🎯 Événements</h3><p>📅</p></a>
+            <a class="admin-card" href="admin_planning.php"><h3>🗓️ Planning</h3><p>⏱️</p></a>
+            <a class="admin-card" href="admin_conteneurs.php"><h3>🗳️ Conteneurs</h3><p>📍</p></a>
+            <a class="admin-card" href="admin_catalog.php"><h3>🛍️ Catalogue</h3><p>🏷️</p></a>
+            <a class="admin-card" href="admin_finance.php"><h3>💳 Finance</h3><p>💶</p></a>
+            <a class="admin-card" href="pro.php"><h3>🧰 Espace pro</h3><p>🚀</p></a>
+        </div>
+    </section>
+    <section class="admin-section">
+    <?php
+    $dash_uid = (int)($_SESSION['user_id'] ?? 0);
+    $dash_wrap_class = 'admin-card';
+    include __DIR__ . '/includes/dashboard_notifications.php';
+    ?>
+    </section>
+</section>
 </main>
-<?php include 'includes/footer.php'; ?>
+<?php include __DIR__ . '/includes/flash_toast.php'; ?>
 </body>
 </html>

@@ -6,6 +6,10 @@ if (!isset($_SESSION['token'])) {
     header("Location: login.php");
     exit();
 }
+if (!in_array((int)($_SESSION['role_id'] ?? 0), [1, 2], true)) {
+    header("Location: login.php");
+    exit();
+}
 
 // Inclusion de la fonction d'update
 require_once 'includes/functions/user_actions.php';
@@ -21,7 +25,7 @@ if (!is_array($users)) {
 $search = $_GET['search'] ?? '';
 $roleFilter = $_GET['role'] ?? '';
 
-$rolesMap = [ 1 => 'ADMIN', 2 => 'STAFF', 3 => 'USER', 4 => 'PRO' ];
+$rolesMap = [ 1 => 'ADMIN', 2 => 'STAFF', 3 => 'USER', 4 => 'PRO', 5 => 'EMP' ];
 
 // 3. Logique d'édition (Formulaire & Traitement)
 $currentUser = [];
@@ -43,7 +47,7 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
 
     // 2. Débannissement (Nouvelle API)
     if ($act === 'unban') {
-        callAPI('PUT', '/users/' . $uid . '/unban', $_SESSION['token']);
+        api_unban_user($_SESSION['token'], $uid);
         header("Location: users.php?msg=unbanned");
         exit();
     }
@@ -57,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         'ban_reason' => $_POST['ban_reason'] ?? '',
         'ban_until' => $ban_until
     ];
-    callAPI('PUT', '/users/' . $uid . '/ban', $_SESSION['token'], $payload);
+    api_ban_user($_SESSION['token'], $uid, $payload['ban_reason'], $payload['ban_until']);
     header("Location: users.php?msg=banned");
     exit();
 }

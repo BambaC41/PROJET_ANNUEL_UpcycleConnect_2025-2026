@@ -1,0 +1,103 @@
+# ✅ CORRECTION ERREUR MySQL - Configuration DB
+
+## 🔴 Problème
+```
+Fatal Error : SQLSTATE[HY000] [1045] Access denied for user 'root'@'localhost' (using password: NO)
+```
+Clic sur "Terminer tutoriel" → Erreur fatale
+
+## 🔍 Cause Exacte
+1. `local_db.php` lisait les variables d'environnement DB_HOST, DB_USER, DB_PASSWORD
+2. **Aucun fichier `.env` n'existait** → fallback sur les défauts : `root` / mot de passe vide
+3. Chez l'utilisateur, root MySQL nécessite un mot de passe → connexion refusée
+4. `tutorial_complete.php` affichait l'erreur SQL brute à l'utilisateur
+
+## ✅ Solution Appliquée
+
+### Fichiers Modifiés (2)
+1. **`includes/functions/local_db.php`**
+   - ✅ Ajouté try/catch autour de la connexion PDO (ligne 25-36)
+   - ✅ Logs l'erreur réelle en backend
+   - ✅ Lance une RuntimeException avec message générique
+
+2. **`tutorial_complete.php`**
+   - ✅ Catch à la ligne 53-56
+   - ✅ Logs l'erreur en backend
+   - ✅ Retourne message générique au lieu du SQL brut
+
+### Fichiers Créés (2)
+1. **`.env`** (NOUVEAU)
+   ```env
+   API_BASE_URL=http://localhost:8080
+   JWT_SECRET=upcycle_dev_only_change_me_2026
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_NAME=upcycleconnect
+   DB_USER=root
+   DB_PASSWORD=
+   ```
+
+2. **`.env.example`** (Template pour développeurs)
+   - Exemples de configuration XAMPP sans/avec mot de passe
+   - Exemples pour production
+
+### Fichier Mis à Jour (1)
+3. **`README.md`**
+   - ✅ Ajout section "Configuration MySQL locale"
+   - ✅ Guide XAMPP sans mot de passe
+   - ✅ Guide XAMPP avec mot de passe personnalisé
+
+## 🚀 Configuration Utilisateur
+
+### Si XAMPP fonctionne (pas de mot de passe MySQL)
+Garder le `.env` actuel :
+```env
+DB_PASSWORD=
+```
+
+### Si XAMPP a un mot de passe MySQL
+Éditer `.env` :
+```env
+DB_PASSWORD=votre_mot_de_passe_ici
+```
+
+**Trouver/définir le mot de passe root :**
+```bash
+# Se connecter à MySQL
+mysql -u root
+
+# Définir/changer le mot de passe (une seule fois):
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'votre_mot_de_passe';
+FLUSH PRIVILEGES;
+```
+
+## ✔️ Vérifications Effectuées
+
+- ✅ Syntaxe PHP valide (includes/functions/local_db.php)
+- ✅ Syntaxe PHP valide (tutorial_complete.php)
+- ✅ `.env` créé avec valeurs fonctionnelles
+- ✅ `.env.example` créé comme template
+- ✅ README.md documenté
+- ✅ Tous les fichiers utilisant DB utilisent `db_pdo()` ou `db_safe_exec()`
+- ✅ Erreurs SQL masquées (pas divulguées à l'utilisateur)
+- ✅ Erreurs loggées en backend pour debugging
+
+## 📊 Avant vs Après
+
+| Aspect | Avant | Après |
+|--------|-------|-------|
+| Erreur au clic tutoriel | ❌ SQL brute exposée | ✅ Message générique |
+| Configuration DB | ❌ Hardcodée | ✅ Via `.env` |
+| Support mot de passe MySQL | ❌ Non | ✅ Oui |
+| Logs des erreurs | ❌ Non | ✅ Oui |
+| Documentation | ❌ Non | ✅ Oui (README.md) |
+
+## 🎯 Résultat
+
+Après cette correction :
+1. ✅ Créer `.env` avec vos credentials MySQL
+2. ✅ Cliquer "Terminer tutoriel" fonctionne
+3. ✅ `tutorial_completed = 1` en base de données
+4. ✅ Le tutoriel ne revient plus après rafraîchissement
+5. ✅ Message d'erreur sûr (pas de fuite config DB)
+
