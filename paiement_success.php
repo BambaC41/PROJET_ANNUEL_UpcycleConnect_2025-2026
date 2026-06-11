@@ -36,11 +36,30 @@ if ($sessionId) {
             $userId = (int)($_SESSION['user_id'] ?? 0);
             
             error_log("💰 Metadata reçues: " . print_r($metadata, true));
-            error_log("💰 Inscription ID dans metadata: " . ($metadata['inscription_id'] ?? 'NON TROUVE'));
             
+            // 🔥 Traitement pour commission d'annonce
+            $annonceId = $metadata['annonce_id'] ?? '';
+            if (!empty($annonceId)) {
+                error_log("💰 Commission pour annonce ID: " . $annonceId);
+                db_safe_exec(function(PDO $pdo) use ($annonceId, $amount) {
+                    $stmt = $pdo->prepare("UPDATE annonce SET commission_payee = 1, commission_payee_at = NOW() WHERE id_annonce = ?");
+                    $stmt->execute([$annonceId]);
+                    error_log("✅ Commission marquée payée pour l'annonce " . $annonceId);
+                    return true;
+                }, false);
+            }
+            
+            // 🔥 Traitement pour inscription
+            if (empty($metadata['inscription_id']) && !empty($_SESSION['pending_inscription_id'])) {
+                $metadata['inscription_id'] = $_SESSION['pending_inscription_id'];
+                error_log("💰 Récupération inscription_id depuis session: " . $metadata['inscription_id']);
+                unset($_SESSION['pending_inscription_id']);
+            }
+            
+            // 🔥 Enregistrement du paiement
             db_safe_exec(function(PDO $pdo) use ($userId, $amount, $sessionId, $metadata) {
-                $stmt = $pdo->prepare("INSERT INTO paiement (user_id, montant, statut, provider, payment_ref, paid_at, metadata) VALUES (?, ?, 'paid', 'stripe', ?, NOW(), ?)");
-                $stmt->execute([$userId, $amount, $sessionId, json_encode($metadata)]);
+                $stmt = $pdo->prepare("INSERT INTO paiement (user_id, montant, statut, provider, payment_ref, paid_at, metadata, id_inscription) VALUES (?, ?, 'paid', 'stripe', ?, NOW(), ?, ?)");
+                $stmt->execute([$userId, $amount, $sessionId, json_encode($metadata), $metadata['inscription_id'] ?? null]);
                 return true;
             }, false);
             
@@ -52,8 +71,6 @@ if ($sessionId) {
                     $stmt->execute([$metadata['inscription_id']]);
                     return true;
                 }, false);
-            } else {
-                error_log("⚠️ Aucun inscription_id dans les métadonnées !");
             }
             
             notif_create($userId, 'paiement_stripe', '✅ Paiement confirmé', "Votre paiement de {$amount}€ a été reçu.");
@@ -176,7 +193,7 @@ $role = (int)($_SESSION['role_id'] ?? 0);
                 <?php elseif ($role === 2): ?>
                     <a class="btn-primary" href="particulier_planning.php">🗓️ Retour planning</a>
                     <a class="btn-outline" href="particulier_documents.php">📄 Documents</a>
-                    <a class="btn-outline" href="particulier.php">🏠 Dashboard</a>
+                    <a class="btn-outline" href="particulier_annonces.php">📦 Mes annonces</a>
                 <?php else: ?>
                     <a class="btn-primary" href="index.php">🏠 Accueil</a>
                 <?php endif; ?>

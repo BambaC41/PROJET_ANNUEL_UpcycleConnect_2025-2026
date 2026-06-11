@@ -17,16 +17,16 @@ $localTutorial = db_safe_exec(function (PDO $pdo) {
 $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
 $notifUnread = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
 $tutorialCompleted = ((int)($me['tutorial_completed'] ?? -1) === 1) || ((int)$localTutorial === 1);
+$totalScore = (int)($score['score_global'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Particulier</title>
+    <title>Espace Particulier - UpcycleConnect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <!-- OneSignal Push Notifications -->
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
@@ -36,7 +36,7 @@ $tutorialCompleted = ((int)($me['tutorial_completed'] ?? -1) === 1) || ((int)$lo
         <article class="pro-kpi"><h3>📦 Mes annonces</h3><p><?= e(count($annonces)) ?></p></article>
         <article class="pro-kpi"><h3>🗓️ Inscriptions</h3><p><?= e(count($inscriptions)) ?></p></article>
         <article class="pro-kpi"><h3>🗳️ Dépôts</h3><p><?= e(count($demandes)) ?></p></article>
-        <article class="pro-kpi"><h3>♻️ Upcycling score</h3><p><?= e((int)($score['score_global'] ?? 0)) ?></p></article>
+        <article class="pro-kpi"><h3>♻️ Upcycling Score</h3><p><?= e($totalScore) ?></p></article>
         <article class="pro-kpi"><h3>🔔 Notifications</h3><p><?= e($notifUnread) ?></p></article>
         <article class="pro-kpi"><h3>📄 Documents</h3><p><?= e(count($docs)) ?></p></article>
     </section>
@@ -47,6 +47,7 @@ $tutorialCompleted = ((int)($me['tutorial_completed'] ?? -1) === 1) || ((int)$lo
         <a class="pro-card pro-link" href="particulier_catalogue.php"><h2>🛍️ Catalogue</h2><p>Formations, services, événements.</p></a>
         <a class="pro-card pro-link" href="particulier_planning.php"><h2>🗓️ Planning</h2><p>Vue emploi du temps hebdo.</p></a>
         <a class="pro-card pro-link" href="particulier_documents.php"><h2>📄 Mes documents</h2><p>Reçus, attestations et fiches de dépôt.</p></a>
+        <a class="pro-card pro-link" href="particulier_score.php"><h2>♻️ Mon Upcycling Score</h2><p>Détail de votre impact environnemental.</p></a>
         <a class="pro-card pro-link" href="notifications.php"><h2>🔔 Notifications</h2><p>Suivre validations et confirmations importantes.</p></a>
         <a class="pro-card pro-link" href="particulier_profile.php"><h2>👤 Mon profil</h2><p><?= e($me['prenom'] ?? 'Utilisateur') ?>, gérer mon compte.</p></a>
     </section>

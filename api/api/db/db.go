@@ -786,7 +786,12 @@ func ApprovePro(id int) error {
 	}
 	return nil
 }
-func GetAnnonces() ([]model.Annonce, error) {
+
+// ============================================
+// FONCTIONS ANNONCES AVEC COMMISSION
+// ============================================
+
+func GetAnnoncesByUserID(userID int) ([]model.Annonce, error) {
 	rows, err := DB.Query(`
 		SELECT
 			a.id_annonce,
@@ -804,18 +809,21 @@ func GetAnnonces() ([]model.Annonce, error) {
 			COALESCE(o.type_materiau, ''),
 			o.poids,
 			o.volume,
-			COALESCE(o.photo_url, '')
+			COALESCE(o.photo_url, ''),
+			COALESCE(a.commission_payee, 0) AS commission_payee,
+			a.commission_payee_at
 		FROM annonce a
 		INNER JOIN objet o ON o.id_objet = a.id_objet
+		WHERE a.id_user = ?
 		ORDER BY a.id_annonce DESC
-	`)
+	`, userID)
+
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	var annonces []model.Annonce
-
 	for rows.Next() {
 		var a model.Annonce
 		var validatedAt sql.NullString
@@ -823,6 +831,8 @@ func GetAnnonces() ([]model.Annonce, error) {
 		var prix sql.NullFloat64
 		var poids sql.NullFloat64
 		var volume sql.NullFloat64
+		var commissionPayee sql.NullBool
+		var commissionPayeeAt sql.NullTime
 
 		err := rows.Scan(
 			&a.ID,
@@ -841,6 +851,8 @@ func GetAnnonces() ([]model.Annonce, error) {
 			&poids,
 			&volume,
 			&a.PhotoURL,
+			&commissionPayee,
+			&commissionPayeeAt,
 		)
 		if err != nil {
 			return nil, err
@@ -862,14 +874,21 @@ func GetAnnonces() ([]model.Annonce, error) {
 		if volume.Valid {
 			a.Volume = &volume.Float64
 		}
+		if commissionPayee.Valid {
+			a.CommissionPayee = commissionPayee.Bool
+		}
+		if commissionPayeeAt.Valid {
+			a.CommissionPayeeAt = &commissionPayeeAt.Time
+		}
 
 		annonces = append(annonces, a)
 	}
 
 	return annonces, nil
 }
-func GetAnnonceByID(id int) (*model.Annonce, error) {
-	row := DB.QueryRow(`
+
+func GetAnnoncesValidees() ([]model.Annonce, error) {
+	rows, err := DB.Query(`
 		SELECT
 			a.id_annonce,
 			COALESCE(a.mode, ''),
@@ -886,20 +905,117 @@ func GetAnnonceByID(id int) (*model.Annonce, error) {
 			COALESCE(o.type_materiau, ''),
 			o.poids,
 			o.volume,
-			COALESCE(o.photo_url, '')
+			COALESCE(o.photo_url, ''),
+			COALESCE(a.commission_payee, 0) AS commission_payee,
+			a.commission_payee_at
 		FROM annonce a
 		INNER JOIN objet o ON o.id_objet = a.id_objet
-		WHERE a.id_annonce = ?
-	`, id)
+		WHERE a.statut = 'validee'
+		ORDER BY a.id_annonce DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
+	var annonces []model.Annonce
+	for rows.Next() {
+		var a model.Annonce
+		var validatedAt sql.NullString
+		var validateurID sql.NullInt64
+		var prix sql.NullFloat64
+		var poids sql.NullFloat64
+		var volume sql.NullFloat64
+		var commissionPayee sql.NullBool
+		var commissionPayeeAt sql.NullTime
+
+		err := rows.Scan(
+			&a.ID,
+			&a.Mode,
+			&prix,
+			&a.Statut,
+			&validatedAt,
+			&a.CreatedAt,
+			&a.UserID,
+			&a.ObjetID,
+			&validateurID,
+			&a.Titre,
+			&a.Description,
+			&a.Etat,
+			&a.TypeMateriau,
+			&poids,
+			&volume,
+			&a.PhotoURL,
+			&commissionPayee,
+			&commissionPayeeAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if prix.Valid {
+			a.Prix = &prix.Float64
+		}
+		if validatedAt.Valid {
+			a.ValidatedAt = &validatedAt.String
+		}
+		if validateurID.Valid {
+			v := int(validateurID.Int64)
+			a.ValidateurID = &v
+		}
+		if poids.Valid {
+			a.Poids = &poids.Float64
+		}
+		if volume.Valid {
+			a.Volume = &volume.Float64
+		}
+		if commissionPayee.Valid {
+			a.CommissionPayee = commissionPayee.Bool
+		}
+		if commissionPayeeAt.Valid {
+			a.CommissionPayeeAt = &commissionPayeeAt.Time
+		}
+
+		annonces = append(annonces, a)
+	}
+
+	return annonces, nil
+}
+
+func GetAnnonceByID(id int) (*model.Annonce, error) {
 	var a model.Annonce
 	var validatedAt sql.NullString
 	var validateurID sql.NullInt64
 	var prix sql.NullFloat64
 	var poids sql.NullFloat64
 	var volume sql.NullFloat64
+	var commissionPayee sql.NullBool
+	var commissionPayeeAt sql.NullTime
 
-	err := row.Scan(
+	err := DB.QueryRow(`
+		SELECT
+			a.id_annonce,
+			COALESCE(a.mode, ''),
+			a.prix,
+			COALESCE(a.statut, ''),
+			DATE_FORMAT(a.validated_at, '%Y-%m-%d %H:%i:%s'),
+			DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s'),
+			a.id_user,
+			a.id_objet,
+			a.id_validateur,
+			o.titre,
+			COALESCE(o.description, ''),
+			COALESCE(o.etat, ''),
+			COALESCE(o.type_materiau, ''),
+			o.poids,
+			o.volume,
+			COALESCE(o.photo_url, ''),
+			COALESCE(a.commission_payee, 0) AS commission_payee,
+			a.commission_payee_at
+		FROM annonce a
+		INNER JOIN objet o ON o.id_objet = a.id_objet
+		WHERE a.id_annonce = ?
+	`, id).Scan(
 		&a.ID,
 		&a.Mode,
 		&prix,
@@ -916,7 +1032,10 @@ func GetAnnonceByID(id int) (*model.Annonce, error) {
 		&poids,
 		&volume,
 		&a.PhotoURL,
+		&commissionPayee,
+		&commissionPayeeAt,
 	)
+
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -940,80 +1059,57 @@ func GetAnnonceByID(id int) (*model.Annonce, error) {
 	if volume.Valid {
 		a.Volume = &volume.Float64
 	}
+	if commissionPayee.Valid {
+		a.CommissionPayee = commissionPayee.Bool
+	}
+	if commissionPayeeAt.Valid {
+		a.CommissionPayeeAt = &commissionPayeeAt.Time
+	}
 
 	return &a, nil
 }
-func GetAnnoncesByUserID(userID int) ([]model.Annonce, error) {
 
+func GetPendingAnnonces() ([]model.Annonce, error) {
 	rows, err := DB.Query(`
-
 		SELECT
-
 			a.id_annonce,
-
 			COALESCE(a.mode, ''),
-
 			a.prix,
-
 			COALESCE(a.statut, ''),
-
 			DATE_FORMAT(a.validated_at, '%Y-%m-%d %H:%i:%s'),
-
 			DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s'),
-
 			a.id_user,
-
 			a.id_objet,
-
 			a.id_validateur,
-
 			o.titre,
-
 			COALESCE(o.description, ''),
-
 			COALESCE(o.etat, ''),
-
 			COALESCE(o.type_materiau, ''),
-
 			o.poids,
-
 			o.volume,
-
-			COALESCE(o.photo_url, '')
-
+			COALESCE(o.photo_url, ''),
+			COALESCE(a.commission_payee, 0) AS commission_payee,
+			a.commission_payee_at
 		FROM annonce a
-
 		INNER JOIN objet o ON o.id_objet = a.id_objet
-
-		WHERE a.id_user = ?
-
+		WHERE a.statut = 'en_attente'
 		ORDER BY a.id_annonce DESC
-
-	`, userID)
-
+	`)
 	if err != nil {
-
 		return nil, err
-
 	}
-
 	defer rows.Close()
 
 	var annonces []model.Annonce
-
 	for rows.Next() {
-
 		var a model.Annonce
-
 		var validatedAt sql.NullString
-
 		var validateurID sql.NullInt64
-
 		var prix sql.NullFloat64
-
 		var poids sql.NullFloat64
-
 		var volume sql.NullFloat64
+		var commissionPayee sql.NullBool
+		var commissionPayeeAt sql.NullTime
 
 		err := rows.Scan(
 			&a.ID,
@@ -1032,53 +1128,42 @@ func GetAnnoncesByUserID(userID int) ([]model.Annonce, error) {
 			&poids,
 			&volume,
 			&a.PhotoURL,
+			&commissionPayee,
+			&commissionPayeeAt,
 		)
-
 		if err != nil {
-
 			return nil, err
-
 		}
 
 		if prix.Valid {
-
 			a.Prix = &prix.Float64
-
 		}
-
 		if validatedAt.Valid {
-
 			a.ValidatedAt = &validatedAt.String
-
 		}
-
 		if validateurID.Valid {
-
 			v := int(validateurID.Int64)
-
 			a.ValidateurID = &v
-
 		}
-
 		if poids.Valid {
-
 			a.Poids = &poids.Float64
-
 		}
-
 		if volume.Valid {
-
 			a.Volume = &volume.Float64
-
+		}
+		if commissionPayee.Valid {
+			a.CommissionPayee = commissionPayee.Bool
+		}
+		if commissionPayeeAt.Valid {
+			a.CommissionPayeeAt = &commissionPayeeAt.Time
 		}
 
 		annonces = append(annonces, a)
-
 	}
 
 	return annonces, nil
-
 }
+
 func CreateAnnonce(a model.Annonce) error {
 	tx, err := DB.Begin()
 	if err != nil {
@@ -1126,6 +1211,7 @@ func CreateAnnonce(a model.Annonce) error {
 
 	return tx.Commit()
 }
+
 func UpdateAnnonce(id int, userID int, a model.Annonce) error {
 	tx, err := DB.Begin()
 	if err != nil {
@@ -1183,6 +1269,7 @@ func UpdateAnnonce(id int, userID int, a model.Annonce) error {
 
 	return tx.Commit()
 }
+
 func DeleteAnnonce(id int, userID int) error {
 	tx, err := DB.Begin()
 	if err != nil {
@@ -1222,181 +1309,6 @@ func DeleteAnnonce(id int, userID int) error {
 
 	return tx.Commit()
 }
-func GetAnnoncesValidees() ([]model.Annonce, error) {
-	rows, err := DB.Query(`
-		SELECT
-			a.id_annonce,
-			COALESCE(a.mode, ''),
-			a.prix,
-			COALESCE(a.statut, ''),
-			DATE_FORMAT(a.validated_at, '%Y-%m-%d %H:%i:%s'),
-			DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s'),
-			a.id_user,
-			a.id_objet,
-			a.id_validateur,
-			o.titre,
-			COALESCE(o.description, ''),
-			COALESCE(o.etat, ''),
-			COALESCE(o.type_materiau, ''),
-			o.poids,
-			o.volume,
-			COALESCE(o.photo_url, '')
-		FROM annonce a
-		INNER JOIN objet o ON o.id_objet = a.id_objet
-		WHERE a.statut = 'validee'
-		ORDER BY a.id_annonce DESC
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var annonces []model.Annonce
-
-	for rows.Next() {
-		var a model.Annonce
-		var validatedAt sql.NullString
-		var validateurID sql.NullInt64
-		var prix sql.NullFloat64
-		var poids sql.NullFloat64
-		var volume sql.NullFloat64
-
-		err := rows.Scan(
-			&a.ID,
-			&a.Mode,
-			&prix,
-			&a.Statut,
-			&validatedAt,
-			&a.CreatedAt,
-			&a.UserID,
-			&a.ObjetID,
-			&validateurID,
-			&a.Titre,
-			&a.Description,
-			&a.Etat,
-			&a.TypeMateriau,
-			&poids,
-			&volume,
-			&a.PhotoURL,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if prix.Valid {
-			a.Prix = &prix.Float64
-		}
-		if validatedAt.Valid {
-			a.ValidatedAt = &validatedAt.String
-		}
-		if validateurID.Valid {
-			v := int(validateurID.Int64)
-			a.ValidateurID = &v
-		}
-		if poids.Valid {
-			a.Poids = &poids.Float64
-		}
-		if volume.Valid {
-			a.Volume = &volume.Float64
-		}
-
-		annonces = append(annonces, a)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return annonces, nil
-}
-
-func GetPendingAnnonces() ([]model.Annonce, error) {
-	rows, err := DB.Query(`
-		SELECT
-			a.id_annonce,
-			COALESCE(a.mode, ''),
-			a.prix,
-			COALESCE(a.statut, ''),
-			DATE_FORMAT(a.validated_at, '%Y-%m-%d %H:%i:%s'),
-			DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s'),
-			a.id_user,
-			a.id_objet,
-			a.id_validateur,
-			o.titre,
-			COALESCE(o.description, ''),
-			COALESCE(o.etat, ''),
-			COALESCE(o.type_materiau, ''),
-			o.poids,
-			o.volume,
-			COALESCE(o.photo_url, '')
-		FROM annonce a
-		INNER JOIN objet o ON o.id_objet = a.id_objet
-		WHERE a.statut = 'en_attente'
-		ORDER BY a.id_annonce DESC
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var annonces []model.Annonce
-
-	for rows.Next() {
-		var a model.Annonce
-		var validatedAt sql.NullString
-		var validateurID sql.NullInt64
-		var prix sql.NullFloat64
-		var poids sql.NullFloat64
-		var volume sql.NullFloat64
-
-		err := rows.Scan(
-			&a.ID,
-			&a.Mode,
-			&prix,
-			&a.Statut,
-			&validatedAt,
-			&a.CreatedAt,
-			&a.UserID,
-			&a.ObjetID,
-			&validateurID,
-			&a.Titre,
-			&a.Description,
-			&a.Etat,
-			&a.TypeMateriau,
-			&poids,
-			&volume,
-			&a.PhotoURL,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		if prix.Valid {
-			a.Prix = &prix.Float64
-		}
-		if validatedAt.Valid {
-			a.ValidatedAt = &validatedAt.String
-		}
-		if validateurID.Valid {
-			v := int(validateurID.Int64)
-			a.ValidateurID = &v
-		}
-		if poids.Valid {
-			a.Poids = &poids.Float64
-		}
-		if volume.Valid {
-			a.Volume = &volume.Float64
-		}
-
-		annonces = append(annonces, a)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return annonces, nil
-}
 
 func ModerateAnnonce(annonceID int, validateurID int, statut string) error {
 	result, err := DB.Exec(`
@@ -1417,6 +1329,11 @@ func ModerateAnnonce(annonceID int, validateurID int, statut string) error {
 	}
 	return nil
 }
+
+// ============================================
+// AUTRES FONCTIONS (conteneurs, demandes, etc.)
+// ============================================
+
 func GetConteneurs() ([]model.Conteneur, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -1777,6 +1694,7 @@ func GetDepotCodes(id int) (*model.DepotCodes, error) {
 
 	return &c, nil
 }
+
 func GetAllDemandesDepot() ([]model.DemandeDepotView, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -1831,120 +1749,72 @@ func GetAllDemandesDepot() ([]model.DemandeDepotView, error) {
 	return demandes, nil
 }
 
+// ============================================
+// FONCTIONS INSCRIPTIONS ET PAIEMENTS
+// ============================================
+
 func countActiveInscriptionsBySessionID(sessionID int) (int, error) {
-
 	var count int
-
 	err := DB.QueryRow(`
-
 		SELECT COUNT(*)
-
 		FROM inscription
-
 		WHERE id_session = ?
-
 		  AND COALESCE(statut, '') <> 'annulee'
-
 	`, sessionID).Scan(&count)
-
 	return count, err
-
 }
 
 func userHasActiveInscription(userID int, sessionID int) (bool, error) {
-
 	var count int
-
 	err := DB.QueryRow(`
-
 		SELECT COUNT(*)
-
 		FROM inscription
-
 		WHERE id_user = ?
-
 		  AND id_session = ?
-
 		  AND COALESCE(statut, '') <> 'annulee'
-
 	`, userID, sessionID).Scan(&count)
-
 	if err != nil {
-
 		return false, err
-
 	}
-
 	return count > 0, nil
-
 }
 
 func CreateInscription(userID int, sessionID int) (int64, error) {
-
 	event, err := GetEventByID(sessionID)
-
 	if err != nil {
-
 		return 0, err
-
 	}
-
 	if event == nil {
-
 		return 0, errors.New("event not found")
-
 	}
-
 	if event.Statut != "valide" {
-
 		return 0, errors.New("event not active")
-
 	}
 
 	alreadyRegistered, err := userHasActiveInscription(userID, sessionID)
-
 	if err != nil {
-
 		return 0, err
-
 	}
-
 	if alreadyRegistered {
-
 		return 0, errors.New("already registered")
-
 	}
 
 	currentCount, err := countActiveInscriptionsBySessionID(sessionID)
-
 	if err != nil {
-
 		return 0, err
-
 	}
-
 	if event.CapaciteMax > 0 && currentCount >= event.CapaciteMax {
-
 		return 0, errors.New("event full")
-
 	}
 
 	result, err := DB.Exec(`
-
 		INSERT INTO inscription (statut, id_user, id_session)
-
 		VALUES ('confirmee', ?, ?)
-
 	`, userID, sessionID)
-
 	if err != nil {
-
 		return 0, err
-
 	}
-
 	return result.LastInsertId()
-
 }
 
 func GetMyInscriptions(userID int) ([]model.MyInscriptionView, error) {
@@ -2005,39 +1875,22 @@ func GetMyInscriptions(userID int) ([]model.MyInscriptionView, error) {
 }
 
 func CancelInscription(inscriptionID int, userID int) error {
-
 	result, err := DB.Exec(`
-
 		UPDATE inscription
-
 		SET statut = 'annulee'
-
 		WHERE id_inscription = ? AND id_user = ?
-
 	`, inscriptionID, userID)
-
 	if err != nil {
-
 		return err
-
 	}
-
 	affected, err := result.RowsAffected()
-
 	if err != nil {
-
 		return err
-
 	}
-
 	if affected == 0 {
-
 		return errors.New("inscription not found")
-
 	}
-
 	return nil
-
 }
 
 func GetInscriptionByID(inscriptionID int, userID int) (int, float64, error) {
@@ -2060,7 +1913,6 @@ func GetInscriptionByID(inscriptionID int, userID int) (int, float64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-
 	return sessionID, prix, nil
 }
 
@@ -2108,7 +1960,6 @@ func CreatePaiementForInscription(inscriptionID int, userID int) (int64, error) 
 	if err != nil {
 		return 0, err
 	}
-
 	return result.LastInsertId()
 }
 
@@ -2173,7 +2024,6 @@ func GetMyPaiements(userID int) ([]model.MyPaiementView, error) {
 		}
 		paiements = append(paiements, p)
 	}
-
 	return paiements, nil
 }
 
@@ -2237,9 +2087,12 @@ func GetAllPaiements() ([]model.MyPaiementView, error) {
 		}
 		paiements = append(paiements, p)
 	}
-
 	return paiements, nil
 }
+
+// ============================================
+// FONCTIONS CONSEILS
+// ============================================
 
 func scanConseilRow(scanner interface{ Scan(dest ...any) error }, c *model.Conseil) error {
 	return scanner.Scan(
@@ -2267,7 +2120,7 @@ const conseilSelect = `
 	FROM conseil`
 
 func GetConseils() ([]model.Conseil, error) {
-	rows, err := DB.Query(conseilSelect+`
+	rows, err := DB.Query(conseilSelect + `
 		WHERE is_active = 1
 		ORDER BY created_at DESC, id_conseil DESC
 	`)
@@ -2284,7 +2137,6 @@ func GetConseils() ([]model.Conseil, error) {
 		}
 		conseils = append(conseils, c)
 	}
-
 	return conseils, nil
 }
 
@@ -2320,7 +2172,6 @@ func GetConseilAuthorID(id int) (int, error) {
 
 func GetConseilByID(id int) (*model.Conseil, error) {
 	var c model.Conseil
-
 	err := DB.QueryRow(conseilSelect+`
 		WHERE id_conseil = ?
 		  AND is_active = 1
@@ -2334,14 +2185,12 @@ func GetConseilByID(id int) (*model.Conseil, error) {
 		&c.IDAuteur,
 		&c.CreatedAt,
 	)
-
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-
 	return &c, nil
 }
 
@@ -2517,6 +2366,10 @@ func DeleteConseil(id int) error {
 	}
 	return nil
 }
+
+// ============================================
+// FONCTIONS SCORE
+// ============================================
 
 func GetUserScore(userID int) (*model.UserScore, error) {
 	var annoncesCount int

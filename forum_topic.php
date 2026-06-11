@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/includes/functions/view_context.php';
 require_once __DIR__ . '/includes/functions/forum_local.php';
-require_once __DIR__ . '/includes/functions/forum.php';
+require_once __DIR__ . '/includes/functions/forum_api.php';  // ← MODIFIÉ
 require_once __DIR__ . '/includes/functions/bootstrap_notify.php';
 require_once __DIR__ . '/includes/notifications.php';
 require_once __DIR__ . '/includes/ui_helpers.php';
@@ -30,7 +30,9 @@ $isMod = in_array($roleId, [1, 4], true);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_reply'])) {
         $content = trim((string)($_POST['content'] ?? ''));
-        if ($content === '') {
+        if (mb_strlen($content) > 1000) {
+            $_SESSION['flash_toast'] = ['type' => 'error', 'message' => 'Le message ne peut pas dépasser 1000 caractères.'];
+        } elseif ($content === '') {
             $_SESSION['flash_toast'] = ['type' => 'error', 'message' => 'Message vide.'];
         } elseif (forum_add_post($topicId, $userId, $content)) {
             $_SESSION['flash_toast'] = ['type' => 'success', 'message' => 'Réponse publiée.'];
@@ -92,42 +94,78 @@ $navFile = match ($roleId) {
     <title><?= $notFound ? 'Sujet introuvable' : e($topic['title'] ?? 'Forum') ?> — UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/ui-components.css">
-    <!-- OneSignal Push Notifications -->
     <?php include 'includes/onesignal_head.php'; ?>
+    <style>
+        .char-counter { font-size: 11px; color: #666; margin-top: 4px; text-align: right; }
+        .char-counter.warning { color: #f44336; }
+        .forum-post {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            transition: box-shadow 0.2s;
+        }
+        .forum-post:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .forum-post-meta {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .forum-post-meta strong { color: #2e7d32; }
+        .forum-post-content { font-size: 15px; line-height: 1.5; color: #333; }
+        .is-hidden { opacity: 0.6; background: #f8f9fa; }
+        .badge-reported { background: #f44336; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 8px; }
+        .actions-compact { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+        .reply-section {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+        }
+    </style>
 </head>
 <body>
-<?php if ($navFile) {
-    include __DIR__ . '/' . $navFile;
-} ?>
-<main class="page-shell" style="max-width:900px;margin:0 auto;padding:24px 16px;">
+<?php if ($navFile) { include __DIR__ . '/' . $navFile; } ?>
+<main class="page-shell" style="max-width: 900px; margin: 0 auto; padding: 24px 20px 48px;">
 <?php include __DIR__ . '/includes/flash_toast.php'; ?>
-    <p><a href="forum.php" class="btn-outline" style="display:inline-block;">← Retour au forum</a></p>
+    <p><a href="forum.php" class="btn-outline" style="display: inline-block;">← Retour au forum</a></p>
 
     <?php if ($notFound): ?>
-        <?php render_empty_state('Sujet introuvable', 'Ce sujet n’existe pas ou a été supprimé.', 'Retour au forum', 'forum.php'); ?>
+        <?php render_empty_state('Sujet introuvable', 'Ce sujet n\'existe pas ou a été supprimé.', 'Retour au forum', 'forum.php'); ?>
     <?php else:
         $badges = forum_topic_badges($topic);
     ?>
         <h1><?= e($topic['title'] ?? '') ?></h1>
-        <p class="muted">
-            <?= e($topic['category_name'] ?? '') ?> · par <?= e($topic['author_pseudo'] ?? '') ?>
-            · <?= (int)($topic['views_count'] ?? 0) ?> vues · <?= (int)($topic['posts_count'] ?? 0) ?> messages
-            <?php foreach ($badges as $b): ?><span class="badge-status <?= e($b['class']) ?>"><?= e($b['label']) ?></span><?php endforeach; ?>
-        </p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px;">
+            <p class="muted">
+                📂 <?= e($topic['category_name'] ?? '') ?> · 👤 <?= e($topic['author_pseudo'] ?? '') ?>
+                · 👁️ <?= (int)($topic['views_count'] ?? 0) ?> vues · 💬 <?= (int)($topic['posts_count'] ?? 0) ?> messages
+                <?php foreach ($badges as $b): ?>
+                    <span class="badge-topic <?= e($b['class']) ?>"><?= e($b['label']) ?></span>
+                <?php endforeach; ?>
+            </p>
+        </div>
 
         <?php if ($isMod): ?>
-        <div class="actions-compact" style="margin:12px 0;">
+        <div class="actions-compact" style="margin-bottom: 20px;">
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="mod_target" value="topic">
                 <input type="hidden" name="mod_id" value="<?= (int)$topic['id'] ?>">
                 <input type="hidden" name="mod_action" value="<?= !empty($topic['is_locked']) ? 'unlock' : 'lock' ?>">
-                <button class="btn-outline" type="submit"><?= !empty($topic['is_locked']) ? 'Déverrouiller' : 'Verrouiller' ?></button>
+                <button class="btn-outline" type="submit"><?= !empty($topic['is_locked']) ? '🔓 Déverrouiller' : '🔒 Verrouiller' ?></button>
             </form>
             <form method="POST" style="display:inline;">
                 <input type="hidden" name="mod_target" value="topic">
                 <input type="hidden" name="mod_id" value="<?= (int)$topic['id'] ?>">
                 <input type="hidden" name="mod_action" value="<?= !empty($topic['is_hidden']) ? 'restore' : 'hide' ?>">
-                <button class="btn-outline" type="submit"><?= !empty($topic['is_hidden']) ? 'Réafficher' : 'Masquer' ?></button>
+                <button class="btn-outline" type="submit"><?= !empty($topic['is_hidden']) ? '👁️ Réafficher' : '🙈 Masquer' ?></button>
             </form>
         </div>
         <?php endif; ?>
@@ -135,16 +173,15 @@ $navFile = match ($roleId) {
         <?php foreach ($posts as $p): ?>
             <article class="forum-post <?= !empty($p['is_hidden']) ? 'is-hidden' : '' ?>">
                 <div class="forum-post-meta">
-                    <strong><?= e($p['author_pseudo'] ?? '') ?></strong>
-                    · <?= e(formatDateFr($p['created_at'] ?? '')) ?>
-                    <?php if (!empty($p['is_hidden'])): ?><span class="badge-reported">Masqué</span><?php endif; ?>
+                    <div><strong><?= e($p['author_pseudo'] ?? '') ?></strong> · <?= date('d/m/Y H:i', strtotime($p['created_at'] ?? '')) ?></div>
+                    <?php if (!empty($p['is_hidden'])): ?><span class="badge-reported">🙈 Masqué</span><?php endif; ?>
                 </div>
-                <div><?= nl2br(e($p['content'] ?? '')) ?></div>
-                <div class="actions-compact" style="margin-top:8px;">
-                    <?php if ((int)($p['author_id'] ?? 0) !== $userId): ?>
-                    <form method="POST" style="display:inline-flex;gap:4px;align-items:center;">
+                <div class="forum-post-content"><?= nl2br(e(mb_substr($p['content'] ?? '', 0, 1000))) ?></div>
+                <div class="actions-compact">
+                    <?php if ((int)($p['author_id'] ?? 0) !== $userId && empty($p['is_hidden'])): ?>
+                    <form method="POST" style="display:inline-flex; gap: 8px; align-items: center;">
                         <input type="hidden" name="report_post_id" value="<?= (int)$p['id'] ?>">
-                        <select class="input" name="report_reason" style="max-width:120px;">
+                        <select class="input" name="report_reason" style="width: 130px;">
                             <option value="spam">Spam</option>
                             <option value="off_topic">Hors sujet</option>
                             <option value="inappropriate">Inapproprié</option>
@@ -157,7 +194,7 @@ $navFile = match ($roleId) {
                         <input type="hidden" name="mod_target" value="post">
                         <input type="hidden" name="mod_id" value="<?= (int)$p['id'] ?>">
                         <input type="hidden" name="mod_action" value="<?= !empty($p['is_hidden']) ? 'restore' : 'hide' ?>">
-                        <button class="btn-outline" type="submit"><?= !empty($p['is_hidden']) ? 'Réafficher' : 'Masquer' ?></button>
+                        <button class="btn-outline" type="submit"><?= !empty($p['is_hidden']) ? '👁️ Réafficher' : '🙈 Masquer' ?></button>
                     </form>
                     <?php endif; ?>
                 </div>
@@ -165,18 +202,35 @@ $navFile = match ($roleId) {
         <?php endforeach; ?>
 
         <?php if (empty($topic['is_locked'])): ?>
-        <section style="margin-top:20px;">
-            <h2>Répondre</h2>
+        <div class="reply-section">
+            <h2>💬 Répondre</h2>
             <form method="POST">
                 <input type="hidden" name="add_reply" value="1">
-                <textarea class="input" name="content" rows="4" required placeholder="Votre réponse…"></textarea>
-                <button class="btn-primary" type="submit" style="margin-top:8px;">Publier la réponse</button>
+                <textarea class="input" name="content" rows="6" maxlength="1000" placeholder="Votre réponse (max 1000 caractères)..." oninput="updateCharCount(this)"></textarea>
+                <div class="char-counter" id="replyCounter">0 / 1000 caractères</div>
+                <button class="btn-primary" type="submit" style="margin-top: 16px;">📤 Publier la réponse</button>
             </form>
-        </section>
+        </div>
         <?php else: ?>
-            <p class="muted">Ce sujet est verrouillé — les réponses sont désactivées.</p>
+            <div class="info-box" style="text-align: center; padding: 20px;">
+                🔒 Ce sujet est verrouillé — les réponses sont désactivées.
+            </div>
         <?php endif; ?>
     <?php endif; ?>
 </main>
+<script>
+function updateCharCount(textarea) {
+    let len = textarea.value.length;
+    let counter = document.getElementById('replyCounter');
+    if (counter) {
+        counter.textContent = len + ' / 1000 caractères';
+        if (len >= 1000) {
+            counter.classList.add('warning');
+        } else {
+            counter.classList.remove('warning');
+        }
+    }
+}
+</script>
 </body>
 </html>

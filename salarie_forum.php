@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/employee_bootstrap.php';
 require_once __DIR__ . '/includes/functions/forum_local.php';
-require_once __DIR__ . '/includes/functions/forum.php';
+require_once 'includes/functions/forum_api.php';  
 require_once __DIR__ . '/includes/ui_helpers.php';
 
 $userId = (int)$_SESSION['user_id'];

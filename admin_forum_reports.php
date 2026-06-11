@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/admin_bootstrap.php';
-require_once 'includes/functions/forum.php';
+require_once 'includes/functions/forum_api.php';  
 
 $status = trim((string)($_GET['status'] ?? 'pending'));
 $page = max(1, (int)($_GET['page'] ?? 1));

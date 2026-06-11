@@ -1,7 +1,7 @@
 <?php
 require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/forum_local.php';
-require_once 'includes/functions/forum.php';
+require_once 'includes/functions/forum_api.php';  
 require_once 'includes/ui_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

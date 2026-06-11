@@ -11,6 +11,8 @@ func main() {
 	if err := db.InitDB(); err != nil {
 		log.Fatal("DB connection error: ", err)
 	}
+
+	// Routes existantes
 	http.HandleFunc("/register", app.RegisterHandler)
 	http.HandleFunc("/login", app.LoginHandler)
 	http.HandleFunc("/me", app.MeHandler)
@@ -32,7 +34,7 @@ func main() {
 	http.HandleFunc("/inscriptions/", app.InscriptionByIDHandler)
 	http.HandleFunc("/me/paiements", app.MyPaiementsHandler)
 	http.HandleFunc("/paiements", app.PaiementsHandler)
-	http.HandleFunc("/me/score", app.MyScoreHandler)
+	http.HandleFunc("/me/score", app.GetUpcyclingScore)
 	http.HandleFunc("/conseils", app.ConseilsHandler)
 	http.HandleFunc("/conseils/", app.ConseilByIDHandler)
 	http.HandleFunc("/admin/conseils", app.AdminConseilsHandler)
@@ -40,10 +42,13 @@ func main() {
 	http.HandleFunc("/admin/forum/", app.AdminForumRouter)
 	http.HandleFunc("/health", app.HealthHandler)
 	http.HandleFunc("/profiles", app.PublicProfilesHandler)
+
+	// Routes annonces - une seule route suffit pour GET/PUT/DELETE
 	http.HandleFunc("/annonces", app.AnnoncesHandler)
-	http.HandleFunc("/annonces/", app.AnnonceByIDHandler)
+	http.HandleFunc("/annonces/", app.AnnonceByIDHandler) // Gère GET, PUT, DELETE sur /annonces/{id}
 	http.HandleFunc("/me/annonces", app.MyAnnoncesHandler)
 	http.HandleFunc("/admin/annonces/pending", app.AdminPendingAnnoncesHandler)
+
 	http.HandleFunc("/conteneurs", app.ConteneursHandler)
 	http.HandleFunc("/conteneurs/", app.ConteneurByIDHandler)
 	http.HandleFunc("/demandes-depot", app.DemandesDepotHandler)
@@ -52,7 +57,14 @@ func main() {
 	http.HandleFunc("/upload", app.UploadHandler)
 	http.HandleFunc("/create-checkout-session", app.CreateCheckoutSession)
 	http.HandleFunc("/verify-payment", app.VerifyPayment)
+	// Routes abonnement
+	http.HandleFunc("/me/abonnement", app.GetMySubscriptionHandler)
+	http.HandleFunc("/me/abonnement/cancel", app.CancelSubscriptionHandler)
+
+	// Routes projets
+	http.HandleFunc("/me/projets", app.GetMyProjectsHandler)
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)

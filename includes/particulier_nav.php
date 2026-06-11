@@ -21,8 +21,9 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
             </span>
             <strong><?= vc_escape($displayPseudo) ?></strong>
         </span>
+        <!-- Mon espace - gardé, Dashboard SUPPRIMÉ -->
         <a class="btn-outline" href="particulier.php">Mon espace</a>
-        <a class="btn-outline" href="particulier.php">Dashboard</a>
+        <!-- <a class="btn-outline" href="particulier.php">Dashboard</a> SUPPRIMÉ -->
         <a class="btn-outline" href="particulier_annonces.php">📦 Annonces</a>
         <a class="btn-outline" href="particulier_conteneurs.php">🗳️ Conteneurs</a>
         <a class="btn-outline" href="particulier_conseils.php">💡 Conseils</a>

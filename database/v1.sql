@@ -1,6 +1,8 @@
 -- =====================================================
--- upcycleconnect_v2.sql (VERSION FINALE - STRIPE READY)
--- Base de données corrigée et alignée avec l'API Go
+-- upcycleconnect_clean.sql (VERSION FINALE COMPLETE)
+-- Base de données avec toutes les tables et données forum
+-- Mot de passe unique : Upcycle2026!
+-- Hash: $2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2
 -- Date: 2026-06-11
 -- =====================================================
 
@@ -11,9 +13,9 @@ USE upcycleconnect;
 SET FOREIGN_KEY_CHECKS = 0;
 SET NAMES utf8mb4;
 
--- =====================================================
--- 1. TABLE role
--- =====================================================
+-- ============================================
+-- TABLE role
+-- ============================================
 CREATE TABLE role (
     id_role INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -26,9 +28,11 @@ INSERT INTO role (id_role, code, libelle) VALUES
 (3, 'PRO', 'Professionnel'),
 (4, 'SALARIE', 'Salarie animateur formateur');
 
--- =====================================================
--- 2. TABLE utilisateur
--- =====================================================
+-- ============================================
+-- TABLE utilisateur
+-- Mot de passe pour tous : Upcycle2026!
+-- Hash: $2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2
+-- ============================================
 CREATE TABLE utilisateur (
     id_user INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
@@ -51,18 +55,23 @@ CREATE TABLE utilisateur (
     tutorial_completed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     id_role INT NOT NULL,
+    upcycling_score INT DEFAULT 0,
     FOREIGN KEY (id_role) REFERENCES role(id_role)
 ) ENGINE=InnoDB;
 
-INSERT INTO utilisateur (email, password_hash, pseudo, prenom, nom, telephone, adresse_rue, adresse_ville, adresse_code_postal, adresse_pays, photo_profil, bio, statut, is_banned, is_approved, tutorial_completed, id_role) VALUES
-('admin@upcycleconnect.fr', '$2y$10$bJ.w2uBseyR6gonALT5VUu1hfbGWtriWWfozc4OLcf6hEwEHZ9Oey', 'superadmin', 'Admin', 'Principal', '0102030405', '1 rue Upcycle', 'Paris', '75001', 'France', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2', 'Administration plateforme', 'actif', 0, 1, 1, 1),
-('user1@test.com', '$2y$10$bJ.w2uBseyR6gonALT5VUu1hfbGWtriWWfozc4OLcf6hEwEHZ9Oey', 'recycleur92', 'Lucas', 'Martin', '0611223344', '12 rue des Fleurs', 'Paris', '75012', 'France', 'https://picsum.photos/200?1', 'Passionne de recyclage et bricolage', 'actif', 0, 1, 0, 2),
-('pro1@test.com', '$2y$10$bJ.w2uBseyR6gonALT5VUu1hfbGWtriWWfozc4OLcf6hEwEHZ9Oey', 'atelier_pro', 'Camille', 'Bernard', '0644556677', '18 rue des Artisans', 'Nantes', '44000', 'France', 'https://picsum.photos/200?4', 'Professionnel seconde main', 'actif', 0, 1, 1, 3),
-('emp1@test.com', '$2y$10$bJ.w2uBseyR6gonALT5VUu1hfbGWtriWWfozc4OLcf6hEwEHZ9Oey', 'formateur_anna', 'Anna', 'Dupont', '0699001122', '5 rue des Ateliers', 'Lille', '59000', 'France', 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e', 'Animatrice formatrice UpcycleConnect', 'actif', 0, 1, 1, 4');
+INSERT INTO utilisateur (id_user, email, password_hash, pseudo, prenom, nom, telephone, adresse_rue, adresse_ville, adresse_code_postal, adresse_pays, photo_profil, bio, statut, is_banned, is_approved, tutorial_completed, id_role, upcycling_score) VALUES
+(1, 'admin@upcycleconnect.fr', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'superadmin', 'Admin', 'Principal', '0102030405', '1 rue Upcycle', 'Paris', '75001', 'France', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2', 'Administration plateforme', 'actif', 0, 1, 1, 1, 0),
+(2, 'staff@upcycleconnect.fr', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'staff', 'Staff', 'Upcycle', '0102030406', '2 rue Upcycle', 'Paris', '75001', 'France', 'https://picsum.photos/200?2', 'Équipe UpcycleConnect', 'actif', 0, 1, 1, 1, 0),
+(3, 'user1@test.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'recycleur92', 'Lucas', 'Martin', '0611223344', '12 rue des Fleurs', 'Paris', '75012', 'France', 'https://picsum.photos/200?1', 'Passionné de recyclage et bricolage', 'actif', 0, 1, 0, 2, 0),
+(4, 'pro1@test.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'atelier_pro', 'Camille', 'Bernard', '0644556677', '18 rue des Artisans', 'Nantes', '44000', 'France', 'https://picsum.photos/200?4', 'Professionnel seconde main', 'actif', 0, 1, 1, 3, 0),
+(5, 'emp1@test.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'formateur_anna', 'Anna', 'Dupont', '0699001122', '5 rue des Ateliers', 'Lille', '59000', 'France', 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e', 'Animatrice formatrice UpcycleConnect', 'actif', 0, 1, 1, 4, 0),
+(6, 'jean.dupont@email.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'jean_dupont', 'Jean', 'Dupont', '0612345678', '15 rue de la Paix', 'Lyon', '69000', 'France', 'https://picsum.photos/200?5', 'Bricoleur et upcycleur amateur', 'actif', 0, 1, 1, 2, 0),
+(7, 'marie.curie@email.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'marie_upcycle', 'Marie', 'Curie', '0698765432', '8 avenue des Arts', 'Paris', '75010', 'France', 'https://picsum.photos/200?6', 'Passionnée de DIY et upcycling', 'actif', 0, 1, 1, 2, 0),
+(8, 'pierre.durand@email.com', '$2a$10$VqrIpSQGvprFNw7NFWsUY.mK45lU.IhqYVbzjsLYPhoEfTyZml9X2', 'pierre_diy', 'Pierre', 'Durand', '0645123789', '23 rue du Travail', 'Bordeaux', '33000', 'France', 'https://picsum.photos/200?7', 'Artisan ébéniste', 'actif', 0, 1, 1, 3, 0);
 
--- =====================================================
--- 3. TABLE objet
--- =====================================================
+-- ============================================
+-- TABLE objet
+-- ============================================
 CREATE TABLE objet (
     id_objet INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(150) NOT NULL,
@@ -78,13 +87,15 @@ CREATE TABLE objet (
 ) ENGINE=InnoDB;
 
 INSERT INTO objet (titre, description, etat, type_materiau, poids, volume, photo_url, id_user) VALUES
-('Chaise en bois', 'Chaise ancienne a revaloriser', 'bon', 'bois', 7.50, 0.40, 'https://picsum.photos/400?wood1', 3),
-('Lampe vintage', 'Lampe a reparer, abat-jour manquant', 'moyen', 'metal', 2.10, 0.15, 'https://picsum.photos/400?lamp1', 3),
-('Panneaux bois brut', 'Lots de chutes pour atelier', 'bon', 'bois', 15.00, 1.20, 'https://picsum.photos/400?wood2', 4);
+('Chaise en bois', 'Chaise ancienne a revaloriser', 'bon', 'bois', 7.50, 0.40, 'https://picsum.photos/400?wood1', 4),
+('Lampe vintage', 'Lampe a reparer, abat-jour manquant', 'moyen', 'metal', 2.10, 0.15, 'https://picsum.photos/400?lamp1', 4),
+('Panneaux bois brut', 'Lots de chutes pour atelier', 'bon', 'bois', 15.00, 1.20, 'https://picsum.photos/400?wood2', 5),
+('Table basse', 'Table en bois massif à restaurer', 'a_renover', 'bois', 12.00, 0.50, 'https://picsum.photos/400?table', 6),
+('Vélo ancien', 'Vélo des années 70 à customiser', 'correct', 'metal', 15.00, 1.20, 'https://picsum.photos/400?velo', 7);
 
--- =====================================================
--- 4. TABLE conteneur
--- =====================================================
+-- ============================================
+-- TABLE conteneur
+-- ============================================
 CREATE TABLE conteneur (
     id_conteneur INT AUTO_INCREMENT PRIMARY KEY,
     code VARCHAR(50) NOT NULL UNIQUE,
@@ -98,9 +109,9 @@ INSERT INTO conteneur (code, adresse, statut, date_installation, derniere_mainte
 ('C-001', '12 Avenue de France, Paris', 'actif', '2026-01-10', '2026-04-01'),
 ('C-002', '45 Rue Nationale, Lyon', 'actif', '2026-02-08', '2026-04-20');
 
--- =====================================================
--- 5. TABLE demande_depot
--- =====================================================
+-- ============================================
+-- TABLE demande_depot
+-- ============================================
 CREATE TABLE demande_depot (
     id_demande INT AUTO_INCREMENT PRIMARY KEY,
     statut VARCHAR(50) NOT NULL DEFAULT 'en_attente',
@@ -118,11 +129,12 @@ CREATE TABLE demande_depot (
 INSERT INTO demande_depot (statut, requested_at, validated_at, deposited_at, id_user, id_objet, id_conteneur) VALUES
 ('en_attente', NOW(), NULL, NULL, 3, 1, 1),
 ('validee', NOW(), NOW(), NULL, 3, 2, 2),
-('deposee', NOW(), NOW(), NOW(), 4, 3, 1);
+('deposee', NOW(), NOW(), NOW(), 5, 3, 1),
+('en_attente', NOW(), NULL, NULL, 6, 4, 2);
 
--- =====================================================
--- 6. TABLE annonce
--- =====================================================
+-- ============================================
+-- TABLE annonce
+-- ============================================
 CREATE TABLE annonce (
     id_annonce INT AUTO_INCREMENT PRIMARY KEY,
     mode VARCHAR(50),
@@ -133,19 +145,22 @@ CREATE TABLE annonce (
     id_user INT NOT NULL,
     id_objet INT UNIQUE,
     id_validateur INT,
+    commission_payee BOOLEAN DEFAULT 0,
+    commission_payee_at DATETIME NULL,
     FOREIGN KEY (id_user) REFERENCES utilisateur(id_user),
     FOREIGN KEY (id_objet) REFERENCES objet(id_objet),
     FOREIGN KEY (id_validateur) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO annonce (mode, prix, statut, validated_at, id_user, id_objet, id_validateur) VALUES
-('don', 0, 'validee', NOW(), 3, 1, 1),
-('vente', 35.00, 'validee', NOW(), 3, 2, 1),
-('vente', 49.00, 'rejetee', NOW(), 4, 3, 2);
+INSERT INTO annonce (mode, prix, statut, validated_at, id_user, id_objet, id_validateur, commission_payee) VALUES
+('don', 0, 'validee', NOW(), 4, 1, 1, 0),
+('vente', 35.00, 'validee', NOW(), 4, 2, 1, 0),
+('vente', 49.00, 'rejetee', NOW(), 5, 3, 1, 0),
+('vente', 25.00, 'validee', NOW(), 6, 4, 1, 0);
 
--- =====================================================
--- 7. TABLE categorie_prestation
--- =====================================================
+-- ============================================
+-- TABLE categorie_prestation
+-- ============================================
 CREATE TABLE categorie_prestation (
     id_categorie INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
@@ -157,9 +172,9 @@ INSERT INTO categorie_prestation (nom, description) VALUES
 ('Reparation', 'Services de reparation'),
 ('Formation', 'Formations professionnelles');
 
--- =====================================================
--- 8. TABLE prestation
--- =====================================================
+-- ============================================
+-- TABLE prestation
+-- ============================================
 CREATE TABLE prestation (
     id_prestation INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(150) NOT NULL,
@@ -177,11 +192,12 @@ CREATE TABLE prestation (
 INSERT INTO prestation (titre, description, type, prix, id_categorie, id_user) VALUES
 ('Atelier couture', 'Apprendre a reparer des vetements', 'atelier', 20.00, 1, NULL),
 ('Reparation velo', 'Service reparation velo', 'service', 30.00, 2, NULL),
-('Formation bois recycle', 'Formation intensive artisan', 'formation', 120.00, 3, NULL);
+('Formation bois recycle', 'Formation intensive artisan', 'formation', 120.00, 3, NULL),
+('Upcycling meubles', 'Apprenez à transformer vos vieux meubles', 'atelier', 45.00, 1, 5);
 
--- =====================================================
--- 9. TABLE session
--- =====================================================
+-- ============================================
+-- TABLE session
+-- ============================================
 CREATE TABLE session (
     id_session INT AUTO_INCREMENT PRIMARY KEY,
     date_debut DATETIME,
@@ -199,13 +215,11 @@ CREATE TABLE session (
 ) ENGINE=InnoDB;
 
 INSERT INTO session (date_debut, date_fin, lieu, capacite_max, statut, id_prestation, id_validateur, id_createur) VALUES
-('2026-05-04 09:45:00', '2026-05-04 11:15:00', 'Salle 05', 15, 'valide', 1, 1, NULL),
-('2026-05-05 14:00:00', '2026-05-05 15:30:00', 'Salle 05', 12, 'valide', 2, 1, NULL),
-('2026-05-06 15:45:00', '2026-05-06 17:15:00', 'Atelier B', 10, 'en_attente', 3, 1, 4);
+('2026-06-20 09:00:00', '2026-06-20 17:00:00', 'Lille, 59000', 20, 'valide', 3, 1, 5);
 
--- =====================================================
--- 10. TABLE inscription
--- =====================================================
+-- ============================================
+-- TABLE inscription
+-- ============================================
 CREATE TABLE inscription (
     id_inscription INT AUTO_INCREMENT PRIMARY KEY,
     statut VARCHAR(50) NOT NULL DEFAULT 'en_attente',
@@ -217,13 +231,11 @@ CREATE TABLE inscription (
 ) ENGINE=InnoDB;
 
 INSERT INTO inscription (statut, id_user, id_session) VALUES
-('confirmee', 3, 1),
-('en_attente', 3, 3),
-('confirmee', 4, 2);
+('confirmee', 3, 1);
 
--- =====================================================
--- 11. TABLE paiement (VERSION STRIPE READY)
--- =====================================================
+-- ============================================
+-- TABLE paiement
+-- ============================================
 CREATE TABLE paiement (
     id_paiement INT AUTO_INCREMENT PRIMARY KEY,
     provider VARCHAR(50),
@@ -243,15 +255,12 @@ CREATE TABLE paiement (
     INDEX idx_paiement_payment_ref (payment_ref)
 ) ENGINE=InnoDB;
 
--- Données de démonstration (optionnelles)
 INSERT INTO paiement (provider, payment_ref, montant, devise, statut, paid_at, id_inscription, user_id) VALUES
-('demo', 'PAY-DEMO-0001', 20.00, 'EUR', 'paid', NOW(), 1, 3),
-('demo', 'PAY-DEMO-0002', 120.00, 'EUR', 'pending', NULL, 2, 3),
-('demo', 'PAY-DEMO-0003', 30.00, 'EUR', 'paid', NOW(), 3, 4);
+('stripe', 'cs_test_example', 120.00, 'EUR', 'paid', NOW(), 1, 3);
 
--- =====================================================
--- 12. TABLE notification
--- =====================================================
+-- ============================================
+-- TABLE notification
+-- ============================================
 CREATE TABLE notification (
     id_notification INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,
@@ -265,16 +274,14 @@ CREATE TABLE notification (
 ) ENGINE=InnoDB;
 
 INSERT INTO notification (id_user, type, titre, contenu) VALUES
-(1, 'system', 'Back-office', 'Bienvenue sur le panneau admin : validez annonces, evenements et conseils.'),
-(2, 'system', 'Staff', 'Nouvelles demandes de validation peuvent arriver dans la file.'),
-(3, 'annonce', 'Annonce en attente', 'Votre annonce est en attente de validation admin.'),
-(3, 'depot', 'Depot valide', 'Votre demande de depot C-001 a ete validee.'),
-(4, 'pro', 'Compte professionnel actif', 'Votre compte professionnel est actif.'),
-(1, 'event', 'Evenement a valider', 'Un nouvel atelier est en attente de validation.');
+(1, 'system', 'Back-office', 'Bienvenue sur le panneau admin'),
+(3, 'paiement_stripe', '✅ Paiement confirmé', 'Votre paiement de 120€ a été reçu.'),
+(3, 'annonce', 'Annonce validée', 'Votre annonce a été validée par l\'administration.'),
+(6, 'forum', 'Nouveau sujet', 'Un nouveau sujet a été créé dans le forum.');
 
--- =====================================================
--- 13. TABLE conseil
--- =====================================================
+-- ============================================
+-- TABLE conseil
+-- ============================================
 CREATE TABLE conseil (
     id_conseil INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(150) NOT NULL,
@@ -288,13 +295,13 @@ CREATE TABLE conseil (
 ) ENGINE=InnoDB;
 
 INSERT INTO conseil (titre, contenu, categorie, image_url, is_active) VALUES
-('Preparer du bois de palette', 'Poncez, retirez les clous et protegez le bois.', 'Tutoriel', 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4', TRUE),
-('Nouveaux conteneurs ouverts', 'Nouveaux conteneurs disponibles dans plusieurs quartiers.', 'News', 'https://images.unsplash.com/photo-1495020689067-958852a7765e', TRUE),
-('Entretenir son velo', 'Verifiez pneus, chaine et freins regulierement.', 'Guide', 'https://images.unsplash.com/photo-1485965120184-e220f721d03e', TRUE);
+('Preparer du bois de palette', 'Poncez, retirez les clous et protegez le bois. Peignez avec des peintures naturelles pour un résultat unique.', 'Tutoriel', 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4', TRUE),
+('Entretenir son velo', 'Verifiez pneus, chaine et freins regulierement. Un entretien regulier prolonge la duree de vie de votre velo.', 'Guide', 'https://images.unsplash.com/photo-1485965120184-e220f721d03e', TRUE),
+('Recycler ses bocaux', 'Transformez vos bocaux en verre en luminaires ou pots de fleurs uniques.', 'Tutoriel', 'https://images.unsplash.com/photo-1602143407151-7111542de6e8', TRUE);
 
--- =====================================================
--- 14. TABLE projet_upcycling
--- =====================================================
+-- ============================================
+-- TABLE projet_upcycling
+-- ============================================
 CREATE TABLE projet_upcycling (
     id_projet INT AUTO_INCREMENT PRIMARY KEY,
     id_pro INT NOT NULL,
@@ -313,12 +320,11 @@ CREATE TABLE projet_upcycling (
 ) ENGINE=InnoDB;
 
 INSERT INTO projet_upcycling (id_pro, id_objet, titre, description, statut, progression, image_url, is_featured, is_public) VALUES
-(4, 1, 'Renovation chaise bistrot', 'Transformation de chaise en piece design.', 'en_cours', 60, 'https://picsum.photos/600?project1', TRUE, TRUE),
-(4, 3, 'Bibliotheque modulaire', 'Assemblage de panneaux recycles.', 'brouillon', 20, 'https://picsum.photos/600?project2', FALSE, TRUE);
+(5, 1, 'Renovation chaise bistrot', 'Transformation de chaise en piece design.', 'en_cours', 60, 'https://picsum.photos/600?project1', TRUE, TRUE);
 
--- =====================================================
--- 15. TABLE abonnement_pro
--- =====================================================
+-- ============================================
+-- TABLE abonnement_pro
+-- ============================================
 CREATE TABLE abonnement_pro (
     id_abonnement INT AUTO_INCREMENT PRIMARY KEY,
     id_pro INT NOT NULL,
@@ -332,11 +338,11 @@ CREATE TABLE abonnement_pro (
 ) ENGINE=InnoDB;
 
 INSERT INTO abonnement_pro (id_pro, formule, date_debut, date_fin, prix, statut) VALUES
-(4, 'premium', '2026-05-01', '2027-04-30', 49.00, 'actif');
+(5, 'premium', '2026-05-01', '2027-04-30', 49.00, 'actif');
 
--- =====================================================
--- 16. TABLE campagne_publicitaire
--- =====================================================
+-- ============================================
+-- TABLE campagne_publicitaire
+-- ============================================
 CREATE TABLE campagne_publicitaire (
     id_campagne INT AUTO_INCREMENT PRIMARY KEY,
     id_pro INT NOT NULL,
@@ -350,12 +356,9 @@ CREATE TABLE campagne_publicitaire (
     FOREIGN KEY (id_pro) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO campagne_publicitaire (id_pro, titre, description, budget, date_debut, date_fin, statut) VALUES
-(4, 'Promotion atelier bois recycle', 'Campagne locale sur 30 jours', 180.00, '2026-05-01', '2026-05-31', 'en_attente');
-
--- =====================================================
--- 17. TABLE audit_log
--- =====================================================
+-- ============================================
+-- TABLE audit_log
+-- ============================================
 CREATE TABLE audit_log (
     id_audit INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,
@@ -368,13 +371,9 @@ CREATE TABLE audit_log (
     FOREIGN KEY (id_user) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO audit_log (id_user, action, cible_type, cible_id, details) VALUES
-(1, 'VALIDATION_ANNONCE', 'annonce', 1, 'Annonce validee pendant la phase de demo'),
-(2, 'VALIDATION_DEPOT', 'demande_depot', 1, 'Demande de depot approuvee par le staff');
-
--- =====================================================
--- 18. TABLE forum_categories
--- =====================================================
+-- ============================================
+-- FORUM TABLES
+-- ============================================
 CREATE TABLE forum_categories (
     id_category INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(120) NOT NULL,
@@ -387,19 +386,6 @@ CREATE TABLE forum_categories (
     UNIQUE KEY uk_forum_category_slug (slug)
 ) ENGINE=InnoDB;
 
-INSERT INTO forum_categories (name, slug, description, sort_order, is_active) VALUES
-('Questions generales', 'questions-generales', 'Echanges communautaires et entraide', 1, 1),
-('Reparation', 'reparation', 'Conseils reparation et maintenance', 2, 1),
-('Upcycling', 'upcycling', 'Projets creatifs et reemploi', 3, 1),
-('Conteneurs', 'conteneurs', 'Depots, collecte et logistique', 4, 1),
-('Formations', 'formations', 'Ateliers et sessions', 5, 1),
-('Vie equipe', 'vie-equipe', 'Coordination interne equipe', 6, 1),
-('Animation ateliers', 'animation-ateliers', 'Animation terrain et ateliers', 7, 1),
-('Formation continue', 'formation-continue', 'Ressources pedagogiques salarie', 8, 1);
-
--- =====================================================
--- 19. TABLE forum_topics
--- =====================================================
 CREATE TABLE forum_topics (
     id_topic INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
@@ -419,13 +405,6 @@ CREATE TABLE forum_topics (
     FOREIGN KEY (author_id) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO forum_topics (category_id, author_id, title, slug, status, is_pinned, posts_count, last_post_at) VALUES
-(3, 4, 'Idees de reemploi textile', 'idees-reemploi-textile-1', 'open', 1, 2, NOW()),
-(8, 4, 'Preparer un atelier debutant', 'preparer-atelier-debutant-2', 'open', 0, 0, NULL);
-
--- =====================================================
--- 20. TABLE forum_posts
--- =====================================================
 CREATE TABLE forum_posts (
     id_post INT AUTO_INCREMENT PRIMARY KEY,
     topic_id INT NOT NULL,
@@ -438,15 +417,6 @@ CREATE TABLE forum_posts (
     FOREIGN KEY (author_id) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO forum_posts (topic_id, author_id, content) VALUES
-(1, 4, 'Quels materiaux privilegier pour debuter avec un groupe de 12 participants ?'),
-(1, 2, 'Commencez par coton et denim recuperes, avec des patrons simples.');
-
-UPDATE forum_topics SET posts_count = 2, last_post_at = NOW() WHERE id_topic = 1;
-
--- =====================================================
--- 21. TABLE forum_reports
--- =====================================================
 CREATE TABLE forum_reports (
     id_report INT AUTO_INCREMENT PRIMARY KEY,
     post_id INT NOT NULL,
@@ -462,12 +432,30 @@ CREATE TABLE forum_reports (
     FOREIGN KEY (handled_by) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
-INSERT INTO forum_reports (post_id, reporter_id, reason, details, status) VALUES
-(2, 4, 'off_topic', 'Message a verifier avant publication officielle', 'pending');
+CREATE TABLE forum_topic_views (
+    id_view INT AUTO_INCREMENT PRIMARY KEY,
+    topic_id INT NOT NULL,
+    user_id INT NOT NULL,
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_topic_user (topic_id, user_id),
+    FOREIGN KEY (topic_id) REFERENCES forum_topics(id_topic) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
 
--- =====================================================
--- 22. TABLE document_genere
--- =====================================================
+CREATE TABLE forum_moderation_logs (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    moderator_id INT NOT NULL,
+    action VARCHAR(80) NOT NULL,
+    target_type ENUM('category','topic','post','report') NOT NULL,
+    target_id INT NOT NULL,
+    reason VARCHAR(255) DEFAULT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (moderator_id) REFERENCES utilisateur(id_user)
+) ENGINE=InnoDB;
+
+-- ============================================
+-- TABLE document_genere
+-- ============================================
 CREATE TABLE document_genere (
     id_document INT AUTO_INCREMENT PRIMARY KEY,
     id_user INT NOT NULL,
@@ -485,14 +473,9 @@ CREATE TABLE document_genere (
     FOREIGN KEY (id_inscription) REFERENCES inscription(id_inscription)
 ) ENGINE=InnoDB;
 
-INSERT INTO document_genere (id_user, type, titre, file_path, contenu_html, id_paiement, id_demande, id_inscription) VALUES
-(3, 'recu_paiement', 'Recu atelier couture', 'documents/recu_1.html', '<h1>Recu paiement</h1><p>Paiement confirme.</p>', 1, NULL, 1),
-(3, 'fiche_depot', 'Fiche depot C-002', 'documents/depot_2.html', '<h1>Fiche depot</h1><p>Code acces: ACC-UC-2026-0002</p>', NULL, 2, NULL),
-(4, 'facture_abonnement', 'Facture abonnement premium', 'documents/facture_abonnement_pro1.html', '<h1>Facture abonnement</h1><p>Formule premium active.</p>', NULL, NULL, NULL);
-
--- =====================================================
--- 23. TABLE facture
--- =====================================================
+-- ============================================
+-- TABLE facture
+-- ============================================
 CREATE TABLE facture (
     id_facture INT AUTO_INCREMENT PRIMARY KEY,
     numero VARCHAR(60) NOT NULL UNIQUE,
@@ -508,41 +491,92 @@ CREATE TABLE facture (
     FOREIGN KEY (id_paiement) REFERENCES paiement(id_paiement)
 ) ENGINE=InnoDB;
 
-INSERT INTO facture (numero, id_user, id_paiement, montant_ht, montant_ttc, statut) VALUES
-('FAC-2026-0001', 3, 1, 16.67, 20.00, 'generee'),
-('FAC-2026-0002', 4, 3, 25.00, 30.00, 'generee');
+-- ============================================
+-- INSERTION DONNEES FORUM
+-- ============================================
 
--- =====================================================
--- 24. TABLE forum_topic_views
--- =====================================================
-CREATE TABLE forum_topic_views (
-    id_view INT AUTO_INCREMENT PRIMARY KEY,
-    topic_id INT NOT NULL,
-    user_id INT NOT NULL,
-    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_topic_user (topic_id, user_id),
-    FOREIGN KEY (topic_id) REFERENCES forum_topics(id_topic) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES utilisateur(id_user)
-) ENGINE=InnoDB;
+INSERT INTO forum_categories (id_category, name, slug, description, sort_order, is_active) VALUES
+(1, 'Questions générales', 'questions-generales', 'Échanges communautaires et entraide sur l\'upcycling', 1, 1),
+(2, 'Réparation', 'reparation', 'Conseils réparation et maintenance d\'objets', 2, 1),
+(3, 'Upcycling', 'upcycling', 'Projets créatifs et réemploi de matériaux', 3, 1),
+(4, 'Conteneurs', 'conteneurs', 'Dépôts, collecte et logistique des conteneurs', 4, 1),
+(5, 'Formations', 'formations', 'Ateliers et sessions de formation', 5, 1);
 
--- =====================================================
--- 25. TABLE forum_moderation_logs
--- =====================================================
-CREATE TABLE forum_moderation_logs (
-    id_log INT AUTO_INCREMENT PRIMARY KEY,
-    moderator_id INT NOT NULL,
-    action VARCHAR(80) NOT NULL,
-    target_type ENUM('category','topic','post','report') NOT NULL,
-    target_id INT NOT NULL,
-    reason VARCHAR(255) DEFAULT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (moderator_id) REFERENCES utilisateur(id_user)
-) ENGINE=InnoDB;
+INSERT INTO forum_topics (id_topic, category_id, author_id, title, slug, status, is_pinned, is_locked, is_hidden, views_count, posts_count, last_post_at, created_at) VALUES
+(1, 1, 3, 'Comment bien débuter dans l\'upcycling ?', 'comment-bien-debuter-dans-upcycling', 'open', 1, 0, 0, 156, 5, '2026-06-10 15:30:00', '2026-06-01 10:00:00'),
+(2, 2, 6, 'Réparer une vieille chaise en bois', 'reparer-une-vieille-chaise-en-bois', 'open', 0, 0, 0, 89, 3, '2026-06-09 18:20:00', '2026-06-03 14:15:00'),
+(3, 3, 7, 'Transformation de palettes en mobilier', 'transformation-palettes-mobilier', 'open', 0, 0, 0, 234, 8, '2026-06-10 20:45:00', '2026-06-02 09:30:00'),
+(4, 4, 3, 'Question sur les conteneurs de dépôt', 'question-conteneurs-depot', 'open', 0, 0, 0, 45, 2, '2026-06-08 11:00:00', '2026-06-05 16:20:00'),
+(5, 5, 4, 'Formation upcycling pour professionnels', 'formation-upcycling-professionnels', 'open', 0, 0, 0, 67, 4, '2026-06-07 14:30:00', '2026-06-04 08:45:00'),
+(6, 1, 8, 'Où trouver des matériaux gratuits pour upcycler ?', 'ou-trouver-materiaux-gratuits', 'open', 0, 0, 0, 112, 6, '2026-06-09 09:15:00', '2026-06-03 11:00:00'),
+(7, 2, 5, 'Réparation d\'un vélo ancien', 'reparation-velo-ancien', 'open', 1, 0, 0, 78, 3, '2026-06-08 16:45:00', '2026-06-04 13:30:00'),
+(8, 3, 3, 'Création de luminaires avec des bocaux', 'creation-luminaires-bocaux', 'open', 0, 0, 0, 145, 7, '2026-06-10 12:00:00', '2026-06-01 17:15:00');
 
+INSERT INTO forum_posts (id_post, topic_id, author_id, content, created_at) VALUES
+(1, 1, 3, 'Bonjour à tous ! Je débute dans l\'upcycling et je cherche des conseils pour commencer. Quels outils sont indispensables ? Quels matériaux sont les plus faciles à travailler ?', '2026-06-01 10:00:00'),
+(2, 1, 6, 'Bienvenue ! Je recommande de commencer avec du bois de palette, c\'est facile à trouver et à travailler. Outils indispensables : une ponceuse, un marteau et des vis.', '2026-06-01 11:30:00'),
+(3, 1, 7, 'Je plussoie pour le bois de palette ! La peinture à la craie est aussi très sympa pour débuter. N\'hésitez pas à regarder des tutos sur YouTube.', '2026-06-01 14:20:00'),
+(4, 1, 3, 'Merci pour vos conseils ! Je vais me lancer sur une petite étagère en palette.', '2026-06-02 09:15:00'),
+(5, 1, 8, 'Super projet ! N\'oublie pas de bien poncer les palettes pour éviter les échardes.', '2026-06-10 15:30:00'),
+(6, 2, 6, 'J\'ai une vieille chaise en bois massif, le siège est cassé. Comment puis-je la réparer ?', '2026-06-03 14:15:00'),
+(7, 2, 3, 'Tu peux remplacer l\'assise par une planche de contreplaqué et ajouter un coussin. Je l\'ai fait plusieurs fois !', '2026-06-04 10:00:00'),
+(8, 2, 5, 'Pense à décaper l\'ancienne peinture avant de poncer et de vernir. Ça lui redonnera une seconde jeunesse.', '2026-06-09 18:20:00'),
+(9, 3, 7, 'J\'ai récupéré 5 palettes. Des idées pour les transformer en mobilier de salon ?', '2026-06-02 09:30:00'),
+(10, 3, 3, 'Tu peux faire une table basse avec 2 palettes superposées, ou une bibliothèque murale. Je peux t\'envoyer des plans.', '2026-06-02 12:00:00'),
+(11, 3, 4, 'J\'ai fait une méridienne avec 3 palettes, c\'est top pour le jardin !', '2026-06-03 10:30:00'),
+(12, 3, 6, 'N\'oublie pas de traiter le bois avec une lasure protectrice si c\'est pour l\'extérieur.', '2026-06-03 16:45:00'),
+(13, 3, 7, 'Merci pour vos idées ! Je vais partir sur une table basse, j\'ai hâte de partager le résultat !', '2026-06-04 09:00:00'),
+(14, 3, 8, 'Hâte de voir le résultat, poste des photos quand tu auras fini !', '2026-06-10 20:45:00'),
+(15, 3, 3, 'Pour la finition, utilise de l\'huile de lin, c\'est écologique et ça protège bien le bois.', '2026-06-10 20:45:00'),
+(16, 3, 7, 'Merci pour l\'astuce ! Je vais essayer l\'huile de lin.', '2026-06-10 20:45:00'),
+(17, 4, 3, 'Les conteneurs de dépôt sont-ils accessibles à tous ? Y a-t-il des frais ?', '2026-06-05 16:20:00'),
+(18, 4, 1, 'Bonjour, les conteneurs sont accessibles gratuitement pour les particuliers après validation de votre demande.', '2026-06-08 11:00:00'),
+(19, 5, 4, 'Y a-t-il des formations certifiantes sur l\'upcycling pour les professionnels ?', '2026-06-04 08:45:00'),
+(20, 5, 5, 'Oui, nous proposons une formation de 2 jours certifiante. Contactez-nous pour plus d\'infos.', '2026-06-05 10:00:00'),
+(21, 5, 3, 'Je suis artisan, cette formation m\'intéresse beaucoup !', '2026-06-06 14:30:00'),
+(22, 5, 1, 'La prochaine session aura lieu le 15 juillet à Paris.', '2026-06-07 14:30:00'),
+(23, 6, 8, 'Où trouver des matériaux gratuits pour mes projets d\'upcycling ?', '2026-06-03 11:00:00'),
+(24, 6, 3, 'Les encombrants, les chantiers de démolition, les palettes des supermarchés, et bien sûr les conteneurs UpcycleConnect !', '2026-06-04 09:30:00'),
+(25, 6, 6, 'Les réseaux sociaux comme Leboncoin ou Geev sont aussi de bonnes sources.', '2026-06-05 15:20:00'),
+(26, 6, 7, 'N\'oubliez pas les magasins de bricolage qui donnent parfois leurs chutes.', '2026-06-06 11:00:00'),
+(27, 6, 8, 'Merci à tous pour vos suggestions !', '2026-06-08 14:00:00'),
+(28, 6, 3, 'Avec plaisir ! Bonne chance pour tes projets.', '2026-06-09 09:15:00'),
+(29, 7, 5, 'Comment restaurer un vélo des années 70 ? La rouille est présente sur le cadre.', '2026-06-04 13:30:00'),
+(30, 7, 3, 'Tu peux utiliser du vinaigre blanc et du bicarbonate pour enlever la rouille, puis repeindre avec une bombe spéciale métal.', '2026-06-05 14:15:00'),
+(31, 7, 6, 'Pense aussi à changer les câbles et gaines, ça fait une grosse différence !', '2026-06-08 16:45:00'),
+(32, 8, 3, 'J\'ai transformé des bocaux en verre en suspension lumineuse, voici le résultat !', '2026-06-01 17:15:00'),
+(33, 8, 7, 'Superbe réalisation ! Tu as utilisé quel type d\'ampoule ?', '2026-06-02 10:00:00'),
+(34, 8, 3, 'Des ampoules LED à filament, ça rend super bien !', '2026-06-03 11:30:00'),
+(35, 8, 6, 'Bravo, c\'est très inspirant !', '2026-06-05 09:00:00'),
+(36, 8, 8, 'J\'adore l\'idée, je vais essayer aussi !', '2026-06-06 14:00:00'),
+(37, 8, 5, 'N\'oubliez pas de percer un trou pour le passage du fil électrique.', '2026-06-07 16:00:00'),
+(38, 8, 3, 'Exact, j\'ai utilisé une mèche à verre. Merci pour le conseil !', '2026-06-10 12:00:00');
+
+UPDATE forum_topics SET posts_count = 5 WHERE id_topic = 1;
+UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 2;
+UPDATE forum_topics SET posts_count = 8 WHERE id_topic = 3;
+UPDATE forum_topics SET posts_count = 2 WHERE id_topic = 4;
+UPDATE forum_topics SET posts_count = 4 WHERE id_topic = 5;
+UPDATE forum_topics SET posts_count = 6 WHERE id_topic = 6;
+UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 7;
+UPDATE forum_topics SET posts_count = 7 WHERE id_topic = 8;
+
+UPDATE forum_topics SET last_post_at = '2026-06-10 15:30:00' WHERE id_topic = 1;
+UPDATE forum_topics SET last_post_at = '2026-06-09 18:20:00' WHERE id_topic = 2;
+UPDATE forum_topics SET last_post_at = '2026-06-10 20:45:00' WHERE id_topic = 3;
+UPDATE forum_topics SET last_post_at = '2026-06-08 11:00:00' WHERE id_topic = 4;
+UPDATE forum_topics SET last_post_at = '2026-06-07 14:30:00' WHERE id_topic = 5;
+UPDATE forum_topics SET last_post_at = '2026-06-09 09:15:00' WHERE id_topic = 6;
+UPDATE forum_topics SET last_post_at = '2026-06-08 16:45:00' WHERE id_topic = 7;
+UPDATE forum_topics SET last_post_at = '2026-06-10 12:00:00' WHERE id_topic = 8;
+
+-- ============================================
+-- VERIFICATION FINALE
+-- ============================================
 SET FOREIGN_KEY_CHECKS = 1;
 
--- =====================================================
--- VERIFICATION FINALE
--- =====================================================
-SELECT '✅ Base upcycleconnect prete pour Stripe !' AS message;
+SELECT '✅ Base upcycleconnect propre et corrigee avec donnees forum !' AS message;
 SELECT COUNT(*) AS nb_tables FROM information_schema.tables WHERE table_schema = 'upcycleconnect';
+SELECT COUNT(*) AS nb_utilisateurs FROM utilisateur;
+SELECT COUNT(*) AS nb_sujets FROM forum_topics;
+SELECT COUNT(*) AS nb_messages FROM forum_posts;

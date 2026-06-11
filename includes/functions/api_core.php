@@ -5,11 +5,11 @@ $envFile = __DIR__ . '/../../.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
-        if (strpos(trim($line), '#') === 0) continue; // Ignorer les commentaires
+        if (strpos(trim($line), '#') === 0) continue;
         $parts = explode('=', $line, 2);
         if (count($parts) === 2) {
             $name = trim($parts[0]);
-            $value = trim(trim($parts[1]), '"\''); // Enlever les quotes éventuelles
+            $value = trim(trim($parts[1]), '\'"');
             if (!array_key_exists($name, $_SERVER) && !array_key_exists($name, $_ENV)) {
                 putenv(sprintf('%s=%s', $name, $value));
                 $_ENV[$name] = $value;
@@ -19,7 +19,6 @@ if (file_exists($envFile)) {
     }
 }
 
-
 function callAPI($method, $endpoint, $token = null, $data = null) {
     $baseUrl = getenv('API_BASE_URL') ?: "http://localhost:8080";
     $url = $baseUrl . $endpoint;
@@ -27,7 +26,6 @@ function callAPI($method, $endpoint, $token = null, $data = null) {
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     
-    // Gestion des méthodes HTTP
     switch (strtoupper($method)) {
         case 'POST':
             curl_setopt($ch, CURLOPT_POST, true);
@@ -43,6 +41,10 @@ function callAPI($method, $endpoint, $token = null, $data = null) {
             break;
         case 'DELETE':
             curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+            break;
+        case 'GET':
+        default:
+            curl_setopt($ch, CURLOPT_HTTPGET, true);
             break;
     }
 
@@ -128,4 +130,5 @@ function api_delete($endpoint, $requireAuth = false) {
     $token = $requireAuth ? (isset($_SESSION['token']) ? $_SESSION['token'] : null) : null;
     return callAPI('DELETE', $endpoint, $token);
 }
+
 ?>

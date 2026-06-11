@@ -68,18 +68,18 @@ function forum_topic_badges(?array $topic): array {
     }
     $badges = [];
     if (!empty($topic['is_pinned'])) {
-        $badges[] = ['class' => 'badge-pinned', 'label' => 'Épinglé'];
+        $badges[] = ['class' => 'badge-pinned', 'label' => '📌 Épinglé'];
     }
     if (!empty($topic['is_locked'])) {
-        $badges[] = ['class' => 'badge-closed', 'label' => 'Verrouillé'];
+        $badges[] = ['class' => 'badge-closed', 'label' => '🔒 Verrouillé'];
     }
     $status = (string)($topic['status'] ?? 'open');
     if ($status === 'closed') {
-        $badges[] = ['class' => 'badge-closed', 'label' => 'Fermé'];
+        $badges[] = ['class' => 'badge-closed', 'label' => '🔒 Fermé'];
     } elseif ($status === 'hidden' || !empty($topic['is_hidden'])) {
-        $badges[] = ['class' => 'badge-reported', 'label' => 'Masqué'];
+        $badges[] = ['class' => 'badge-reported', 'label' => '🙈 Masqué'];
     } else {
-        $badges[] = ['class' => 'badge-open', 'label' => 'Ouvert'];
+        $badges[] = ['class' => 'badge-open', 'label' => '💬 Ouvert'];
     }
     return $badges;
 }
