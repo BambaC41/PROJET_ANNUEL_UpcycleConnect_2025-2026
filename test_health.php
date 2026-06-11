@@ -18,6 +18,8 @@ echo "<!DOCTYPE html>
         .test strong { display: block; margin-bottom: 4px; }
         .test code { display: block; background: #f1f5f9; padding: 4px; border-radius: 4px; font-size: 12px; margin-top: 4px; color: #64748b; }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>
 <h1>Tests de santé - UpcycleConnect</h1>\n";

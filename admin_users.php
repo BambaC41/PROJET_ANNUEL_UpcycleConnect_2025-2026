@@ -2,12 +2,13 @@
 require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/local_db.php';
 require_once 'includes/notifications.php';
+require_once 'includes/ui_helpers.php';
 
 $roleMap = [
     1 => 'Admin',
     2 => 'Particulier',
     3 => 'Professionnel',
-    4 => 'Salarié animateur/formateur',
+    4 => 'Salarié',
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['user_id'])) {
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['use
             $res = api_approve_pro($_SESSION['token'], $targetId);
             $auditOk = (($res['status'] ?? 0) === 200);
             $_SESSION['flash_toast'] = $auditOk
-                ? ['type' => 'success', 'message' => 'Compte pro approuvé (#' . $targetId . ').']
+                ? ['type' => 'success', 'message' => '✅ Compte pro approuvé (#' . $targetId . ').']
                 : ['type' => 'error', 'message' => 'Impossible d\'approuver le compte pro.'];
             if ($auditOk) {
                 notif_create($targetId, 'compte', 'Compte professionnel approuvé', 'Votre espace professionnel est accessible.');
@@ -37,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['use
                 $res = api_ban_user($_SESSION['token'], $targetId, trim((string)($_POST['ban_reason'] ?? 'Bannissement admin')), date('Y-m-d H:i:s', strtotime('+7 days')));
                 $auditOk = (($res['status'] ?? 0) === 200);
                 $_SESSION['flash_toast'] = $auditOk
-                    ? ['type' => 'success', 'message' => 'Utilisateur banni.']
+                    ? ['type' => 'success', 'message' => '✅ Utilisateur banni.']
                     : ['type' => 'error', 'message' => 'Bannissement impossible.'];
                 if ($auditOk) {
                     notif_create($targetId, 'compte', 'Compte suspendu', 'Votre compte a été suspendu par l\'administration.');
@@ -47,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['use
             $res = api_unban_user($_SESSION['token'], $targetId);
             $auditOk = (($res['status'] ?? 0) === 200);
             $_SESSION['flash_toast'] = $auditOk
-                ? ['type' => 'success', 'message' => 'Utilisateur débanni.']
+                ? ['type' => 'success', 'message' => '✅ Utilisateur débanni.']
                 : ['type' => 'error', 'message' => 'Débannissement impossible.'];
             if ($auditOk) {
                 notif_create($targetId, 'compte', 'Compte réactivé', 'Votre compte n\'est plus suspendu.');
@@ -66,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['use
                     if ($auditOk) {
                         $label = $roleMap[$newRole] ?? (string)$newRole;
                         notif_create($targetId, 'compte', 'Rôle modifié', 'Nouveau rôle : ' . $label . '.');
-                        $_SESSION['flash_toast'] = ['type' => 'success', 'message' => 'Rôle mis à jour.'];
+                        $_SESSION['flash_toast'] = ['type' => 'success', 'message' => '✅ Rôle mis à jour.'];
                         db_safe_exec(static function (PDO $pdo) use ($selfId, $targetId, $newRole): void {
                             $audit = $pdo->prepare('INSERT INTO audit_log (id_user, action, cible_type, cible_id, details, created_at) VALUES (?, ?, "utilisateur", ?, ?, NOW())');
                             $audit->execute([$selfId, 'CHANGE_ROLE', $targetId, 'Nouveau role ' . $newRole]);
@@ -94,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_pro_id'])) {
     $res = api_approve_pro($_SESSION['token'], $approveId);
     $ok = (($res['status'] ?? 0) === 200);
     $_SESSION['flash_toast'] = $ok
-        ? ['type' => 'success', 'message' => 'Compte pro approuvé (#' . $approveId . ').']
+        ? ['type' => 'success', 'message' => '✅ Compte pro approuvé (#' . $approveId . ').']
         : ['type' => 'error', 'message' => 'Impossible d\'approuver le compte pro (#' . $approveId . ').'];
     if ($ok) {
         notif_create($approveId, 'compte', 'Compte professionnel approuvé', 'Votre espace professionnel est accessible.');
@@ -104,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_pro_id'])) {
         }, null);
     }
     header('Location: admin_users.php');
-    exit();
+    exit;
 }
 
 $users = api_get_users($_SESSION['token']);
@@ -114,109 +115,152 @@ $q = mb_strtolower(trim((string)($_GET['q'] ?? '')));
 $roleFilter = (int)($_GET['role'] ?? 0);
 $approvedFilter = trim((string)($_GET['approved'] ?? 'all'));
 $bannedFilter = trim((string)($_GET['banned'] ?? 'all'));
+
+// Filtrer les utilisateurs
 $users = array_values(array_filter($users, function($u) use ($q, $roleFilter, $approvedFilter, $bannedFilter) {
-    if ($roleFilter > 0 && (int)($u['id_role'] ?? 0) !== $roleFilter) {
-        return false;
-    }
-    if ($approvedFilter !== 'all' && (int)($u['is_approved'] ?? 0) !== ($approvedFilter === '1' ? 1 : 0)) {
-        return false;
-    }
-    if ($bannedFilter !== 'all' && (int)($u['is_banned'] ?? 0) !== ($bannedFilter === '1' ? 1 : 0)) {
-        return false;
-    }
+    if ($roleFilter > 0 && (int)($u['id_role'] ?? 0) !== $roleFilter) return false;
+    if ($approvedFilter !== 'all' && (int)($u['is_approved'] ?? 0) !== ($approvedFilter === '1' ? 1 : 0)) return false;
+    if ($bannedFilter !== 'all' && (int)($u['is_banned'] ?? 0) !== ($bannedFilter === '1' ? 1 : 0)) return false;
     $needle = mb_strtolower((string)($u['email'] ?? '') . ' ' . (string)($u['pseudo'] ?? ''));
-    if ($q !== '' && strpos($needle, $q) === false) {
-        return false;
-    }
+    if ($q !== '' && strpos($needle, $q) === false) return false;
     return true;
 }));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gestion utilisateurs</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
-    <section class="admin-section">
-        <h1>Utilisateurs et validation PRO</h1>
-        <h2 style="font-size:18px;margin-top:18px;">Professionnels en attente</h2>
-        <table class="admin-table">
-            <thead><tr><th>Photo</th><th>ID</th><th>Email</th><th>Nom</th><th>Créé le</th><th>Action</th></tr></thead>
-            <tbody>
-            <?php if (empty($pendingPros)): ?>
-                <tr><td colspan="6" style="text-align:center;">Aucun pro en attente.</td></tr>
-            <?php else: foreach ($pendingPros as $pro): ?>
-                <tr>
-                    <td><?php if (!empty($pro['photo_profil'])): ?><img src="<?= e(vc_media_url($pro['photo_profil'])) ?>" alt="Photo" style="width:38px;height:38px;border-radius:50%;object-fit:cover;"><?php else: ?>👤<?php endif; ?></td>
-                    <td><?= e($pro['id_user'] ?? '') ?></td>
-                    <td><?= e($pro['email'] ?? '') ?></td>
-                    <td><?= e(trim(($pro['prenom'] ?? '') . ' ' . ($pro['nom'] ?? ''))) ?></td>
-                    <td><?= e(formatDateFr($pro['created_at'] ?? '')) ?></td>
-                    <td>
-                        <form method="POST">
-                            <input type="hidden" name="approve_pro_id" value="<?= e($pro['id_user'] ?? 0) ?>">
-                            <button type="submit" class="btn-primary">Valider le PRO</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; endif; ?>
-            </tbody>
-        </table>
-    </section>
-
-    <section class="admin-section">
-        <h2>Liste complète</h2>
-        <form method="GET" class="row-actions">
-            <input class="input" type="search" name="q" value="<?= e($q) ?>" placeholder="Email ou pseudo">
-            <select class="input" name="role"><option value="0">Tous rôles</option><?php foreach($roleMap as $rid=>$rname): ?><option value="<?= $rid ?>" <?= $roleFilter===$rid?'selected':'' ?>><?= e($rname) ?></option><?php endforeach; ?></select>
-            <select class="input" name="approved"><option value="all">Approuvé: tous</option><option value="1" <?= $approvedFilter==='1'?'selected':'' ?>>Oui</option><option value="0" <?= $approvedFilter==='0'?'selected':'' ?>>Non</option></select>
-            <select class="input" name="banned"><option value="all">Banni: tous</option><option value="1" <?= $bannedFilter==='1'?'selected':'' ?>>Oui</option><option value="0" <?= $bannedFilter==='0'?'selected':'' ?>>Non</option></select>
-            <button class="btn-outline" type="submit">Filtrer</button>
-        </form>
+<main class="pro-shell page-shell">
+    <?php include 'includes/flash_toast.php'; ?>
+    
+    <!-- Professionnels en attente -->
+    <section class="pro-card">
+        <h2>👔 Professionnels en attente de validation</h2>
         <div class="table-responsive">
-        <table class="admin-table">
-            <thead><tr><th>Photo</th><th>ID</th><th>Email</th><th>Pseudo</th><th>Rôle</th><th>OK</th><th>Banni</th><th>Créé</th><th>Actions</th></tr></thead>
-            <tbody>
-            <?php foreach ($users as $u):
-                $uid = (int)($u['id_user'] ?? 0);
-                $isSelf = $uid === (int)($_SESSION['user_id'] ?? 0);
-            ?>
-                <tr>
-                    <td><?php if (!empty($u['photo_profil'])): ?><img src="<?= e(vc_media_url($u['photo_profil'])) ?>" alt="Photo" style="width:32px;height:32px;border-radius:50%;object-fit:cover;"><?php else: ?>👤<?php endif; ?></td>
-                    <td><?= e($uid) ?></td>
-                    <td><?= e($u['email'] ?? '') ?></td>
-                    <td><?= e($u['pseudo'] ?? '') ?></td>
-                    <td><?= e($roleMap[(int)($u['id_role'] ?? 0)] ?? '') ?></td>
-                    <td><?= !empty($u['is_approved']) ? 'Oui' : 'Non' ?></td>
-                    <td><?= !empty($u['is_banned']) ? 'Oui' : 'Non' ?></td>
-                    <td><?= e(formatDateFr($u['created_at'] ?? '')) ?></td>
-                    <td>
-                        <form method="POST" class="actions-compact">
-                            <input type="hidden" name="user_id" value="<?= $uid ?>">
-                            <select class="input" name="new_role" title="Rôle"><?php foreach ($roleMap as $rid => $rname): ?><option value="<?= $rid ?>" <?= (int)($u['id_role'] ?? 0) === $rid ? 'selected' : '' ?>><?= e($rname) ?></option><?php endforeach; ?></select>
-                            <button class="btn-outline" name="action" value="change_role" type="submit">Changer le rôle</button>
-                            <?php if (!$isSelf): ?>
-                                <?php if (!empty($u['is_banned'])): ?>
-                                    <button class="btn-outline" name="action" value="unban" type="submit">Débannir</button>
-                                <?php else: ?>
-                                    <button class="btn-danger" name="action" value="ban" type="submit">Bannir</button>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                            <?php if ((int)($u['id_role'] ?? 0) === 3 && empty($u['is_approved'])): ?>
-                                <button class="btn-primary" name="action" value="approve_pro" type="submit">OK Pro</button>
-                            <?php endif; ?>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+            <table class="table">
+                <thead>
+                    <tr><th>Photo</th><th>ID</th><th>Email</th><th>Nom</th><th>Créé le</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                <?php if (empty($pendingPros)): ?>
+                    <tr><td colspan="6" style="text-align:center;">✅ Aucun professionnel en attente.</td></tr>
+                <?php else: foreach ($pendingPros as $pro): ?>
+                    <tr>
+                        <td style="text-align:center;">
+                            <?php if (!empty($pro['photo_profil'])): ?>
+                                <img src="<?= e(vc_media_url($pro['photo_profil'])) ?>" alt="Photo" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+                            <?php else: ?>👤<?php endif; ?>
+                        </td>
+                        <td><?= e($pro['id_user'] ?? '—') ?></td>
+                        <td><?= e($pro['email'] ?? '—') ?></td>
+                        <td><?= e(trim(($pro['prenom'] ?? '') . ' ' . ($pro['nom'] ?? ''))) ?: '—' ?></td>
+                        <td><?= formatDateFr($pro['created_at'] ?? '') ?></td>
+                        <td class="row-actions">
+                            <form method="POST">
+                                <input type="hidden" name="approve_pro_id" value="<?= e($pro['id_user'] ?? 0) ?>">
+                                <button type="submit" class="btn-success">✅ Valider le PRO</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
         </div>
     </section>
-</section>
+
+    <!-- Liste complète des utilisateurs -->
+    <section class="pro-card">
+        <h2>👥 Liste complète des utilisateurs</h2>
+        <form method="GET" class="row-actions" style="margin-bottom:20px; flex-wrap:wrap;">
+            <input class="input" type="search" name="q" value="<?= e($q) ?>" placeholder="Email ou pseudo" style="width:200px;">
+            <select class="input" name="role" style="width:150px;">
+                <option value="0">Tous rôles</option>
+                <?php foreach($roleMap as $rid=>$rname): ?>
+                    <option value="<?= $rid ?>" <?= $roleFilter===$rid?'selected':'' ?>><?= e($rname) ?></option>
+                <?php endforeach; ?>
+            </select>
+            <select class="input" name="approved" style="width:130px;">
+                <option value="all">Approuvé: tous</option>
+                <option value="1" <?= $approvedFilter==='1'?'selected':'' ?>>Oui</option>
+                <option value="0" <?= $approvedFilter==='0'?'selected':'' ?>>Non</option>
+            </select>
+            <select class="input" name="banned" style="width:130px;">
+                <option value="all">Banni: tous</option>
+                <option value="1" <?= $bannedFilter==='1'?'selected':'' ?>>Oui</option>
+                <option value="0" <?= $bannedFilter==='0'?'selected':'' ?>>Non</option>
+            </select>
+            <button class="btn-outline" type="submit">Filtrer</button>
+        </form>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Pseudo</th>
+                        <th>Rôle</th>
+                        <th>Approuvé</th>
+                        <th>Banni</th>
+                        <th>Créé le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($users as $u):
+                    $uid = (int)($u['id_user'] ?? 0);
+                    $isSelf = $uid === (int)($_SESSION['user_id'] ?? 0);
+                ?>
+                    <tr>
+                        <td style="text-align:center;">
+                            <?php if (!empty($u['photo_profil'])): ?>
+                                <img src="<?= e(vc_media_url($u['photo_profil'])) ?>" alt="Photo" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                            <?php else: ?>👤<?php endif; ?>
+                        </td>
+                        <td><?= e($uid) ?></td>
+                        <td><?= e($u['email'] ?? '—') ?></td>
+                        <td><?= e($u['pseudo'] ?? '—') ?></td>
+                        <td><?= e($roleMap[(int)($u['id_role'] ?? 0)] ?? '—') ?></td>
+                        <td><?= !empty($u['is_approved']) ? '<span class="status-badge status-ok">✅ Oui</span>' : '<span class="status-badge status-warn">⏳ Non</span>' ?></td>
+                        <td><?= !empty($u['is_banned']) ? '<span class="status-badge status-danger">🚫 Oui</span>' : '<span class="status-badge status-ok">✅ Non</span>' ?></td>
+                        <td><?= formatDateFr($u['created_at'] ?? '') ?></td>
+                        <td class="row-actions">
+                            <form method="POST" class="row-actions" style="gap:6px; flex-wrap:wrap;">
+                                <input type="hidden" name="user_id" value="<?= $uid ?>">
+                                <select class="input" name="new_role" style="width:120px;">
+                                    <?php foreach ($roleMap as $rid => $rname): ?>
+                                        <option value="<?= $rid ?>" <?= (int)($u['id_role'] ?? 0) === $rid ? 'selected' : '' ?>><?= e($rname) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button class="btn-outline" name="action" value="change_role" type="submit">🔄 Changer</button>
+                                <?php if (!$isSelf): ?>
+                                    <?php if (!empty($u['is_banned'])): ?>
+                                        <button class="btn-outline" name="action" value="unban" type="submit">🔓 Débannir</button>
+                                    <?php else: ?>
+                                        <button class="btn-danger" name="action" value="ban" type="submit">🚫 Bannir</button>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                                <?php if ((int)($u['id_role'] ?? 0) === 3 && empty($u['is_approved'])): ?>
+                                    <button class="btn-success" name="action" value="approve_pro" type="submit">✅ Approuver</button>
+                                <?php endif; ?>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
-<?php include 'includes/flash_toast.php'; ?>
 </body>
 </html>

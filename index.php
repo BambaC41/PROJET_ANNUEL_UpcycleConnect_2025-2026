@@ -26,6 +26,8 @@ if ($isConnected) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/public.css">
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>
 <header class="navbar">

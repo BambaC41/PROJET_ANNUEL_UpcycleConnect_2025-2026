@@ -52,20 +52,26 @@ foreach ($categories as $c) {
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Forum catégories</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
+<main class="pro-shell page-shell">
     <?php include 'includes/flash_toast.php'; ?>
-    <section class="admin-section">
-        <h1>Forum — catégories</h1>
+    <section class="pro-card">
+        <h1>📂 Forum — catégories</h1>
         <p class="muted"><a href="admin_forum.php">← Modération forum</a></p>
 
-        <div class="admin-card" style="padding:16px;margin:16px 0;border:1px solid #e2e8f0;border-radius:8px;">
-            <h2><?= $edit ? 'Modifier' : 'Nouvelle catégorie' ?></h2>
-            <form method="POST" class="row-actions" style="flex-wrap:wrap;">
+        <div class="pro-card" style="margin-bottom:24px; background:#f8fafc;">
+            <h2><?= $edit ? '✏️ Modifier' : '➕ Nouvelle catégorie' ?></h2>
+            <form method="POST" class="form-grid" style="grid-template-columns:repeat(auto-fit, minmax(200px,1fr));">
                 <?php if ($edit): ?>
                     <input type="hidden" name="update_category_id" value="<?= (int)($edit['id'] ?? 0) ?>">
                 <?php else: ?>
@@ -75,35 +81,40 @@ foreach ($categories as $c) {
                 <input class="input" name="slug" placeholder="slug-url" value="<?= e($edit['slug'] ?? '') ?>" required>
                 <input class="input" name="description" placeholder="Description" value="<?= e($edit['description'] ?? '') ?>">
                 <input class="input" type="number" name="sort_order" value="<?= (int)($edit['sort_order'] ?? 0) ?>" style="width:100px;">
-                <label><input type="checkbox" name="is_active" value="1" <?= (!$edit || !empty($edit['is_active'])) ? 'checked' : '' ?>> Active</label>
-                <button class="btn-primary" type="submit"><?= $edit ? 'Enregistrer' : 'Créer' ?></button>
-                <?php if ($edit): ?><a class="btn-outline" href="admin_forum_categories.php">Annuler</a><?php endif; ?>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" name="is_active" value="1" <?= (!$edit || !empty($edit['is_active'])) ? 'checked' : '' ?>> Active</label>
+                <div class="row-actions">
+                    <button class="btn-primary" type="submit"><?= $edit ? '💾 Enregistrer' : '➕ Créer' ?></button>
+                    <?php if ($edit): ?><a class="btn-outline" href="admin_forum_categories.php">❌ Annuler</a><?php endif; ?>
+                </div>
             </form>
         </div>
 
-        <table class="admin-table">
-            <thead><tr><th>ID</th><th>Nom</th><th>Slug</th><th>Ordre</th><th>Active</th><th>Actions</th></tr></thead>
-            <tbody>
-            <?php foreach ($categories as $c): ?>
-                <tr>
-                    <td><?= (int)($c['id'] ?? 0) ?></td>
-                    <td><?= e($c['name'] ?? '') ?></td>
-                    <td><?= e($c['slug'] ?? '') ?></td>
-                    <td><?= (int)($c['sort_order'] ?? 0) ?></td>
-                    <td><?= !empty($c['is_active']) ? 'Oui' : 'Non' ?></td>
-                    <td>
-                        <a class="btn-outline" href="admin_forum_categories.php?edit=<?= (int)($c['id'] ?? 0) ?>">Modifier</a>
-                        <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette catégorie ?');">
-                            <input type="hidden" name="delete_category_id" value="<?= (int)($c['id'] ?? 0) ?>">
-                            <button class="btn-danger" type="submit">Supprimer</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Nom</th><th>Slug</th><th>Ordre</th><th>Active</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($categories as $c): ?>
+                    <tr>
+                        <td><?= (int)($c['id'] ?? 0) ?></td>
+                        <td><strong><?= e($c['name'] ?? '') ?></strong></td>
+                        <td><?= e($c['slug'] ?? '') ?></td>
+                        <td><?= (int)($c['sort_order'] ?? 0) ?></td>
+                        <td><?= !empty($c['is_active']) ? '<span class="status-badge status-ok">✅ Oui</span>' : '<span class="status-badge status-muted">❌ Non</span>' ?></td>
+                        <td class="row-actions">
+                            <a class="btn-outline" href="admin_forum_categories.php?edit=<?= (int)($c['id'] ?? 0) ?>">✏️ Modifier</a>
+                            <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette catégorie ?');">
+                                <input type="hidden" name="delete_category_id" value="<?= (int)($c['id'] ?? 0) ?>">
+                                <button class="btn-danger" type="submit">🗑️ Supprimer</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
     </section>
-</section>
 </main>
 </body>
 </html>

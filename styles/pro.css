@@ -143,3 +143,21 @@
     grid-template-columns: 1fr;
   }
 }
+.pro-header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.pro-header nav ul li a:hover {
+    background: rgba(22, 163, 74, 0.1);
+    color: #2e7d32;
+}
+
+/* Supprimer les styles AlterNext s'ils existent */
+.alternex-logo, .alternex-header {
+    display: none !important;
+}

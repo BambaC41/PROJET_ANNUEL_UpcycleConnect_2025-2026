@@ -63,6 +63,8 @@ function pro_depot_badge(string $st): string
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>

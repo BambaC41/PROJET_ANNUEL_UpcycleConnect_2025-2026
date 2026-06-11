@@ -80,62 +80,80 @@ if (isset($_GET['export']) && $_GET['export'] === 'csv') {
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Finance et paiements</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
-<?php include 'includes/flash_toast.php'; ?>
-<section class="admin-section">
-    <h1>Finance et paiements</h1>
-    <div class="admin-kpi-grid">
-        <div class="admin-card"><h3>CA payé</h3><p><?= e(number_format($paid, 2, ',', ' ')) ?> €</p></div>
-        <div class="admin-card"><h3>En attente</h3><p><?= e(number_format($pending, 2, ',', ' ')) ?> €</p></div>
-        <div class="admin-card"><h3>Échoués</h3><p><?= e(number_format($failed, 2, ',', ' ')) ?> €</p></div>
-        <div class="admin-card"><h3>Total lignes</h3><p><?= count($rows) ?></p></div>
-        <div class="admin-card"><h3>TVA estimée (20%)</h3><p><?= e(number_format($paid * 0.2, 2, ',', ' ')) ?> €</p></div>
-    </div>
-    <form method="GET" class="row-actions">
-        <select class="input" name="status"><option value="all">Tous statuts</option><option value="paid">paid</option><option value="pending">pending</option><option value="failed">failed</option></select>
-        <input class="input" type="date" name="date_from" value="<?= e($dateFrom) ?>">
-        <input class="input" type="date" name="date_to" value="<?= e($dateTo) ?>">
-        <button class="btn-outline" type="submit">Filtrer</button>
-        <a class="btn-outline" href="admin_finance.php?export=csv">Export CSV</a>
-    </form>
-    <?php if (empty($rows)): render_empty_state('Aucun paiement', 'Les paiements démo apparaîtront ici après inscription ou facturation pro.'); else: ?>
-    <div class="table-responsive">
-    <table class="admin-table">
-        <thead><tr><th>ID</th><th>Payeur</th><th>Rôle</th><th>Prestation</th><th>Montant</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
-        <tbody>
-        <?php foreach ($rows as $p):
-            $amt = (float)($p['montant'] ?? $p['amount'] ?? 0);
-            $roleLabels = [1 => 'Admin', 2 => 'Particulier', 3 => 'Pro', 4 => 'Salarié'];
-        ?>
-            <tr>
-                <td><?= (int)$p['id_paiement'] ?></td>
-                <td><?= e($p['email'] ?? $p['pseudo'] ?? '') ?></td>
-                <td><?= e($roleLabels[(int)($p['id_role'] ?? 0)] ?? '') ?></td>
-                <td><?= e($p['prestation_titre'] ?? '—') ?></td>
-                <td><?= e(number_format($amt, 2, ',', ' ')) ?> €</td>
-                <td><?= e($p['pay_status'] ?? '') ?></td>
-                <td><?= e(formatDateFr($p['paid_at'] ?? '')) ?></td>
-                <td class="actions-compact">
-                    <a class="btn-outline" href="document_download.php?type=paiement&id=<?= (int)$p['id_paiement'] ?>">Facture</a>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="payment_id" value="<?= (int)$p['id_paiement'] ?>">
-                        <select class="input" name="new_status"><option value="paid">paid</option><option value="pending">pending</option><option value="failed">failed</option></select>
-                        <button class="btn-outline" type="submit">Appliquer</button>
-                    </form>
-                </td>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-    </div>
-    <?php endif; ?>
-</section>
-</section>
+<main class="pro-shell page-shell">
+    <?php include 'includes/flash_toast.php'; ?>
+    <section class="pro-card">
+        <h1>💰 Finance et paiements</h1>
+        
+        <div class="pro-kpis">
+            <article class="pro-kpi"><h3>CA payé</h3><p><?= e(number_format($paid, 2, ',', ' ')) ?> €</p></article>
+            <article class="pro-kpi"><h3>En attente</h3><p><?= e(number_format($pending, 2, ',', ' ')) ?> €</p></article>
+            <article class="pro-kpi"><h3>Échoués</h3><p><?= e(number_format($failed, 2, ',', ' ')) ?> €</p></article>
+            <article class="pro-kpi"><h3>Total lignes</h3><p><?= count($rows) ?></p></article>
+            <article class="pro-kpi"><h3>TVA (20%)</h3><p><?= e(number_format($paid * 0.2, 2, ',', ' ')) ?> €</p></article>
+        </div>
+
+        <form method="GET" class="row-actions" style="margin-bottom:20px;">
+            <select class="input" name="status" style="width:150px;">
+                <option value="all">Tous statuts</option>
+                <option value="paid" <?= $statusF === 'paid' ? 'selected' : '' ?>>paid</option>
+                <option value="pending" <?= $statusF === 'pending' ? 'selected' : '' ?>>pending</option>
+                <option value="failed" <?= $statusF === 'failed' ? 'selected' : '' ?>>failed</option>
+            </select>
+            <input class="input" type="date" name="date_from" value="<?= e($dateFrom) ?>" placeholder="Date début">
+            <input class="input" type="date" name="date_to" value="<?= e($dateTo) ?>" placeholder="Date fin">
+            <button class="btn-outline" type="submit">Filtrer</button>
+            <a class="btn-outline" href="admin_finance.php?export=csv">📎 Export CSV</a>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr><th>ID</th><th>Payeur</th><th>Rôle</th><th>Prestation</th><th>Montant</th><th>Statut</th><th>Date</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                <?php if (empty($rows)): ?>
+                    <tr><td colspan="8" style="text-align:center;">Aucun paiement.</td></tr>
+                <?php else: foreach ($rows as $p): ?>
+                    <?php $amt = (float)($p['montant'] ?? $p['amount'] ?? 0);
+                    $roleLabels = [1 => 'Admin', 2 => 'Particulier', 3 => 'Pro', 4 => 'Salarié']; ?>
+                    <tr>
+                        <td><?= (int)$p['id_paiement'] ?></td>
+                        <td><?= e($p['email'] ?? $p['pseudo'] ?? '') ?></td>
+                        <td><?= e($roleLabels[(int)($p['id_role'] ?? 0)] ?? '') ?></td>
+                        <td><?= e($p['prestation_titre'] ?? '—') ?></td>
+                        <td><?= e(number_format($amt, 2, ',', ' ')) ?> €</td>
+                        <td><span class="status-badge <?= ($p['pay_status'] ?? '') === 'paid' ? 'status-ok' : (($p['pay_status'] ?? '') === 'pending' ? 'status-warn' : 'status-danger') ?>"><?= e($p['pay_status'] ?? '') ?></span></td>
+                        <td><?= e(formatDateFr($p['paid_at'] ?? '')) ?></td>
+                        <td class="row-actions">
+                            <a class="btn-outline" href="document_download.php?type=paiement&id=<?= (int)$p['id_paiement'] ?>">📄 Facture</a>
+                            <form method="POST" style="display:inline-flex; gap:4px;">
+                                <input type="hidden" name="payment_id" value="<?= (int)$p['id_paiement'] ?>">
+                                <select class="input" name="new_status" style="width:100px;">
+                                    <option value="paid">paid</option>
+                                    <option value="pending">pending</option>
+                                    <option value="failed">failed</option>
+                                </select>
+                                <button class="btn-outline" type="submit">Appliquer</button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </section>
 </main>
 </body>
 </html>

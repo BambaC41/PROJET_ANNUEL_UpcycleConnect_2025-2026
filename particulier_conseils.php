@@ -20,7 +20,9 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
 ?>
 <!DOCTYPE html><html lang="fr"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Conseils particulier</title>
-<link rel="stylesheet" href="styles/style.css"><link rel="stylesheet" href="styles/pro.css"></head>
+<link rel="stylesheet" href="styles/style.css"><link rel="stylesheet" href="styles/pro.css">    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
 <body class="pro-page"><?php include 'includes/particulier_nav.php'; ?><main class="pro-shell page-shell">
 <section class="pro-card"><h1>💡 Espace conseils</h1>
 <form method="GET" class="row-actions"><input class="input" type="search" name="q" value="<?= e($query) ?>" placeholder="Filtrer par mot-clé..."><button class="btn-outline">Filtrer</button></form>

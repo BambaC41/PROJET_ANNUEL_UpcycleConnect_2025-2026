@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
 
 $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
 ?>
-<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Profil particulier</title><link rel="stylesheet" href="styles/style.css"><link rel="stylesheet" href="styles/pro.css"></head>
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Profil particulier</title><link rel="stylesheet" href="styles/style.css"><link rel="stylesheet" href="styles/pro.css">    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
 <body class="pro-page"><?php include 'includes/particulier_nav.php'; ?><main class="pro-shell page-shell">
 <section class="pro-card"><h1>👤 Mon profil</h1>
 <?php if ($flash !== ''): ?><div class="<?= $flashType === 'error' ? 'error-box' : 'success-box' ?>"><?= e($flash) ?></div><?php endif; ?>

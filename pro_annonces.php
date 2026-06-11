@@ -141,6 +141,8 @@ $filtered = array_values(array_filter($annonces, function ($a) use ($mode, $q) {
             opacity: 0.85;
         }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include __DIR__ . '/includes/pro_nav.php'; ?>

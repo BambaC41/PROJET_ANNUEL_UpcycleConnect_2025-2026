@@ -82,6 +82,8 @@ if (!$conseil) {
             margin-bottom: 16px;
         }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>

@@ -57,6 +57,8 @@ echo "<!DOCTYPE html>
         .test.fail { border-left-color: #dc2626; background: #fee2e2; }
         .warn { color: #f59e0b; }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>
 <h1>Vérification des includes/functions</h1>\n";

@@ -106,9 +106,10 @@ $filtered = array_values(array_filter($cards, function ($c) use ($type, $q) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catalogue particulier</title>
+    <title>Catalogue particulier - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>
@@ -138,27 +139,8 @@ $filtered = array_values(array_filter($cards, function ($c) use ($type, $q) {
                     <?php else: ?>
                         <span class="status-badge status-ok">Gratuit</span>
                     <?php endif; ?>
-                    <?php if (($c['kind'] ?? '') === 'evenement'): ?>
-                        <?php
-                        $sid = (int)($c['id_session'] ?? 0);
-                        $placesLeft = (int)($c['places'] ?? 0);
-                        $insRow = $insBySession[$sid] ?? null;
-                        $iid = (int)($insRow['id_inscription'] ?? 0);
-                        $isPaid = $iid > 0 && !empty($paidInscriptionIds[$iid]);
-                        ?>
-                        <?php if ($placesLeft <= 0): ?>
-                            <span class="status-badge status-muted">Complet</span>
-                        <?php elseif ($insRow && $pr <= 0): ?>
-                            <span class="status-badge status-ok">Inscription confirmée</span>
-                        <?php elseif ($insRow && $isPaid): ?>
-                            <span class="status-badge status-ok">Déjà inscrit — payé</span>
-                        <?php elseif ($insRow && !$isPaid && $pr > 0): ?>
-                            <span class="status-badge status-warn">Inscrit — paiement en attente</span>
-                        <?php elseif ($insRow): ?>
-                            <span class="status-badge status-ok">Déjà inscrit</span>
-                        <?php endif; ?>
-                    <?php endif; ?>
                 </p>
+                
                 <?php if (($c['kind'] ?? '') === 'evenement'): ?>
                     <?php
                     $sid = (int)($c['id_session'] ?? 0);
@@ -166,31 +148,40 @@ $filtered = array_values(array_filter($cards, function ($c) use ($type, $q) {
                     $insRow = $insBySession[$sid] ?? null;
                     $iid = (int)($insRow['id_inscription'] ?? 0);
                     $isPaid = $iid > 0 && !empty($paidInscriptionIds[$iid]);
+                    $isConfirmed = ($insRow['statut'] ?? '') === 'confirmee';
                     ?>
+                    
                     <?php if ($placesLeft <= 0): ?>
-                        <button class="btn-outline" type="button" disabled>Complet</button>
-                    <?php elseif ($insRow && $pr <= 0): ?>
-                        <button class="btn-outline" type="button" disabled>Inscription confirmée</button>
-                    <?php elseif ($insRow && $isPaid): ?>
-                        <button class="btn-outline" type="button" disabled>Déjà inscrit</button>
+                        <span class="status-badge status-muted" style="display:block; margin-top:8px;">❌ Complet</span>
+                        <button class="btn-outline" type="button" disabled style="margin-top:8px;">Complet</button>
+                        
+                    <?php elseif ($insRow && ($isConfirmed || $isPaid)): ?>
+                        <span class="status-badge status-ok" style="display:block; margin-top:8px;">✅ Inscrit et payé</span>
+                        <span class="btn-outline disabled" style="opacity:0.6; cursor:not-allowed; margin-top:8px;">✅ Déjà inscrit</span>
+                        
                     <?php elseif ($insRow && !$isPaid && $pr > 0): ?>
-                        <div class="row-actions" style="flex-wrap:wrap;">
-                            <a class="btn-outline" href="particulier_planning.php">Voir dans mon planning</a>
-                            <a class="btn-primary" href="paiement_checkout_demo.php?<?= http_build_query([
-                                'payment_type' => 'inscription',
-                                'amount' => $pr,
-                                'inscription_id' => $iid,
-                                'label' => 'Inscription événement',
-                            ]) ?>">Payer en démonstration</a>
+                        <span class="status-badge status-warn" style="display:block; margin-top:8px;">⏳ Paiement requis</span>
+                        <div class="row-actions" style="flex-wrap:wrap; margin-top:8px;">
+                            <a class="btn-primary" href="paiement_stripe.php?amount=<?= $pr * 100 ?>&item=Inscription+<?= urlencode($c['title']) ?>&inscription_id=<?= $iid ?>">
+                                💳 Payer (<?= number_format($pr, 2) ?>€)
+                            </a>
                         </div>
+                        
+                    <?php elseif ($insRow && $pr <= 0): ?>
+                        <span class="status-badge status-ok" style="display:block; margin-top:8px;">✅ Inscription gratuite confirmée</span>
+                        <span class="btn-outline disabled" style="opacity:0.6; cursor:not-allowed; margin-top:8px;">✅ Confirmé</span>
+                        
                     <?php elseif (!$insRow): ?>
-                        <form method="POST">
+                        <form method="POST" style="margin-top:8px;">
                             <input type="hidden" name="register_event_id" value="<?= $sid ?>">
-                            <button class="btn-primary" type="submit">S'inscrire</button>
+                            <button class="btn-primary" type="submit">📝 S'inscrire</button>
                         </form>
+                        
                     <?php else: ?>
-                        <button class="btn-outline" type="button" disabled>Déjà inscrit</button>
+                        <span class="status-badge status-ok" style="display:block; margin-top:8px;">✅ Inscription enregistrée</span>
+                        <span class="btn-outline disabled" style="opacity:0.6; cursor:not-allowed; margin-top:8px;">✅ Déjà inscrit</span>
                     <?php endif; ?>
+                    
                 <?php endif; ?>
             </article>
         <?php endforeach; ?>

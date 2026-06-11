@@ -83,6 +83,8 @@ $showCreate = $roleId >= 1 && $roleId <= 4;
     <?php if ($roleId === 1): ?><link rel="stylesheet" href="styles/admin.css"><?php endif; ?>
     <?php if ($roleId === 3): ?><link rel="stylesheet" href="styles/pro.css"><?php endif; ?>
     <?php if ($roleId === 4): ?><link rel="stylesheet" href="styles/employee.css"><?php endif; ?>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">
 <?php

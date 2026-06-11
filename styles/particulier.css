@@ -1084,3 +1084,13 @@ tr:last-child td {
     align-items: stretch;
   }
 }
+/* Animation pour les éléments surlignés */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+}
+
+.stat-card, .btn-primary, .score-card {
+    transition: all 0.3s ease;
+}

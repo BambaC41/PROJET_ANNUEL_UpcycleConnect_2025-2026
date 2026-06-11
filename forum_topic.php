@@ -92,6 +92,8 @@ $navFile = match ($roleId) {
     <title><?= $notFound ? 'Sujet introuvable' : e($topic['title'] ?? 'Forum') ?> — UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/ui-components.css">
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>
 <?php if ($navFile) {

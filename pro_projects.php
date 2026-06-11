@@ -61,6 +61,8 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/ui-components.css">
     <script src="scripts/modal.js" defer></script>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>

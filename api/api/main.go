@@ -50,6 +50,8 @@ func main() {
 	http.HandleFunc("/demandes-depot/", app.DemandeDepotByIDHandler)
 	http.HandleFunc("/me/demandes-depot", app.MyDemandesDepotHandler)
 	http.HandleFunc("/upload", app.UploadHandler)
+	http.HandleFunc("/create-checkout-session", app.CreateCheckoutSession)
+	http.HandleFunc("/verify-payment", app.VerifyPayment)
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

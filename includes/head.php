@@ -6,4 +6,5 @@
     <link rel="stylesheet" href="styles/admin.css">
     <link rel="stylesheet" href="styles/ui-components.css">
     <script src="scripts/modal.js" defer></script>
-</head> 
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>

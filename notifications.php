@@ -55,6 +55,8 @@ $role = (int)($_SESSION['role_id'] ?? 0);
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/employee.css">
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php

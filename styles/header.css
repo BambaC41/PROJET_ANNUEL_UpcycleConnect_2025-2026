@@ -1,0 +1,179 @@
+/* Header styles - Version propre sans AlterNext */
+
+header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+/* Logo */
+.logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-text {
+    font-weight: 700;
+    font-size: 18px;
+    margin-left: 12px;
+    color: #2e7d32;
+}
+
+.admin-header .logo-text {
+    color: #1a5e2a;
+}
+
+.pro-header .logo-text {
+    color: #2e7d32;
+}
+
+.salarie-header .logo-text {
+    color: #1565c0;
+}
+
+.particulier-header .logo-text {
+    color: #2e7d32;
+}
+
+/* Navigation */
+.main-nav ul {
+    display: flex;
+    list-style: none;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.main-nav li a {
+    padding: 8px 14px;
+    text-decoration: none;
+    color: #4a5568;
+    font-weight: 500;
+    border-radius: 30px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    display: inline-block;
+}
+
+.main-nav li a:hover {
+    background: rgba(22, 163, 74, 0.1);
+    color: #2e7d32;
+}
+
+/* Header actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-name {
+    font-weight: 600;
+    color: #2d3748;
+    background: #f0f2f5;
+    padding: 6px 14px;
+    border-radius: 30px;
+    font-size: 14px;
+}
+
+/* Boutons */
+.logout-btn {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 8px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.login-btn {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 8px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.login-btn:hover {
+    background: #2e7d32;
+    color: white;
+}
+
+.register-btn {
+    background: #2e7d32;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.register-btn:hover {
+    background: #1a5e2a;
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .header-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .main-nav ul {
+        justify-content: center;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-nav ul {
+        gap: 4px;
+    }
+    
+    .main-nav li a {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .logo-text {
+        font-size: 14px;
+    }
+}

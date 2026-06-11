@@ -102,6 +102,8 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
             }
         }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>

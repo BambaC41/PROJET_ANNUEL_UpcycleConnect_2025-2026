@@ -28,44 +28,57 @@ $pendingAnnonces = (($pendingRes['status'] ?? 0) === 200 && is_array($pendingRes
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Validation des annonces</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
-    <section class="admin-section">
-        <h1>Validation des annonces</h1>
-        <table class="admin-table">
-            <thead><tr><th>ID</th><th>Titre</th><th>Mode</th><th>Prix</th><th>Date</th><th>Action</th></tr></thead>
-            <tbody>
-            <?php if (empty($pendingAnnonces)): ?>
-                <tr><td colspan="6" style="text-align:center;">Aucune annonce en attente.</td></tr>
-            <?php else: foreach ($pendingAnnonces as $a): ?>
-                <tr>
-                    <td><?= e($a['id_annonce'] ?? '') ?></td>
-                    <td><?= e($a['titre'] ?? '') ?></td>
-                    <td><?= e($a['mode'] ?? '') ?></td>
-                    <td><?= (($a['mode'] ?? '') === 'vente') ? e(number_format((float)($a['prix'] ?? 0), 2, ',', ' ')) . ' €' : 'Gratuit' ?></td>
-                    <td><?= e(formatDateFr($a['created_at'] ?? '')) ?></td>
-                    <td style="display:flex; gap:8px;">
-                        <form method="POST">
-                            <input type="hidden" name="moderate_annonce_id" value="<?= e($a['id_annonce'] ?? 0) ?>">
-                            <input type="hidden" name="moderation_statut" value="validee">
-                            <button class="btn-primary" type="submit">Valider</button>
-                        </form>
-                        <form method="POST">
-                            <input type="hidden" name="moderate_annonce_id" value="<?= e($a['id_annonce'] ?? 0) ?>">
-                            <input type="hidden" name="moderation_statut" value="rejetee">
-                            <button class="btn-danger" type="submit">Rejeter</button>
-                        </form>
-                    </td>
-                </tr>
-            <?php endforeach; endif; ?>
-            </tbody>
-        </table>
+<main class="pro-shell page-shell">
+    <section class="pro-card">
+        <h1>📦 Validation des annonces</h1>
+        
+        <?php if (empty($pendingAnnonces)): ?>
+            <div class="success-box" style="text-align:center;">✅ Aucune annonce en attente de validation.</div>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr><th>ID</th><th>Titre</th><th>Mode</th><th>Prix</th><th>Date</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                    <?php foreach ($pendingAnnonces as $a): ?>
+                        <tr>
+                            <td><?= e($a['id_annonce'] ?? '') ?></td>
+                            <td><strong><?= e($a['titre'] ?? '') ?></strong></td>
+                            <td><?= e($a['mode'] ?? '') ?></td>
+                            <td><?= (($a['mode'] ?? '') === 'vente') ? e(formatPriceEur($a['prix'] ?? 0)) : 'Gratuit' ?></td>
+                            <td><?= e(formatDateFr($a['created_at'] ?? '')) ?></td>
+                            <td class="row-actions" style="gap:8px;">
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="moderate_annonce_id" value="<?= e($a['id_annonce'] ?? 0) ?>">
+                                    <input type="hidden" name="moderation_statut" value="validee">
+                                    <button class="btn-success" type="submit">✅ Valider</button>
+                                </form>
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="moderate_annonce_id" value="<?= e($a['id_annonce'] ?? 0) ?>">
+                                    <input type="hidden" name="moderation_statut" value="rejetee">
+                                    <button class="btn-danger" type="submit">❌ Rejeter</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
     </section>
-</section>
 </main>
+<?php include 'includes/flash_toast.php'; ?>
 </body>
 </html>

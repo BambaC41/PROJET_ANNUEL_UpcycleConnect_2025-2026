@@ -33,17 +33,31 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Mon profil</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
-    <section class="admin-section">
+<main class="pro-shell page-shell">
+    <section class="pro-card">
         <h1>👤 Mon profil admin</h1>
-        <?php if ($flash !== ''): ?><div class="<?= $flashType === 'error' ? 'error-box' : 'success-box' ?>"><?= e($flash) ?></div><?php endif; ?>
-        <?php if (!empty($me['photo_profil'])): ?><img src="<?= e(vc_media_url($me['photo_profil'])) ?>" alt="Photo profil" style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:2px solid #16a34a;margin-bottom:10px;"><?php endif; ?>
-        <form method="POST" enctype="multipart/form-data" class="form-grid">
+        <?php if ($flash !== ''): ?>
+            <div class="<?= $flashType === 'error' ? 'error-box' : 'success-box' ?>"><?= e($flash) ?></div>
+        <?php endif; ?>
+        
+        <?php if (!empty($me['photo_profil'])): ?>
+            <div style="text-align:center; margin-bottom:20px;">
+                <img src="<?= e(vc_media_url($me['photo_profil'])) ?>" alt="Photo profil" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary);">
+            </div>
+        <?php endif; ?>
+        
+        <form method="POST" enctype="multipart/form-data" class="form-grid" style="grid-template-columns:repeat(2,1fr);">
             <input type="hidden" name="update_profile" value="1">
             <input class="input" name="pseudo" value="<?= e($me['pseudo'] ?? '') ?>" placeholder="Pseudo">
             <input class="input" name="prenom" value="<?= e($me['prenom'] ?? '') ?>" placeholder="Prénom">
@@ -55,11 +69,12 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
             <input class="input" name="adresse_pays" value="<?= e($me['adresse_pays'] ?? '') ?>" placeholder="Pays">
             <input class="input" name="photo_profil" value="<?= e($me['photo_profil'] ?? '') ?>" placeholder="URL photo">
             <input class="input" type="file" name="photo_profil_file" accept="image/*">
-            <textarea class="input" name="bio" style="grid-column:1/-1;min-height:100px;" placeholder="Bio"><?= e($me['bio'] ?? '') ?></textarea>
-            <button class="btn-primary" type="submit">💾 Enregistrer</button>
+            <textarea class="input" name="bio" rows="4" placeholder="Bio" style="grid-column:span 2;"><?= e($me['bio'] ?? '') ?></textarea>
+            <div class="row-actions" style="grid-column:span 2;">
+                <button class="btn-primary" type="submit">💾 Enregistrer</button>
+            </div>
         </form>
     </section>
-</section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
 </body>

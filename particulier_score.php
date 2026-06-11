@@ -197,6 +197,8 @@ $co2Estimate = ($score['poids_total_kg'] ?? 0) * 2;
             transition: width 0.3s;
         }
     </style>
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>

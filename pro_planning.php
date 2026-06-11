@@ -44,6 +44,8 @@ foreach ($inscriptions as $ins) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/calendar.css">
+    <!-- OneSignal Push Notifications -->
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>

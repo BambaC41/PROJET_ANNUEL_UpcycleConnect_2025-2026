@@ -49,45 +49,55 @@ $title = $prestationsMap[(int)($data['id_prestation'] ?? 0)] ?? 'Prestation';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
-<?php include 'includes/head.php'; ?>
-<body class="admin-page">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Modifier événement</title>
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin.css">
+    <?php include 'includes/onesignal_head.php'; ?>
+</head>
+<body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="admin-layout">
-<?php include 'includes/sidebar.php'; ?>
-<section class="admin-content">
-    <section class="admin-section">
-        <h1>Modifier événement #<?= e((string)$id) ?></h1>
+<main class="pro-shell page-shell">
+    <section class="pro-card">
+        <h1>✏️ Modifier événement #<?= e((string)$id) ?></h1>
         <p class="muted"><?= e($title) ?></p>
         <form method="POST" class="form-grid" style="max-width:640px;">
             <input type="hidden" name="save_event" value="1">
-            <label>Lieu
+            <div>
+                <label>Lieu</label>
                 <input class="input" name="lieu" value="<?= e((string)($data['lieu'] ?? '')) ?>" required>
-            </label>
-            <label>Date début
+            </div>
+            <div>
+                <label>Date début</label>
                 <?php $tsDebut = strtotime((string)($data['date_debut'] ?? '')); ?>
                 <input class="input" type="datetime-local" name="date_debut" value="<?= e(date('Y-m-d\TH:i', $tsDebut !== false ? $tsDebut : time())) ?>">
-            </label>
-            <label>Date fin
+            </div>
+            <div>
+                <label>Date fin</label>
                 <?php $tsFin = strtotime((string)($data['date_fin'] ?? '')); ?>
                 <input class="input" type="datetime-local" name="date_fin" value="<?= e(date('Y-m-d\TH:i', $tsFin !== false ? $tsFin : time())) ?>">
-            </label>
-            <label>Capacité max
+            </div>
+            <div>
+                <label>Capacité max</label>
                 <input class="input" type="number" name="capacite_max" value="<?= e((string)(int)($data['capacite_max'] ?? 0)) ?>">
-            </label>
-            <label>Statut
+            </div>
+            <div>
+                <label>Statut</label>
                 <select class="input" name="statut">
                     <?php foreach (['en_attente', 'valide', 'rejete', 'annule'] as $st): ?>
                         <option value="<?= e($st) ?>" <?= (($data['statut'] ?? '') === $st) ? 'selected' : '' ?>><?= e($st) ?></option>
                     <?php endforeach; ?>
                 </select>
-            </label>
-            <div class="row-actions">
-                <button class="btn-primary" type="submit">Enregistrer</button>
-                <a class="btn-outline" href="admin_events.php">Annuler</a>
+            </div>
+            <div class="row-actions" style="margin-top:16px;">
+                <button class="btn-primary" type="submit">💾 Enregistrer</button>
+                <a class="btn-outline" href="admin_events.php">❌ Annuler</a>
             </div>
         </form>
     </section>
-</section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
 </body>
