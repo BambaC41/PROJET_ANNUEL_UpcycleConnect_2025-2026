@@ -1,2 +1,28 @@
-.aider*
+=# IDE
+.idea/
+.vscode/
+*.swp
+
 .env
+.env.*
+*.key
+*.pem
+
+# Logs
+*.log
+stripe_debug.log
+
+
+uploads/events/*
+uploads/conseils/*
+!uploads/events/.gitkeep
+!uploads/conseils/.gitkeep
+storage/documents/*
+!storage/documents/.gitkeep
+api/api/uploads/receipts/*.pdf
+api/api/uploads/reçus/*.pdf
+
+
+
+api/api/vendor/
+*.exe

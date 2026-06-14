@@ -77,5 +77,6 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
     </section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

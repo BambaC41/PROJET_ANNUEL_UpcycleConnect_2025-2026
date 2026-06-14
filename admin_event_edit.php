@@ -100,5 +100,6 @@ $title = $prestationsMap[(int)($data['id_prestation'] ?? 0)] ?? 'Prestation';
     </section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

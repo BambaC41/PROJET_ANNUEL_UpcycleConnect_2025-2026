@@ -149,6 +149,6 @@ $co2Estimate = (float)($score['poids_total_kg'] ?? 0) * 2;
         </div>
     </section>
 </main>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

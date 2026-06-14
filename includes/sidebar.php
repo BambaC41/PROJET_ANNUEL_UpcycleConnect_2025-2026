@@ -1,41 +1,41 @@
 <?php
-// includes/sidebar.php - Version clean sans AlterNext
+// includes/sidebar.php - Sidebar latérale pour l'admin
 ?>
 <aside class="admin-sidebar">
     <div class="sidebar-header">
         <div class="sidebar-logo">
-            <img src="assets/logo.png" alt="UpcycleConnect" style="height: 35px;">
-            <span class="sidebar-title">UpcycleConnect Admin</span>
+            <span class="sidebar-title">📋 Menu Admin</span>
         </div>
     </div>
     
     <nav class="sidebar-nav">
         <div class="sidebar-group">
-            <div class="sidebar-group-label">Général</div>
+            <div class="sidebar-group-label">📋 GÉNÉRAL</div>
             <a href="admin.php">🏠 Dashboard</a>
             <a href="admin_users.php">👥 Utilisateurs</a>
             <a href="admin_catalog.php">🛍️ Catalogue</a>
             <a href="admin_events.php">📅 Événements</a>
             <a href="admin_annonces.php">📦 Annonces</a>
+            <a href="admin_conseils.php">💡 Conseils & News</a>
         </div>
         
         <div class="sidebar-group">
-            <div class="sidebar-group-label">Gestion</div>
+            <div class="sidebar-group-label">⚙️ GESTION</div>
             <a href="admin_conteneurs.php">🗳️ Conteneurs</a>
+            <a href="admin_demandes_depot.php">📋 Demandes dépôt</a>
             <a href="admin_finance.php">💰 Finance</a>
             <a href="admin_documents.php">📄 Documents</a>
             <a href="admin_audit.php">🧾 Audit</a>
         </div>
         
         <div class="sidebar-group">
-            <div class="sidebar-group-label">Forum</div>
-            <a href="admin_forum.php">💬 Vue générale</a>
-            <a href="admin_forum_reports.php">⚠️ Signalements</a>
-            <a href="admin_forum_categories.php">📂 Catégories</a>
+            <div class="sidebar-group-label">💬 FORUM</div>
+            <a href="admin_forum.php">📋 Supervision</a>
+            <a href="admin_forum_moderation.php">🛡️ Modération</a>
         </div>
         
         <div class="sidebar-group">
-            <div class="sidebar-group-label">Compte</div>
+            <div class="sidebar-group-label">👤 COMPTE</div>
             <a href="admin_profile.php">👤 Mon profil</a>
             <a href="logout.php" class="sidebar-logout">🔓 Déconnexion</a>
         </div>
@@ -43,27 +43,18 @@
 </aside>
 
 <style>
-/* Styles sidebar - version propre */
 .admin-sidebar {
     background: white;
-    border-radius: 18px;
+    border-radius: 20px;
     padding: 20px 0;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
-    position: sticky;
-    top: 24px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    border: 1px solid #e5e7eb;
 }
 
 .sidebar-header {
     padding: 0 20px 20px;
     border-bottom: 1px solid #e5e7eb;
     margin-bottom: 20px;
-}
-
-.sidebar-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
 }
 
 .sidebar-title {
@@ -113,7 +104,6 @@
 
 .sidebar-logout {
     color: #dc2626 !important;
-    margin-top: 10px;
 }
 
 .sidebar-logout:hover {
@@ -121,10 +111,9 @@
     color: #dc2626 !important;
 }
 
-/* Layout admin */
+/* Layout admin - sans grid, le sidebar s'affiche normalement */
 .admin-layout {
-    display: grid;
-    grid-template-columns: 280px 1fr;
+    display: flex;
     gap: 28px;
     max-width: 1400px;
     margin: 0 auto;
@@ -132,15 +121,13 @@
 }
 
 .admin-content {
+    flex: 1;
     min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
 }
 
 @media (max-width: 980px) {
     .admin-layout {
-        grid-template-columns: 1fr;
+        flex-direction: column;
         padding: 20px;
     }
     .admin-sidebar {

@@ -150,5 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
 </main>
+<?php  ?>
 </body>
 </html>

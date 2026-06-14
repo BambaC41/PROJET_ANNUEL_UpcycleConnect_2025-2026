@@ -194,6 +194,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
         </div>
     </section>
 </main>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

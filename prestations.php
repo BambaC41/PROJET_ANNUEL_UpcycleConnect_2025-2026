@@ -343,6 +343,6 @@ function previewEditImage() {
     }
 }
 </script>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

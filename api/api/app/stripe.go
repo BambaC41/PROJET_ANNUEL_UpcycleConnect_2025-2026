@@ -4,6 +4,7 @@ import (
 	"api/db"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -44,6 +45,8 @@ func CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 		AnnonceID     string `json:"annonce_id"`
 		FactureID     string `json:"facture_id"`
 		SessionID     string `json:"session_id"`
+		Type          string `json:"type"`
+		Formule       string `json:"formule"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		payload.Amount = 2999
@@ -78,6 +81,8 @@ func CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
 			"annonce_id":     payload.AnnonceID,
 			"facture_id":     payload.FactureID,
 			"php_session_id": payload.SessionID,
+			"type":           payload.Type,
+			"formule":        payload.Formule,
 		},
 	}
 
@@ -107,7 +112,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	filename := fmt.Sprintf("facture_%d_%s.pdf", userID, time.Now().Format("20060102_150405"))
 	fullPath := filepath.Join(receiptDir, filename)
 
-	// Récupérer infos utilisateur
 	var userEmail, userPseudo string
 	db.DB.QueryRow(`
 		SELECT COALESCE(email, ''), COALESCE(pseudo, '')
@@ -121,7 +125,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 
-	// En-tête
 	pdf.SetFont("Arial", "B", 24)
 	pdf.SetTextColor(34, 139, 34)
 	pdf.Cell(0, 15, "UpcycleConnect")
@@ -136,13 +139,11 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf.Cell(0, 5, "contact@upcycleconnect.fr")
 	pdf.Ln(12)
 
-	// Titre
 	pdf.SetFont("Arial", "B", 18)
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Cell(0, 10, "FACTURE")
 	pdf.Ln(12)
 
-	// Infos facture
 	pdf.SetFont("Arial", "", 10)
 	pdf.Cell(40, 6, "N° Facture:")
 	pdf.Cell(80, 6, invoiceNumber)
@@ -160,7 +161,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf.Cell(0, 6, userEmail)
 	pdf.Ln(12)
 
-	// Détail
 	pdf.SetFont("Arial", "B", 11)
 	pdf.Cell(0, 8, "Detail de la prestation")
 	pdf.Ln(8)
@@ -179,7 +179,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf.Cell(30, 7, fmt.Sprintf("%.2f", amount))
 	pdf.Ln(10)
 
-	// Totaux
 	pdf.SetX(120)
 	pdf.Cell(30, 7, "Total HT:")
 	pdf.Cell(30, 7, fmt.Sprintf("%.2f EUR", amountHT))
@@ -196,7 +195,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf.Cell(30, 8, fmt.Sprintf("%.2f EUR", amount))
 	pdf.Ln(15)
 
-	// Références
 	pdf.SetFont("Arial", "I", 9)
 	pdf.SetTextColor(100, 100, 100)
 	if metadata["annonce_id"] != "" {
@@ -210,7 +208,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	pdf.Cell(0, 5, "Transaction Stripe: "+metadata["php_session_id"])
 	pdf.Ln(10)
 
-	// Pied
 	pdf.SetY(-30)
 	pdf.SetFont("Arial", "I", 8)
 	pdf.Cell(0, 5, "UpcycleConnect - Ce document fait office de facture officielle")
@@ -277,4 +274,138 @@ func VerifyPayment(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// callStripeAPI - Fonction pour appeler directement l'API REST Stripe
+func callStripeAPI(endpoint string, method string) (map[string]interface{}, error) {
+	url := "https://api.stripe.com/v1/" + endpoint
+
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(stripe.Key, "")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// GetStripeBalance récupère le solde et les transactions Stripe via API REST
+func GetStripeBalance() (map[string]interface{}, error) {
+	// Récupérer le solde
+	balanceData, err := callStripeAPI("balance", "GET")
+	if err != nil {
+		return nil, err
+	}
+
+	// Récupérer les transactions (paiements)
+	chargesData, err := callStripeAPI("charges?limit=50", "GET")
+	if err != nil {
+		return nil, err
+	}
+
+	availableAmount := 0.0
+	pendingAmount := 0.0
+	currency := "eur"
+
+	if balance, ok := balanceData["available"].([]interface{}); ok && len(balance) > 0 {
+		if item, ok := balance[0].(map[string]interface{}); ok {
+			if amount, ok := item["amount"].(float64); ok {
+				availableAmount = amount / 100
+			}
+			if cur, ok := item["currency"].(string); ok {
+				currency = cur
+			}
+		}
+	}
+	if pending, ok := balanceData["pending"].([]interface{}); ok && len(pending) > 0 {
+		if item, ok := pending[0].(map[string]interface{}); ok {
+			if amount, ok := item["amount"].(float64); ok {
+				pendingAmount = amount / 100
+			}
+		}
+	}
+
+	// Extraire les transactions
+	var transactions []map[string]interface{}
+	totalRevenue := 0.0
+
+	if data, ok := chargesData["data"].([]interface{}); ok {
+		for _, charge := range data {
+			if ch, ok := charge.(map[string]interface{}); ok {
+				if paid, ok := ch["paid"].(bool); ok && paid {
+					amount := 0.0
+					if amt, ok := ch["amount"].(float64); ok {
+						amount = amt / 100
+						totalRevenue += amount
+					}
+					created := int64(0)
+					if cr, ok := ch["created"].(float64); ok {
+						created = int64(cr)
+					}
+					status := "paid"
+					if st, ok := ch["status"].(string); ok {
+						status = st
+					}
+					transactions = append(transactions, map[string]interface{}{
+						"id":      ch["id"],
+						"amount":  amount,
+						"status":  status,
+						"type":    "charge",
+						"created": time.Unix(created, 0).Format("2006-01-02 15:04:05"),
+					})
+				}
+			}
+		}
+	}
+
+	return map[string]interface{}{
+		"balance_available": availableAmount,
+		"balance_pending":   pendingAmount,
+		"currency":          currency,
+		"total_revenue":     totalRevenue,
+		"transactions":      transactions,
+		"transaction_count": len(transactions),
+	}, nil
+}
+
+// GetAllStripePaymentsHandler - Handler pour récupérer tous les paiements Stripe
+func GetAllStripePaymentsHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Vérifier que l'utilisateur est admin
+	if _, ok := requireAdmin(w, r); !ok {
+		return
+	}
+
+	data, err := GetStripeBalance()
+	if err != nil {
+		http.Error(w, "Erreur Stripe: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"success": true,
+		"data":    data,
+	})
 }

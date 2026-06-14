@@ -72,5 +72,6 @@ if ($isConnected) {
         <a class="btn-primary" href="create_particulier.php">Acceder au formulaire particulier</a>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

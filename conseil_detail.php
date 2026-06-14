@@ -125,6 +125,6 @@ if (!$conseil) {
         </div>
     </section>
 </main>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

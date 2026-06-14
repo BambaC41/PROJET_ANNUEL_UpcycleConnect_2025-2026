@@ -180,5 +180,6 @@ $filtered = array_values(array_filter($cards, function ($c) use ($q) {
 </section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

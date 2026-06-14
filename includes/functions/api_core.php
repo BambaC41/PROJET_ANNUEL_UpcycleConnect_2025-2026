@@ -130,5 +130,15 @@ function api_delete($endpoint, $requireAuth = false) {
     $token = $requireAuth ? (isset($_SESSION['token']) ? $_SESSION['token'] : null) : null;
     return callAPI('DELETE', $endpoint, $token);
 }
-
+// Récupérer le vrai chiffre d'affaires Stripe
+function api_get_stripe_balance() {
+    $result = api_get('/admin/stripe/balance', true);
+    
+    // Debug - afficher ce que retourne l'API (à enlever en production)
+    if (($result['status'] ?? 0) !== 200) {
+        error_log("Stripe API error: " . print_r($result, true));
+    }
+    
+    return $result;
+}
 ?>

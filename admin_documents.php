@@ -42,5 +42,6 @@ $docs = document_list_all();
         </div>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

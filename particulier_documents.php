@@ -69,5 +69,6 @@ $unpaidInvoices = db_safe_exec(function(PDO $pdo) {
         <?php endif; ?>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

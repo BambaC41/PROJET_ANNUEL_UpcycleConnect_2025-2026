@@ -175,6 +175,6 @@ foreach ($prestations as $p) {
 </div>
 
 <script src="scripts/events.js" defer></script>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

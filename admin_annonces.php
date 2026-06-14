@@ -80,5 +80,6 @@ $pendingAnnonces = (($pendingRes['status'] ?? 0) === 200 && is_array($pendingRes
     </section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

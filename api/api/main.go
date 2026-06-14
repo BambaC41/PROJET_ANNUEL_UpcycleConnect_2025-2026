@@ -43,27 +43,36 @@ func main() {
 	http.HandleFunc("/health", app.HealthHandler)
 	http.HandleFunc("/profiles", app.PublicProfilesHandler)
 
-	// Routes annonces - une seule route suffit pour GET/PUT/DELETE
+	// Routes annonces
 	http.HandleFunc("/annonces", app.AnnoncesHandler)
-	http.HandleFunc("/annonces/", app.AnnonceByIDHandler) // Gère GET, PUT, DELETE sur /annonces/{id}
+	http.HandleFunc("/annonces/", app.AnnonceByIDHandler)
 	http.HandleFunc("/me/annonces", app.MyAnnoncesHandler)
 	http.HandleFunc("/admin/annonces/pending", app.AdminPendingAnnoncesHandler)
 
+	// Routes conteneurs
 	http.HandleFunc("/conteneurs", app.ConteneursHandler)
 	http.HandleFunc("/conteneurs/", app.ConteneurByIDHandler)
 	http.HandleFunc("/demandes-depot", app.DemandesDepotHandler)
 	http.HandleFunc("/demandes-depot/", app.DemandeDepotByIDHandler)
 	http.HandleFunc("/me/demandes-depot", app.MyDemandesDepotHandler)
+
+	// Upload et paiements
 	http.HandleFunc("/upload", app.UploadHandler)
 	http.HandleFunc("/create-checkout-session", app.CreateCheckoutSession)
 	http.HandleFunc("/verify-payment", app.VerifyPayment)
+
 	// Routes abonnement
 	http.HandleFunc("/me/abonnement", app.GetMySubscriptionHandler)
 	http.HandleFunc("/me/abonnement/cancel", app.CancelSubscriptionHandler)
 
 	// Routes projets
 	http.HandleFunc("/me/projets", app.GetMyProjectsHandler)
+
+	// Route pour générer un code-barre SVG
+	http.HandleFunc("/barcode/", app.BarcodeHandler)
+
 	http.Handle("/uploads/", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+	http.HandleFunc("/admin/stripe/balance", app.GetAllStripePaymentsHandler)
 
 	log.Println("Server running on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

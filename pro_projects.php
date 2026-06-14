@@ -116,5 +116,6 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
 <button class="btn-primary" type="submit">Enregistrer</button>
 </form></div></div>
 <?php endforeach; ?>
+<?php  ?>
 </body>
 </html>

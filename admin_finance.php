@@ -3,157 +3,322 @@ require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/local_db.php';
 require_once 'includes/ui_helpers.php';
 
-$statusF = trim((string)($_GET['status'] ?? 'all'));
-$dateFrom = trim((string)($_GET['date_from'] ?? ''));
-$dateTo = trim((string)($_GET['date_to'] ?? ''));
+// Récupérer les données Stripe
+$stripeData = api_get_stripe_balance();
+$totalRevenue = 0;
+$transactionsCount = 0;
+$stripeTransactions = [];
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_id'], $_POST['new_status'])) {
-    $pid = (int)$_POST['payment_id'];
-    $st = trim((string)$_POST['new_status']);
-    $rows = (int)db_safe_exec(static function (PDO $pdo) use ($pid, $st): int {
-        $u = $pdo->prepare("UPDATE paiement SET status = ?, statut = ?, paid_at = IF(? = 'paid', NOW(), paid_at) WHERE id_paiement = ?");
-        $u->execute([$st, $st, $st, $pid]);
-        return $u->rowCount();
-    }, 0);
-    $_SESSION['flash_toast'] = $rows > 0
-        ? ['type' => 'success', 'message' => 'Paiement #' . $pid . ' → ' . $st]
-        : ['type' => 'error', 'message' => 'Mise à jour impossible.'];
-    if ($rows > 0) {
-        db_safe_exec(static function (PDO $pdo) use ($pid, $st): void {
-            $pdo->prepare('INSERT INTO audit_log (id_user, action, cible_type, cible_id, details, created_at) VALUES (?, ?, "paiement", ?, ?, NOW())')
-                ->execute([(int)($_SESSION['user_id'] ?? 0), 'PAYMENT_STATUS', $pid, $st]);
-        }, null);
+if (($stripeData['status'] ?? 0) === 200) {
+    if (isset($stripeData['data']['data'])) {
+        $stripeBalance = $stripeData['data']['data'];
+        $totalRevenue = $stripeBalance['total_revenue'] ?? $stripeBalance['balance_pending'] ?? 0;
+        $transactionsCount = $stripeBalance['transaction_count'] ?? 0;
+        $stripeTransactions = $stripeBalance['transactions'] ?? [];
+    } elseif (isset($stripeData['data']['balance_pending'])) {
+        $totalRevenue = $stripeData['data']['balance_pending'];
+        $transactionsCount = $stripeData['data']['transaction_count'] ?? 0;
+        $stripeTransactions = $stripeData['data']['transactions'] ?? [];
     }
-    header('Location: admin_finance.php');
-    exit;
 }
 
-$rows = (array)db_safe_exec(static function (PDO $pdo) use ($statusF, $dateFrom, $dateTo): array {
-    $sql = "SELECT p.id_paiement, p.montant, p.amount, p.devise, p.currency, COALESCE(p.status, p.statut) AS pay_status,
-            p.paid_at, p.provider, p.payment_ref, p.id_inscription, p.user_id,
-            u.email, u.pseudo, u.id_role, pr.titre AS prestation_titre
-        FROM paiement p
-        LEFT JOIN utilisateur u ON u.id_user = COALESCE(p.user_id, (SELECT i.id_user FROM inscription i WHERE i.id_inscription = p.id_inscription LIMIT 1))
-        LEFT JOIN inscription i ON i.id_inscription = p.id_inscription
-        LEFT JOIN session s ON s.id_session = i.id_session
-        LEFT JOIN prestation pr ON pr.id_prestation = s.id_prestation
-        WHERE 1=1";
-    $params = [];
-    if ($statusF !== 'all') {
-        $sql .= " AND (p.status = ? OR p.statut = ?)";
-        $params[] = $statusF;
-        $params[] = $statusF;
-    }
-    if ($dateFrom !== '') {
-        $sql .= ' AND DATE(p.paid_at) >= ?';
-        $params[] = $dateFrom;
-    }
-    if ($dateTo !== '') {
-        $sql .= ' AND DATE(p.paid_at) <= ?';
-        $params[] = $dateTo;
-    }
-    $sql .= ' ORDER BY p.id_paiement DESC LIMIT 200';
-    $st = $pdo->prepare($sql);
-    $st->execute($params);
-    return $st->fetchAll(PDO::FETCH_ASSOC);
+// Revenus mensuels depuis la BDD
+$monthlyRevenue = (array)db_safe_exec(function (PDO $pdo) {
+    $stmt = $pdo->prepare("
+        SELECT 
+            DATE_FORMAT(paid_at, '%Y-%m') as month,
+            SUM(montant) as total,
+            COUNT(*) as count
+        FROM paiement 
+        WHERE statut = 'paid' AND paid_at IS NOT NULL
+        GROUP BY DATE_FORMAT(paid_at, '%Y-%m')
+        ORDER BY month DESC
+        LIMIT 12
+    ");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }, []);
-
-$sum = static function (array $list, callable $fn): float {
-    return array_reduce($list, static fn($c, $p) => $c + ($fn($p) ? (float)($p['montant'] ?? $p['amount'] ?? 0) : 0), 0.0);
-};
-$paid = $sum($rows, static fn($p) => in_array((string)($p['pay_status'] ?? ''), ['paid', 'paye'], true));
-$pending = $sum($rows, static fn($p) => in_array((string)($p['pay_status'] ?? ''), ['pending', 'en_attente'], true));
-$failed = $sum($rows, static fn($p) => in_array((string)($p['pay_status'] ?? ''), ['failed', 'echec'], true));
-$total = $paid + $pending + $failed;
-
-if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=paiements_export.csv');
-    $out = fopen('php://output', 'w');
-    fputcsv($out, ['id', 'email', 'montant', 'statut', 'prestation', 'date']);
-    foreach ($rows as $r) {
-        fputcsv($out, [$r['id_paiement'], $r['email'], $r['montant'] ?? $r['amount'], $r['pay_status'], $r['prestation_titre'], $r['paid_at']]);
-    }
-    fclose($out);
-    exit;
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Finance et paiements</title>
+    <title>Admin - Finance Stripe</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <?php include 'includes/onesignal_head.php'; ?>
+    <style>
+        .finance-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        .stat-card.stripe { border-left: 4px solid #6772e5; }
+        .stat-icon { font-size: 40px; margin-bottom: 12px; }
+        .stat-amount { font-size: 36px; font-weight: 700; margin: 8px 0; color: #6772e5; }
+        .stat-label { color: #666; font-size: 14px; }
+        .stat-sub { font-size: 12px; color: #999; margin-top: 6px; }
+        
+        .chart-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 24px;
+            border: 1px solid #e5e7eb;
+        }
+        .chart-container h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+        }
+        
+        .payment-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .payment-table th, .payment-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .payment-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+        .payment-row {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .payment-row:hover {
+            background: #f0f7ff;
+        }
+        .status-paid {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+        .refresh-btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        
+        .modal-transaction {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-transaction.active { display: flex; }
+        .modal-transaction-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 0;
+        }
+        .modal-header {
+            background: #6772e5;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+        }
+        .modal-body { padding: 20px; }
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label { width: 100px; font-weight: 600; color: #555; }
+        .detail-value { flex: 1; color: #333; word-break: break-all; }
+    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="pro-shell page-shell">
-    <?php include 'includes/flash_toast.php'; ?>
-    <section class="pro-card">
-        <h1>💰 Finance et paiements</h1>
-        
-        <div class="pro-kpis">
-            <article class="pro-kpi"><h3>CA payé</h3><p><?= e(number_format($paid, 2, ',', ' ')) ?> €</p></article>
-            <article class="pro-kpi"><h3>En attente</h3><p><?= e(number_format($pending, 2, ',', ' ')) ?> €</p></article>
-            <article class="pro-kpi"><h3>Échoués</h3><p><?= e(number_format($failed, 2, ',', ' ')) ?> €</p></article>
-            <article class="pro-kpi"><h3>Total lignes</h3><p><?= count($rows) ?></p></article>
-            <article class="pro-kpi"><h3>TVA (20%)</h3><p><?= e(number_format($paid * 0.2, 2, ',', ' ')) ?> €</p></article>
-        </div>
+<div class="admin-layout">
+    <?php include 'includes/sidebar.php'; ?>
+    <main class="admin-content">
+        <section class="admin-section">
+            <?php include 'includes/flash_toast.php'; ?>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <h1>💰 Finance & Paiements Stripe</h1>
+                <button class="refresh-btn" onclick="location.reload()">🔄 Actualiser</button>
+            </div>
+            
+            <div class="finance-stats">
+                <div class="stat-card stripe">
+                    <div class="stat-icon">💳</div>
+                    <div class="stat-amount"><?= number_format($totalRevenue, 2, ',', ' ') ?> €</div>
+                    <div class="stat-label">Total des transactions Stripe</div>
+                    <div class="stat-sub"><?= $transactionsCount ?> paiement(s) effectué(s)</div>
+                </div>
+            </div>
+            
+            <?php if (!empty($monthlyRevenue)): ?>
+            <div class="chart-container">
+                <h3>📈 Évolution des revenus mensuels</h3>
+                <canvas id="revenueChart" height="80" style="max-height: 250px;"></canvas>
+            </div>
+            <?php endif; ?>
+            
+            <h2 style="margin: 30px 0 20px 0;">📋 Historique des transactions Stripe</h2>
+            
+            <?php if (empty($stripeTransactions)): ?>
+                <div class="empty-state">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                    <h3>Aucune transaction Stripe</h3>
+                </div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="payment-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Montant</th>
+                                <th>Statut</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($stripeTransactions as $index => $tx): ?>
+                                <tr class="payment-row" onclick="showTransactionDetails(<?= $index ?>)">
+                                    <td><small><?= e(substr($tx['id'] ?? '', 0, 16)) ?>...</small></td>
+                                    <td><strong><?= number_format($tx['amount'] ?? 0, 2, ',', ' ') ?> €</strong></td>
+                                    <td><span class="status-paid">✅ <?= e($tx['status'] ?? 'succeeded') ?></span></td>
+                                    <td><?= e($tx['created'] ?? '—') ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+    </main>
+</div>
 
-        <form method="GET" class="row-actions" style="margin-bottom:20px;">
-            <select class="input" name="status" style="width:150px;">
-                <option value="all">Tous statuts</option>
-                <option value="paid" <?= $statusF === 'paid' ? 'selected' : '' ?>>paid</option>
-                <option value="pending" <?= $statusF === 'pending' ? 'selected' : '' ?>>pending</option>
-                <option value="failed" <?= $statusF === 'failed' ? 'selected' : '' ?>>failed</option>
-            </select>
-            <input class="input" type="date" name="date_from" value="<?= e($dateFrom) ?>" placeholder="Date début">
-            <input class="input" type="date" name="date_to" value="<?= e($dateTo) ?>" placeholder="Date fin">
-            <button class="btn-outline" type="submit">Filtrer</button>
-            <a class="btn-outline" href="admin_finance.php?export=csv">📎 Export CSV</a>
-        </form>
-
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr><th>ID</th><th>Payeur</th><th>Rôle</th><th>Prestation</th><th>Montant</th><th>Statut</th><th>Date</th><th>Actions</th></tr>
-                </thead>
-                <tbody>
-                <?php if (empty($rows)): ?>
-                    <tr><td colspan="8" style="text-align:center;">Aucun paiement.</td></tr>
-                <?php else: foreach ($rows as $p): ?>
-                    <?php $amt = (float)($p['montant'] ?? $p['amount'] ?? 0);
-                    $roleLabels = [1 => 'Admin', 2 => 'Particulier', 3 => 'Pro', 4 => 'Salarié']; ?>
-                    <tr>
-                        <td><?= (int)$p['id_paiement'] ?></td>
-                        <td><?= e($p['email'] ?? $p['pseudo'] ?? '') ?></td>
-                        <td><?= e($roleLabels[(int)($p['id_role'] ?? 0)] ?? '') ?></td>
-                        <td><?= e($p['prestation_titre'] ?? '—') ?></td>
-                        <td><?= e(number_format($amt, 2, ',', ' ')) ?> €</td>
-                        <td><span class="status-badge <?= ($p['pay_status'] ?? '') === 'paid' ? 'status-ok' : (($p['pay_status'] ?? '') === 'pending' ? 'status-warn' : 'status-danger') ?>"><?= e($p['pay_status'] ?? '') ?></span></td>
-                        <td><?= e(formatDateFr($p['paid_at'] ?? '')) ?></td>
-                        <td class="row-actions">
-                            <a class="btn-outline" href="document_download.php?type=paiement&id=<?= (int)$p['id_paiement'] ?>">📄 Facture</a>
-                            <form method="POST" style="display:inline-flex; gap:4px;">
-                                <input type="hidden" name="payment_id" value="<?= (int)$p['id_paiement'] ?>">
-                                <select class="input" name="new_status" style="width:100px;">
-                                    <option value="paid">paid</option>
-                                    <option value="pending">pending</option>
-                                    <option value="failed">failed</option>
-                                </select>
-                                <button class="btn-outline" type="submit">Appliquer</button>
-                            </form>
-                        </td>
-                    </tr>
-                <?php endforeach; endif; ?>
-                </tbody>
-            </table>
+<!-- Modal détails transaction -->
+<div id="transactionModal" class="modal-transaction" onclick="closeTransactionModal()">
+    <div class="modal-transaction-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3>💳 Détails de la transaction</h3>
+            <button class="modal-close" onclick="closeTransactionModal()">&times;</button>
         </div>
-    </section>
-</main>
+        <div class="modal-body" id="transactionModalBody"></div>
+    </div>
+</div>
+
+<script>
+const transactionsData = <?= json_encode($stripeTransactions) ?>;
+
+function showTransactionDetails(index) {
+    const tx = transactionsData[index];
+    if (!tx) return;
+    
+    const modalBody = document.getElementById('transactionModalBody');
+    modalBody.innerHTML = `
+        <div class="detail-row">
+            <div class="detail-label">🆔 ID :</div>
+            <div class="detail-value">${tx.id}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">💰 Montant :</div>
+            <div class="detail-value">${tx.amount.toFixed(2)} €</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">📌 Statut :</div>
+            <div class="detail-value">✅ ${tx.status}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">📅 Date :</div>
+            <div class="detail-value">${tx.created}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">🔧 Type :</div>
+            <div class="detail-value">${tx.type || 'charge'}</div>
+        </div>
+    `;
+    document.getElementById('transactionModal').classList.add('active');
+}
+
+function closeTransactionModal() {
+    document.getElementById('transactionModal').classList.remove('active');
+}
+
+window.onclick = function(e) {
+    if (e.target.classList.contains('modal-transaction')) {
+        closeTransactionModal();
+    }
+}
+
+<?php if (!empty($monthlyRevenue)): ?>
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+const revenueData = <?= json_encode(array_reverse($monthlyRevenue)) ?>;
+new Chart(revenueCtx, {
+    type: 'bar',
+    data: {
+        labels: revenueData.map(item => item.month),
+        datasets: [{
+            label: 'Chiffre d\'affaires (€)',
+            data: revenueData.map(item => parseFloat(item.total)),
+            backgroundColor: 'rgba(103, 114, 229, 0.6)',
+            borderColor: '#6772e5',
+            borderWidth: 2,
+            borderRadius: 8
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: { legend: { position: 'top' } },
+        scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value + ' €'; } } } }
+    }
+});
+<?php endif; ?>
+</script>
+<?php  ?>
 </body>
 </html>

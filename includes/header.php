@@ -35,7 +35,6 @@ if ($isAdmin) {
     <div class="header-container">
         <div class="logo">
             <a href="<?= $isAdmin ? 'admin.php' : ($isPro ? 'pro.php' : ($isSalarie ? 'salarie.php' : 'index.php')) ?>">
-                <img src="assets/logo.png" alt="UpcycleConnect" style="height:45px;">
                 <span class="logo-text"><?= e($siteTitle) ?></span>
             </a>
         </div>
@@ -79,17 +78,8 @@ if ($isAdmin) {
         <div class="header-actions">
             <?php if (isset($_SESSION['user_id'])): ?>
                 <div class="user-menu">
-                    <span class="user-name">
-                        <?php if (!empty($_SESSION['user_pseudo'])): ?>
-                            <?= e($_SESSION['user_pseudo']) ?>
-                        <?php elseif (!empty($_SESSION['user_email'])): ?>
-                            <?= e(explode('@', $_SESSION['user_email'])[0]) ?>
-                        <?php else: ?>
-                            Utilisateur
-                        <?php endif; ?>
-                    </span>
-                    <a href="logout.php" class="logout-btn">🔓 Déconnexion</a>
-                </div>
+                   <a href="logout.php" class="logout-btn">🔓 Déconnexion</a>
+              </div>
             <?php else: ?>
                 <a href="login.php" class="login-btn">🔐 Connexion</a>
                 <a href="register.php" class="register-btn">📝 Inscription</a>

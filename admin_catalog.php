@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (int)$_POST['id_categorie'],
             ]);
         }, false);
-        $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => 'Offre créée.'] : ['type' => 'error', 'message' => 'Création impossible.'];
+        $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => '✅ Offre créée.'] : ['type' => 'error', 'message' => '❌ Création impossible.'];
     } elseif ($action === 'update' && $id > 0) {
         $ok = (bool)db_safe_exec(static function (PDO $pdo) use ($id): bool {
             $st = $pdo->prepare('UPDATE prestation SET titre=?, description=?, type=?, prix=?, is_active=?, id_categorie=? WHERE id_prestation=?');
@@ -39,12 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id,
             ]);
         }, false);
-        $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => 'Offre mise à jour.'] : ['type' => 'error', 'message' => 'Mise à jour impossible.'];
+        $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => '✅ Offre mise à jour.'] : ['type' => 'error', 'message' => '❌ Mise à jour impossible.'];
     } elseif ($action === 'toggle' && $id > 0) {
         db_safe_exec(static function (PDO $pdo) use ($id): void {
             $pdo->prepare('UPDATE prestation SET is_active = NOT is_active WHERE id_prestation = ?')->execute([$id]);
         }, null);
-        $_SESSION['flash_toast'] = ['type' => 'success', 'message' => 'Statut actif/inactif basculé.'];
+        $_SESSION['flash_toast'] = ['type' => 'success', 'message' => '🔄 Statut modifié.'];
     } elseif ($action === 'delete' && $id > 0) {
         $linked = (int)db_safe_exec(static function (PDO $pdo) use ($id): int {
             $st = $pdo->prepare('SELECT COUNT(*) FROM session WHERE id_prestation = ?');
@@ -55,12 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             db_safe_exec(static function (PDO $pdo) use ($id): void {
                 $pdo->prepare('UPDATE prestation SET is_active = 0 WHERE id_prestation = ?')->execute([$id]);
             }, null);
-            $_SESSION['flash_toast'] = ['type' => 'warning', 'message' => 'Offre désactivée (sessions liées).'];
+            $_SESSION['flash_toast'] = ['type' => 'warning', 'message' => '⚠️ Offre désactivée (sessions liées).'];
         } else {
             $ok = (bool)db_safe_exec(static function (PDO $pdo) use ($id): bool {
                 return $pdo->prepare('DELETE FROM prestation WHERE id_prestation = ?')->execute([$id]);
             }, false);
-            $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => 'Offre supprimée.'] : ['type' => 'error', 'message' => 'Suppression impossible.'];
+            $_SESSION['flash_toast'] = $ok ? ['type' => 'success', 'message' => '🗑️ Offre supprimée.'] : ['type' => 'error', 'message' => '❌ Suppression impossible.'];
         }
     }
     if (!empty($_SESSION['flash_toast']['type']) && ($_SESSION['flash_toast']['type'] ?? '') === 'success') {
@@ -98,6 +98,7 @@ $kpis = [
     'ateliers' => count(array_filter($prestations, static fn($p) => ($p['type'] ?? '') === 'atelier')),
 ];
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -108,149 +109,354 @@ $kpis = [
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
     <?php include 'includes/onesignal_head.php'; ?>
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 28px;
+            position: relative;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #4caf50;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 22px;
+            color: #2e7d32;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #555;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .form-group textarea { resize: vertical; }
+        .form-row { display: flex; gap: 16px; }
+        .form-row .form-group { flex: 1; }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 16px 0;
+        }
+        .checkbox-group input {
+            width: auto;
+        }
+        .badge-active { background: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-inactive { background: #f5f5f5; color: #999; padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .offer-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        .offer-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .offer-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: #1a1a2e;
+        }
+        .offer-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .type-atelier { background: #e3f2fd; color: #1565c0; }
+        .type-formation { background: #e8f5e9; color: #2e7d32; }
+        .type-service { background: #fff3e0; color: #ef6c00; }
+        .offer-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin: 12px 0;
+        }
+        .offers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .offer-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<main class="pro-shell page-shell">
-    <?php include 'includes/flash_toast.php'; ?>
-    
-    <section class="pro-card">
-        <h1>🛍️ Catalogue des offres</h1>
-        <p class="muted" style="margin-bottom:16px;">
-            📌 <strong>Type</strong> = atelier / formation / service<br>
-            📌 <strong>Catégorie</strong> = Atelier / Formation / Réparation (plus précis)<br>
-            📌 <strong>Prix</strong> = prix de base pour les événements créés à partir de cette offre
-        </p>
-        
-        <div class="pro-kpis" style="margin-bottom:24px;">
-            <article class="pro-kpi"><h3>Total offres</h3><p><?= (int)$kpis['total'] ?></p></article>
-            <article class="pro-kpi"><h3>Actives</h3><p><?= (int)$kpis['actives'] ?></p></article>
-            <article class="pro-kpi"><h3>Formations</h3><p><?= (int)$kpis['formations'] ?></p></article>
-            <article class="pro-kpi"><h3>Ateliers</h3><p><?= (int)$kpis['ateliers'] ?></p></article>
-        </div>
-        
-        <button class="btn-primary" type="button" onclick="openModal('modal-create-prestation')">➕ Nouvelle offre</button>
-        
-        <form method="GET" class="row-actions" style="margin:16px 0; flex-wrap:wrap;">
-            <input class="input" type="search" name="q" value="<?= e($_GET['q'] ?? '') ?>" placeholder="Recherche" style="width:200px;">
-            <select class="input" name="type" style="width:150px;">
-                <option value="">📋 Type</option>
-                <option value="atelier">atelier</option>
-                <option value="formation">formation</option>
-                <option value="service">service</option>
-            </select>
-            <select class="input" name="cat" style="width:180px;">
-                <option value="0">📁 Catégorie</option>
-                <?php foreach ($categories as $c): ?>
-                    <option value="<?= (int)$c['id_categorie'] ?>" <?= $catFilter === (int)$c['id_categorie'] ? 'selected' : '' ?>><?= e($c['nom']) ?></option>
-                <?php endforeach; ?>
-            </select>
-            <button class="btn-outline" type="submit">Filtrer</button>
-        </form>
-        
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Titre</th>
-                        <th>Type</th>
-                        <th>Catégorie</th>
-                        <th>Prix</th>
-                        <th>Sessions</th>
-                        <th>Actif</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($filtered as $p): ?>
-                    <tr>
-                        <td><?= (int)$p['id_prestation'] ?></td>
-                        <td><strong><?= e($p['titre']) ?></strong></td>
-                        <td><span class="status-badge status-info"><?= e($p['type']) ?></span></td>
-                        <td><?= e($p['categorie_nom']) ?></td>
-                        <td><?= formatPriceEur($p['prix'] ?? 0) ?></td>
-                        <td><?= (int)$p['sessions_count'] ?></td>
-                        <td><?= !empty($p['is_active']) ? '<span class="status-badge status-ok">✅ Actif</span>' : '<span class="status-badge status-muted">❌ Inactif</span>' ?></td>
-                        <td class="row-actions">
-                            <button class="btn-outline" type="button" onclick="openModal('modal-edit-<?= (int)$p['id_prestation'] ?>')">✏️ Modifier</button>
+<div class="admin-layout">
+    <?php include 'includes/sidebar.php'; ?>
+    <main class="admin-content">
+        <section class="admin-section">
+            <?php include 'includes/flash_toast.php'; ?>
+            
+            <h1>🛍️ Catalogue des offres</h1>
+            
+            <div class="pro-kpis" style="margin-bottom:24px;">
+                <article class="pro-kpi"><h3>Total offres</h3><p><?= (int)$kpis['total'] ?></p></article>
+                <article class="pro-kpi"><h3>Actives</h3><p><?= (int)$kpis['actives'] ?></p></article>
+                <article class="pro-kpi"><h3>Formations</h3><p><?= (int)$kpis['formations'] ?></p></article>
+                <article class="pro-kpi"><h3>Ateliers</h3><p><?= (int)$kpis['ateliers'] ?></p></article>
+            </div>
+            
+            <button class="btn-primary" onclick="openModal('createModal')">➕ Nouvelle offre</button>
+            
+            <form method="GET" class="row-actions" style="margin:20px 0; flex-wrap:wrap;">
+                <input class="input" type="search" name="q" value="<?= e($_GET['q'] ?? '') ?>" placeholder="Recherche" style="width:200px;">
+                <select class="input" name="type" style="width:150px;">
+                    <option value="">📋 Tous types</option>
+                    <option value="atelier" <?= $typeFilter === 'atelier' ? 'selected' : '' ?>>Atelier</option>
+                    <option value="formation" <?= $typeFilter === 'formation' ? 'selected' : '' ?>>Formation</option>
+                    <option value="service" <?= $typeFilter === 'service' ? 'selected' : '' ?>>Service</option>
+                </select>
+                <select class="input" name="cat" style="width:180px;">
+                    <option value="0">📁 Toutes catégories</option>
+                    <?php foreach ($categories as $c): ?>
+                        <option value="<?= (int)$c['id_categorie'] ?>" <?= $catFilter === (int)$c['id_categorie'] ? 'selected' : '' ?>><?= e($c['nom']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <select class="input" name="active" style="width:130px;">
+                    <option value="all" <?= $activeFilter === 'all' ? 'selected' : '' ?>>Tous statuts</option>
+                    <option value="1" <?= $activeFilter === '1' ? 'selected' : '' ?>>Actifs</option>
+                    <option value="0" <?= $activeFilter === '0' ? 'selected' : '' ?>>Inactifs</option>
+                </select>
+                <button class="btn-outline" type="submit">🔍 Filtrer</button>
+                <a href="admin_catalog.php" class="btn-outline">⟳ Réinitialiser</a>
+            </form>
+            
+            <div class="offers-grid">
+                <?php foreach ($filtered as $p): 
+                    $isActive = !empty($p['is_active']);
+                    $typeClass = 'type-' . ($p['type'] ?? 'service');
+                ?>
+                    <div class="offer-card">
+                        <div class="offer-title"><?= e($p['titre']) ?></div>
+                        <span class="offer-type <?= $typeClass ?>"><?= e($p['type']) ?></span>
+                        <div class="offer-price"><?= formatPriceEur($p['prix'] ?? 0) ?></div>
+                        <div class="offer-actions">
+                            <button class="btn-outline btn-sm" onclick='openEditModal(<?= htmlspecialchars(json_encode([
+                                'id' => $p['id_prestation'],
+                                'titre' => $p['titre'],
+                                'description' => $p['description'],
+                                'type' => $p['type'],
+                                'categorie' => $p['id_categorie'],
+                                'prix' => $p['prix'],
+                                'is_active' => $isActive
+                            ])) ?>)'>✏️ Modifier</button>
                             <form method="POST" style="display:inline;">
                                 <input type="hidden" name="action" value="toggle">
                                 <input type="hidden" name="id_prestation" value="<?= (int)$p['id_prestation'] ?>">
-                                <button class="btn-outline" type="submit">🔄 Activer/Désact.</button>
+                                <button class="btn-outline btn-sm" type="submit">🔄 <?= $isActive ? 'Désactiver' : 'Activer' ?></button>
                             </form>
                         </div>
-                     </tr>
+                    </div>
                 <?php endforeach; ?>
-                </tbody>
-              </div>
+            </div>
+            
+            <?php if (empty($filtered)): ?>
+                <div class="empty-state" style="text-align:center; padding:60px;">📭 Aucune offre trouvée.</div>
+            <?php endif; ?>
+        </section>
+    </main>
+</div>
+
+<!-- Modal Création -->
+<div id="createModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>➕ Nouvelle offre</h2>
+            <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
         </div>
-    </section>
-</main>
+        <form method="POST">
+            <input type="hidden" name="action" value="create">
+            <div class="form-group">
+                <label>Titre *</label>
+                <input class="input" name="titre" required>
+            </div>
+            <div class="form-group">
+                <label>Description *</label>
+                <textarea class="input" name="description" rows="3" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select class="input" name="type" required>
+                        <option value="atelier">📦 Atelier</option>
+                        <option value="formation">🎓 Formation</option>
+                        <option value="service">🔧 Service</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Catégorie *</label>
+                    <select class="input" name="id_categorie" required>
+                        <option value="">-- Choisir --</option>
+                        <?php foreach ($categories as $c): ?>
+                            <option value="<?= (int)$c['id_categorie'] ?>"><?= e($c['nom']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Prix (€)</label>
+                <input class="input" type="number" step="0.01" name="prix" value="0">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" name="is_active" value="1" checked> Active
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal('createModal')">Annuler</button>
+                <button class="btn-primary" type="submit">💾 Créer</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-<!-- Modal création -->
-<div id="modal-create-prestation" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
-<h2>➕ Nouvelle offre</h2>
-<form method="POST"><input type="hidden" name="action" value="create">
-<input class="input" name="titre" required placeholder="Titre (ex: Atelier poterie)">
-<textarea class="input" name="description" rows="3" required placeholder="Description de l'offre"></textarea>
-<select class="input" name="type" required>
-    <option value="">-- Choisir un type --</option>
-    <option value="atelier">atelier</option>
-    <option value="formation">formation</option>
-    <option value="service">service</option>
-</select>
-<select class="input" name="id_categorie" required>
-    <option value="">-- Choisir une catégorie --</option>
-    <?php foreach ($categories as $c): ?>
-        <option value="<?= (int)$c['id_categorie'] ?>"><?= e($c['nom']) ?></option>
-    <?php endforeach; ?>
-</select>
-<div>
-    <label>💰 Prix (en euros)</label>
-    <input class="input" type="number" step="0.01" name="prix" value="0" placeholder="Ex: 29.99">
+<!-- Modal Édition -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>✏️ Modifier l'offre</h2>
+            <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+        </div>
+        <form method="POST" id="editForm">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id_prestation" id="edit_id">
+            <div class="form-group">
+                <label>Titre *</label>
+                <input class="input" name="titre" id="edit_titre" required>
+            </div>
+            <div class="form-group">
+                <label>Description *</label>
+                <textarea class="input" name="description" id="edit_description" rows="3" required></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select class="input" name="type" id="edit_type">
+                        <option value="atelier">📦 Atelier</option>
+                        <option value="formation">🎓 Formation</option>
+                        <option value="service">🔧 Service</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Catégorie *</label>
+                    <select class="input" name="id_categorie" id="edit_categorie">
+                        <?php foreach ($categories as $c): ?>
+                            <option value="<?= (int)$c['id_categorie'] ?>"><?= e($c['nom']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Prix (€)</label>
+                <input class="input" type="number" step="0.01" name="prix" id="edit_prix">
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" name="is_active" value="1" id="edit_active"> Active
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal('editModal')">Annuler</button>
+                <button class="btn-primary" type="submit">💾 Enregistrer</button>
+            </div>
+        </form>
+    </div>
 </div>
-<label><input type="checkbox" name="is_active" value="1" checked> Active</label>
-<div class="row-actions" style="margin-top:16px;">
-    <button class="btn-primary" type="submit">💾 Enregistrer</button>
-    <button class="btn-outline" type="button" data-close-modal="modal-create-prestation">❌ Annuler</button>
-</div>
-</form></div></div>
-
-<?php foreach ($filtered as $p): ?>
-<div id="modal-edit-<?= (int)$p['id_prestation'] ?>" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
-<h2>✏️ Modifier offre #<?= (int)$p['id_prestation'] ?></h2>
-<form method="POST"><input type="hidden" name="action" value="update"><input type="hidden" name="id_prestation" value="<?= (int)$p['id_prestation'] ?>">
-<input class="input" name="titre" value="<?= e($p['titre']) ?>" required>
-<textarea class="input" name="description" rows="3" required><?= e($p['description']) ?></textarea>
-<select class="input" name="type">
-    <option value="atelier" <?= ($p['type']??'')==='atelier'?'selected':'' ?>>atelier</option>
-    <option value="formation" <?= ($p['type']??'')==='formation'?'selected':'' ?>>formation</option>
-    <option value="service" <?= ($p['type']??'')==='service'?'selected':'' ?>>service</option>
-</select>
-<select class="input" name="id_categorie">
-    <?php foreach ($categories as $c): ?>
-        <option value="<?= (int)$c['id_categorie'] ?>" <?= (int)$p['id_categorie']===(int)$c['id_categorie']?'selected':'' ?>><?= e($c['nom']) ?></option>
-    <?php endforeach; ?>
-</select>
-<input class="input" type="number" step="0.01" name="prix" value="<?= e((string)$p['prix']) ?>">
-<label><input type="checkbox" name="is_active" value="1" <?= !empty($p['is_active'])?'checked':'' ?>> Active</label>
-<div class="row-actions" style="margin-top:16px;">
-    <button class="btn-primary" type="submit">💾 Enregistrer</button>
-    <button class="btn-outline" type="button" onclick="closeModal('modal-edit-<?= (int)$p['id_prestation'] ?>')">❌ Fermer</button>
-</div>
-</form></div></div>
-<?php endforeach; ?>
 
 <script>
-function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-document.querySelectorAll('[data-close-modal]').forEach(btn => {
-    btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close-modal')));
-});
+function openModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+function openEditModal(offer) {
+    document.getElementById('edit_id').value = offer.id;
+    document.getElementById('edit_titre').value = offer.titre;
+    document.getElementById('edit_description').value = offer.description;
+    document.getElementById('edit_type').value = offer.type;
+    document.getElementById('edit_categorie').value = offer.categorie;
+    document.getElementById('edit_prix').value = offer.prix;
+    document.getElementById('edit_active').checked = offer.is_active;
+    openModal('editModal');
+}
 window.onclick = function(e) {
-    if (e.target.classList.contains('modal-backdrop')) e.target.parentElement.style.display = 'none';
+    if (e.target.classList.contains('modal')) {
+        e.target.classList.remove('active');
+    }
 }
 </script>
+<?php  ?>
 </body>
 </html>

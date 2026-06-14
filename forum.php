@@ -8,7 +8,7 @@ require_once __DIR__ . '/includes/i18n.php';
 set_lang_from_request();
 require_once __DIR__ . '/includes/functions/view_context.php';
 require_once __DIR__ . '/includes/functions/forum_local.php';
-require_once __DIR__ . '/includes/functions/forum_api.php';  // ← MODIFIÉ
+require_once __DIR__ . '/includes/functions/forum_api.php';
 require_once __DIR__ . '/includes/functions/bootstrap_notify.php';
 require_once __DIR__ . '/includes/notifications.php';
 require_once __DIR__ . '/includes/ui_helpers.php';
@@ -30,6 +30,43 @@ if ($userId <= 0) {
     exit;
 }
 bootstrap_flash_unread_notifications();
+
+// Vérifier si l'utilisateur est banni du forum
+function forum_is_user_banned_check(int $userId): bool {
+    return (bool)db_safe_exec(function (PDO $pdo) use ($userId): bool {
+        $st = $pdo->prepare('SELECT COUNT(*) FROM forum_bans WHERE user_id = ? AND banned_until > NOW()');
+        $st->execute([$userId]);
+        return $st->fetchColumn() > 0;
+    }, false);
+}
+
+if (forum_is_user_banned_check($userId)) {
+    $banInfo = db_safe_exec(function (PDO $pdo) use ($userId) {
+        $st = $pdo->prepare('SELECT reason, banned_until FROM forum_bans WHERE user_id = ? AND banned_until > NOW() LIMIT 1');
+        $st->execute([$userId]);
+        return $st->fetch(PDO::FETCH_ASSOC);
+    }, []);
+    $banUntil = isset($banInfo['banned_until']) ? date('d/m/Y H:i', strtotime($banInfo['banned_until'])) : 'date inconnue';
+    ?>
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head><meta charset="UTF-8"><title>Accès restreint - Forum</title><link rel="stylesheet" href="styles/style.css"></head>
+    <body class="pro-page">
+        <main style="max-width: 600px; margin: 80px auto; padding: 20px;">
+            <div class="error-box" style="text-align: center; padding: 30px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🚫</div>
+                <h2>Vous êtes banni du forum</h2>
+                <p><strong>Raison :</strong> <?= e($banInfo['reason'] ?? 'Non spécifiée') ?></p>
+                <p><strong>Banni jusqu'au :</strong> <?= e($banUntil) ?></p>
+                <a href="<?= nav_role_dashboard_url() ?>" class="btn-primary" style="margin-top: 20px;">Retour au tableau de bord</a>
+            </div>
+        </main>
+    <?php  ?>
+</body>
+    </html>
+    <?php
+    exit;
+}
 
 $navFile = match ($roleId) {
     1 => null,
@@ -76,18 +113,8 @@ $catFilter = (int)($_GET['cat'] ?? 0);
 $categories = forum_get_categories();
 $topics = forum_get_topics(['category_id' => $catFilter, 'q' => $q, 'per_page' => 40]);
 $showCreate = $roleId >= 1 && $roleId <= 4;
-
-// Fonction temps relatif
-function timeAgo($datetime) {
-    $timestamp = strtotime($datetime);
-    $diff = time() - $timestamp;
-    if ($diff < 60) return 'à l\'instant';
-    if ($diff < 3600) return floor($diff / 60) . ' min';
-    if ($diff < 86400) return floor($diff / 3600) . ' h';
-    if ($diff < 604800) return floor($diff / 86400) . ' j';
-    return date('d/m/Y', $timestamp);
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="<?= e(current_lang()) ?>">
 <head>
@@ -97,10 +124,7 @@ function timeAgo($datetime) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/ui-components.css">
     <?php if ($roleId === 1): ?><link rel="stylesheet" href="styles/admin.css"><?php endif; ?>
-    <?php if ($roleId === 3): ?><link rel="stylesheet" href="styles/pro.css"><?php endif; ?>
-    <?php if ($roleId === 4): ?><link rel="stylesheet" href="styles/employee.css"><?php endif; ?>
     <style>
-        /* Forum moderne style Quora-like */
         .forum-header {
             background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
             border-radius: 20px;
@@ -108,8 +132,8 @@ function timeAgo($datetime) {
             margin-bottom: 32px;
             color: white;
         }
-        .forum-header h1 { margin: 0 0 8px 0; font-size: 32px; }
-        .forum-header p { margin: 0; opacity: 0.9; }
+        .forum-header h1 { margin: 0; font-size: 28px; }
+        .forum-header p { margin: 8px 0 0 0; opacity: 0.9; }
         
         .forum-categories-grid {
             display: grid;
@@ -121,23 +145,21 @@ function timeAgo($datetime) {
             background: white;
             border-radius: 16px;
             padding: 20px;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             text-decoration: none;
             display: block;
-            border: 1px solid #e9ecef;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
         }
         .forum-category-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
             border-color: #4caf50;
         }
         .forum-category-icon { font-size: 32px; margin-bottom: 12px; }
         .forum-category-name { font-size: 18px; font-weight: 700; color: #2e7d32; margin: 0 0 8px 0; }
-        .forum-category-desc { color: #6c757d; font-size: 13px; margin: 0 0 12px 0; line-height: 1.5; }
-        .forum-category-stats { display: flex; gap: 16px; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef; padding-top: 12px; margin-top: 8px; }
+        .forum-category-desc { color: #6c757d; font-size: 13px; margin: 0; line-height: 1.5; }
         
-        .forum-topics-list { background: white; border-radius: 16px; border: 1px solid #e9ecef; overflow: hidden; }
+        .forum-topics-list { background: white; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
         .forum-topics-header {
             display: flex;
             background: #f8f9fa;
@@ -145,16 +167,16 @@ function timeAgo($datetime) {
             font-size: 12px;
             font-weight: 600;
             color: #6c757d;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e5e7eb;
         }
         .forum-topic-item {
             display: flex;
             align-items: center;
             padding: 16px;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e5e7eb;
             transition: background 0.2s;
         }
-        .forum-topic-item:hover { background: #f8f9fa; }
+        .forum-topic-item:hover { background: #fafbfc; }
         .forum-topic-main { flex: 1; min-width: 0; }
         .forum-topic-title {
             font-weight: 600;
@@ -172,8 +194,7 @@ function timeAgo($datetime) {
             font-size: 12px;
             color: #6c757d;
         }
-        .forum-topic-meta span { display: inline-flex; align-items: center; gap: 4px; }
-        .forum-topic-stats { text-align: right; min-width: 100px; font-size: 13px; }
+        .forum-topic-stats { text-align: right; min-width: 100px; }
         .forum-topic-replies { font-weight: 600; color: #2e7d32; }
         .forum-topic-views { color: #6c757d; font-size: 12px; }
         .badge-topic {
@@ -185,7 +206,7 @@ function timeAgo($datetime) {
             margin-left: 8px;
         }
         .badge-pinned { background: #fff3e0; color: #ef6c00; }
-        .badge-locked { background: #f1f5f9; color: #475569; }
+        .badge-open { background: #e8f5e9; color: #2e7d32; }
         
         .create-topic-card {
             background: #f8f9fa;
@@ -202,14 +223,7 @@ function timeAgo($datetime) {
             gap: 8px;
         }
         .char-counter { font-size: 11px; color: #666; margin-top: 4px; text-align: right; }
-        .char-counter.warning { color: #f44336; }
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            background: #f8f9fa;
-            border-radius: 16px;
-            color: #6c757d;
-        }
+        .empty-state { text-align: center; padding: 48px 20px; background: #f8f9fa; border-radius: 16px; color: #6c757d; }
         
         @media (max-width: 768px) {
             .forum-topics-header { display: none; }
@@ -217,7 +231,6 @@ function timeAgo($datetime) {
             .forum-topic-stats { text-align: left; }
             .forum-categories-grid { grid-template-columns: 1fr; }
             .forum-header { padding: 20px; }
-            .forum-header h1 { font-size: 24px; }
         }
     </style>
     <?php include 'includes/onesignal_head.php'; ?>
@@ -236,17 +249,15 @@ if ($roleId === 1) {
 include __DIR__ . '/includes/flash_toast.php';
 ?>
 
-<!-- En-tête forum -->
 <div class="forum-header">
     <h1>💬 Forum communautaire</h1>
     <p>Échangez, partagez et apprenez avec la communauté UpcycleConnect</p>
 </div>
 
 <?php if (!forum_schema_ready()): ?>
-    <div class="error-box">Forum non configuré. Contactez l'administrateur.</div>
+    <div class="error-box">Forum non configuré.</div>
 <?php else: ?>
 
-<!-- Barre de recherche -->
 <form method="GET" style="margin-bottom: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
     <input class="input" type="search" name="q" value="<?= e($q) ?>" placeholder="Rechercher un sujet..." style="flex: 1; padding: 12px;">
     <select class="input" name="cat" style="width: 200px;">
@@ -258,7 +269,6 @@ include __DIR__ . '/includes/flash_toast.php';
     <button class="btn-primary" type="submit">🔍 Rechercher</button>
 </form>
 
-<!-- Créer un sujet -->
 <?php if ($showCreate): ?>
 <div class="create-topic-card">
     <details>
@@ -274,13 +284,12 @@ include __DIR__ . '/includes/flash_toast.php';
             <input class="input" type="text" name="title" maxlength="200" placeholder="Titre du sujet (max 200 caractères)" required>
             <textarea class="input" name="content" rows="5" maxlength="1000" placeholder="Votre message (max 1000 caractères)" required oninput="updateCharCount(this)"></textarea>
             <div class="char-counter" id="topicCounter">0 / 1000 caractères</div>
-            <button class="btn-primary" type="submit" style="align-self: flex-start;">📤 Publier le sujet</button>
+            <button class="btn-primary" type="submit">📤 Publier le sujet</button>
         </form>
     </details>
 </div>
 <?php endif; ?>
 
-<!-- Catégories -->
 <h2 style="margin: 0 0 16px 0;">📂 Catégories</h2>
 <div class="forum-categories-grid">
     <?php foreach ($categories as $c): ?>
@@ -292,7 +301,6 @@ include __DIR__ . '/includes/flash_toast.php';
     <?php endforeach; ?>
 </div>
 
-<!-- Sujets récents -->
 <h2 style="margin: 32px 0 16px 0;">📋 Sujets récents</h2>
 <div class="forum-topics-list">
     <div class="forum-topics-header">
@@ -302,12 +310,7 @@ include __DIR__ . '/includes/flash_toast.php';
     </div>
     
     <?php if (empty($topics)): ?>
-        <div class="empty-state">
-            <p>Aucun sujet pour le moment.</p>
-            <?php if ($showCreate): ?>
-                <p>Soyez le premier à lancer une discussion !</p>
-            <?php endif; ?>
-        </div>
+        <div class="empty-state">Aucun sujet pour le moment.</div>
     <?php else: ?>
         <?php foreach ($topics as $t):
             if ((int)($t['id'] ?? 0) <= 0) continue;
@@ -324,7 +327,7 @@ include __DIR__ . '/includes/flash_toast.php';
                     <div class="forum-topic-meta">
                         <span>📂 <?= e($t['category_name'] ?? '') ?></span>
                         <span>👤 <?= e($t['author_pseudo'] ?? '') ?></span>
-                        <span>🕐 <?= timeAgo($t['created_at'] ?? '') ?></span>
+                        <span>🕐 <?= forum_timeAgo($t['created_at'] ?? '') ?></span>
                     </div>
                 </div>
                 <div class="forum-topic-stats">
@@ -350,18 +353,11 @@ function updateCharCount(textarea) {
     let counter = document.getElementById('topicCounter');
     if (counter) {
         counter.textContent = len + ' / 1000 caractères';
-        if (len >= 1000) {
-            counter.classList.add('warning');
-        } else {
-            counter.classList.remove('warning');
-        }
+        if (len >= 1000) counter.classList.add('warning');
+        else counter.classList.remove('warning');
     }
 }
-const topicTextarea = document.querySelector('textarea[name="content"]');
-if (topicTextarea) {
-    updateCharCount(topicTextarea);
-    topicTextarea.addEventListener('input', function() { updateCharCount(this); });
-}
 </script>
+<?php  ?>
 </body>
 </html>

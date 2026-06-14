@@ -5,6 +5,7 @@ import (
 	"api/model"
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +14,131 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// ============================================
+// FONCTIONS DE VÉRIFICATION PREMIUM
+// ============================================
+
+// CheckUserPremium vérifie si un utilisateur pro a un abonnement premium actif
+func CheckUserPremium(userID int) bool {
+	var count int
+	err := db.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM abonnement_pro 
+		WHERE id_pro = ? 
+		  AND statut = 'actif' 
+		  AND formule IN ('premium_mensuel', 'premium_annuel', 'premium')
+		  AND (date_fin IS NULL OR date_fin >= CURDATE())
+	`, userID).Scan(&count)
+
+	if err != nil {
+		log.Printf("Error checking premium for user %d: %v", userID, err)
+		return false
+	}
+
+	result := count > 0
+	log.Printf("User %d premium status: %v (count=%d)", userID, result, count)
+	return result
+}
+
+// GetUserSubscription récupère l'abonnement actif d'un utilisateur
+func GetUserSubscription(userID int) map[string]interface{} {
+	var idAbonnement int
+	var formule, statut, dateDebut, dateFin string
+	var prix float64
+
+	err := db.DB.QueryRow(`
+		SELECT id_abonnement, formule, statut, DATE_FORMAT(date_debut, '%Y-%m-%d'), 
+		       DATE_FORMAT(date_fin, '%Y-%m-%d'), prix
+		FROM abonnement_pro 
+		WHERE id_pro = ? AND statut = 'actif' AND (date_fin IS NULL OR date_fin >= CURDATE())
+		ORDER BY id_abonnement DESC LIMIT 1
+	`, userID).Scan(&idAbonnement, &formule, &statut, &dateDebut, &dateFin, &prix)
+
+	if err == sql.ErrNoRows {
+		log.Printf("User %d: no active subscription found", userID)
+		return map[string]interface{}{
+			"formule":    "gratuit",
+			"statut":     "actif",
+			"prix":       0,
+			"is_premium": false,
+		}
+	}
+	if err != nil {
+		log.Printf("Error getting subscription for user %d: %v", userID, err)
+		return map[string]interface{}{
+			"formule":    "gratuit",
+			"statut":     "inconnu",
+			"prix":       0,
+			"is_premium": false,
+		}
+	}
+
+	log.Printf("User %d subscription found: formule=%s, statut=%s, dateFin=%s", userID, formule, statut, dateFin)
+
+	return map[string]interface{}{
+		"formule":    formule,
+		"statut":     statut,
+		"date_debut": dateDebut,
+		"date_fin":   dateFin,
+		"prix":       prix,
+		"is_premium": true,
+	}
+}
+
+// GetMaxAnnoncesByUserID retourne le nombre max d'annonces selon l'abonnement
+func GetMaxAnnoncesByUserID(userID int, roleID int) int {
+	// Les particuliers n'ont pas de limite stricte
+	if roleID == RoleUser {
+		return 999
+	}
+	// Les pros gratuits : 5 annonces max
+	if !CheckUserPremium(userID) {
+		return 5
+	}
+	// Pros premium : illimité
+	return 999
+}
+
+// CanUserCreateAnnonce vérifie si l'utilisateur peut créer une nouvelle annonce
+func CanUserCreateAnnonce(userID int, roleID int) bool {
+	maxAnnonces := GetMaxAnnoncesByUserID(userID, roleID)
+
+	var currentCount int
+	err := db.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM annonce 
+		WHERE id_user = ? 
+		  AND statut IN ('en_attente', 'validee')
+	`, userID).Scan(&currentCount)
+	if err != nil {
+		return false
+	}
+
+	return currentCount < maxAnnonces
+}
+
+// GetRemainingAnnoncesCount retourne le nombre d'annonces restantes
+func GetRemainingAnnoncesCount(userID int, roleID int) int {
+	maxAnnonces := GetMaxAnnoncesByUserID(userID, roleID)
+
+	var currentCount int
+	err := db.DB.QueryRow(`
+		SELECT COUNT(*) 
+		FROM annonce 
+		WHERE id_user = ? 
+		  AND statut IN ('en_attente', 'validee')
+	`, userID).Scan(&currentCount)
+	if err != nil {
+		return maxAnnonces
+	}
+
+	remaining := maxAnnonces - currentCount
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
 
 // UpdateUpcyclingScore calcule et met à jour le score d'un utilisateur
 func UpdateUpcyclingScore(userID int) error {
@@ -314,8 +440,33 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+
+	// Ajouter les infos premium à la réponse
+	response := map[string]interface{}{
+		"id_user":             user.ID,
+		"email":               user.Email,
+		"pseudo":              user.Pseudo,
+		"prenom":              user.Prenom,
+		"nom":                 user.Nom,
+		"telephone":           user.Telephone,
+		"adresse_rue":         user.AdresseRue,
+		"adresse_ville":       user.AdresseVille,
+		"adresse_code_postal": user.AdresseCodePostal,
+		"adresse_pays":        user.AdressePays,
+		"photo_profil":        user.PhotoProfil,
+		"bio":                 user.Bio,
+		"statut":              user.Statut,
+		"created_at":          user.CreatedAt,
+		"id_role":             user.RoleID,
+		"is_banned":           user.IsBanned,
+		"is_approved":         user.IsApproved,
+		"tutorial_completed":  user.TutorialCompleted,
+		"is_premium":          CheckUserPremium(claims.UserID),
+		"remaining_annonces":  GetRemainingAnnoncesCount(claims.UserID, claims.RoleID),
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(response)
 }
 
 func UpdateMeHandler(w http.ResponseWriter, r *http.Request) {
@@ -621,39 +772,8 @@ func GetMySubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var abonnement struct {
-		ID        int     `json:"id_abonnement"`
-		Formule   string  `json:"formule"`
-		Statut    string  `json:"statut"`
-		DateDebut string  `json:"date_debut"`
-		DateFin   *string `json:"date_fin,omitempty"`
-		Prix      float64 `json:"prix"`
-	}
-
-	err := db.DB.QueryRow(`
-        SELECT id_abonnement, formule, statut, DATE_FORMAT(date_debut, '%Y-%m-%d %H:%i:%s'), 
-               DATE_FORMAT(date_fin, '%Y-%m-%d %H:%i:%s'), prix
-        FROM abonnement_pro
-        WHERE id_pro = ? AND statut = 'actif'
-        ORDER BY id_abonnement DESC LIMIT 1
-    `, claims.UserID).Scan(&abonnement.ID, &abonnement.Formule, &abonnement.Statut,
-		&abonnement.DateDebut, &abonnement.DateFin, &abonnement.Prix)
-
-	if err == sql.ErrNoRows {
-		// Pas d'abonnement actif -> gratuit
-		writeJSON(w, http.StatusOK, map[string]interface{}{
-			"formule": "gratuit",
-			"statut":  "actif",
-			"prix":    0,
-		})
-		return
-	}
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	writeJSON(w, http.StatusOK, abonnement)
+	subscription := GetUserSubscription(claims.UserID)
+	writeJSON(w, http.StatusOK, subscription)
 }
 
 // CancelSubscriptionHandler - Résilier l'abonnement
@@ -675,10 +795,10 @@ func CancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Mettre à jour le statut à "resilie"
 	_, err := db.DB.Exec(`
-        UPDATE abonnement_pro 
-        SET statut = 'resilie' 
-        WHERE id_pro = ? AND statut = 'actif'
-    `, claims.UserID)
+		UPDATE abonnement_pro 
+		SET statut = 'resilie' 
+		WHERE id_pro = ? AND statut = 'actif'
+	`, claims.UserID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -701,13 +821,13 @@ func GetMyProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rows, err := db.DB.Query(`
-        SELECT id_projet, titre, description, statut, progression, is_public, image_url, 
-               DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'),
-               DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s')
-        FROM projet_upcycling
-        WHERE id_pro = ?
-        ORDER BY id_projet DESC
-    `, claims.UserID)
+		SELECT id_projet, titre, description, statut, progression, is_public, image_url, 
+		       DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s'),
+		       DATE_FORMAT(updated_at, '%Y-%m-%d %H:%i:%s')
+		FROM projet_upcycling
+		WHERE id_pro = ?
+		ORDER BY id_projet DESC
+	`, claims.UserID)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
@@ -740,45 +860,4 @@ func GetMyProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, projets)
-}
-func CheckUserPremium(userID int) bool {
-	var count int
-	err := db.DB.QueryRow(`
-        SELECT COUNT(*) 
-        FROM abonnement_pro 
-        WHERE id_pro = ? 
-          AND statut = 'actif' 
-          AND formule IN ('premium_mensuel', 'premium_annuel')
-          AND (date_fin IS NULL OR date_fin >= CURDATE())
-    `, userID).Scan(&count)
-	if err != nil {
-		return false
-	}
-	return count > 0
-}
-
-// GetMaxAnnoncesByUserID retourne le nombre max d'annonces selon l'abonnement
-func GetMaxAnnoncesByUserID(userID int) int {
-	if CheckUserPremium(userID) {
-		return 999 // illimité
-	}
-	return 5 // gratuit
-}
-
-// CanUserCreateAnnonce vérifie si l'utilisateur peut créer une nouvelle annonce
-func CanUserCreateAnnonce(userID int) bool {
-	maxAnnonces := GetMaxAnnoncesByUserID(userID)
-
-	var currentCount int
-	err := db.DB.QueryRow(`
-        SELECT COUNT(*) 
-        FROM annonce 
-        WHERE id_user = ? 
-          AND statut IN ('en_attente', 'validee')
-    `, userID).Scan(&currentCount)
-	if err != nil {
-		return false
-	}
-
-	return currentCount < maxAnnonces
 }

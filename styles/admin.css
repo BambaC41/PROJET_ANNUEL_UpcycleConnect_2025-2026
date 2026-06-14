@@ -618,3 +618,52 @@ hr {
         top: auto;
     }
 }
+/* Styles pour les codes-barres EAN-13 */
+.code-ean13 {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    background: #e8f5e9;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.barcode-preview {
+    background: white;
+    padding: 8px;
+    border-radius: 6px;
+    display: inline-block;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.barcode-preview canvas {
+    border: 1px solid #eee;
+}
+
+.info-box {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+/* Impression des fiches depot */
+@media print {
+    .navbar, .admin-sidebar, .btn-outline, .btn-primary, .btn-danger, .btn-success,
+    form, .row-actions, .admin-layout, .pro-card > h2, .pro-card > h1 {
+        display: none !important;
+    }
+    .pro-card {
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+    }
+    .code-ean13 {
+        font-size: 16px;
+        padding: 8px;
+    }
+}

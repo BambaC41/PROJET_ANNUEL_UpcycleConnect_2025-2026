@@ -93,6 +93,21 @@ $myAnnonces = api_get_my_annonces()['data'] ?? [];
 // ANNONCES PUBLIQUES (marketplace)
 $publicAnnonces = api_get_annonces()['data'] ?? [];
 
+// MES ACHATS
+$myPurchases = (array)db_safe_exec(function (PDO $pdo) use ($myId) {
+    $stmt = $pdo->prepare('
+        SELECT a.*, o.titre, o.description, o.photo_url, u.pseudo AS vendeur_pseudo,
+               a.date_achat, a.prix
+        FROM annonce a
+        JOIN objet o ON o.id_objet = a.id_objet
+        JOIN utilisateur u ON u.id_user = a.id_user
+        WHERE a.id_acheteur = ?
+        ORDER BY a.date_achat DESC
+    ');
+    $stmt->execute([$myId]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}, []);
+
 // Récupérer les infos de réservation/achat
 $locks = (array)db_safe_exec(static function (PDO $pdo) {
     $stmt = $pdo->query('SELECT id_annonce, id_reserve_par, id_acheteur FROM annonce');
@@ -132,6 +147,7 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
     return $okQ && $okM;
 }));
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -246,6 +262,7 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
         .badge-available { background: #4caf50; }
         .badge-reserved { background: #ff9800; }
         .badge-sold { background: #999; }
+        .badge-purchased { background: #2e7d32; }
         .annonce-card {
             position: relative;
             overflow: hidden;
@@ -402,6 +419,24 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
                 white-space: nowrap;
             }
         }
+        .btn-create {
+            background: #4caf50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .btn-create:hover {
+            background: #2e7d32;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
     </style>
 </head>
 <body class="pro-page">
@@ -443,13 +478,13 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             <textarea class="input" name="description" placeholder="Description" style="grid-column:1/-1;min-height:90px;" maxlength="200" oninput="updateCharCount(this)"></textarea>
             <div class="char-counter" id="descCounter">0 / 200 caractères</div>
             
-            <button class="btn-primary" type="submit" style="grid-column:1/-1;">➕ Publier</button>
+            <button class="btn-create" type="submit" style="grid-column:1/-1;">➕ Publier</button>
         </form>
     </section>
 
     <!-- SECTION MES ANNONCES -->
     <section class="pro-card">
-        <h2 style="font-size:18px;margin-top:0;">Mes annonces</h2>
+        <h2 style="font-size:18px;margin-top:0;">📋 Mes annonces</h2>
         
         <form method="GET" class="row-actions" style="margin-bottom:20px;">
             <input class="input" type="search" name="q" placeholder="Rechercher..." value="<?= e($query) ?>" style="flex:1;">
@@ -461,145 +496,203 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             <button class="btn-outline" type="submit">Filtrer</button>
         </form>
         
-        <table class="table">
-            <thead>
-                <tr><th>Titre</th><th>Mode</th><th>Prix</th><th>Statut</th><th>Date</th><th>Commission</th></tr>
-            </thead>
-            <tbody>
-            <?php foreach ($filteredMyAnnonces as $a): ?>
-                <?php 
-                $commission = (($a['mode'] ?? '') === 'vente' && ($a['statut'] ?? '') === 'validee') 
-                    ? ($a['prix'] ?? 0) * 0.05 : 0; 
-                $statut = (string)($a['statut'] ?? '');
-                $statutLabel = match($statut) {
-                    'en_attente' => 'En attente',
-                    'validee' => '✅ Validée',
-                    'rejetee' => '❌ Rejetée',
-                    default => $statut
-                };
-                $commissionPayee = ($a['commission_payee'] ?? 0) == 1;
-                ?>
-                <tr class="annonce-row" 
-                    data-id="<?= $a['id_annonce'] ?? 0 ?>" 
-                    data-titre="<?= e($a['titre'] ?? '') ?>"
-                    data-description="<?= e(mb_substr($a['description'] ?? '', 0, 200)) ?>"
-                    data-mode="<?= e($a['mode'] ?? '') ?>"
-                    data-prix="<?= e($a['prix'] ?? 0) ?>"
-                    data-statut="<?= $statutLabel ?>"
-                    data-date="<?= e(formatDateFr($a['created_at'] ?? '')) ?>"
-                    data-photo="<?= e(vc_media_url($a['photo_url'] ?? '')) ?>"
-                    data-commission-payee="<?= $commissionPayee ? '1' : '0' ?>">
-                    <td><?= e($a['titre'] ?? '') ?></td>
-                    <td><?= e($a['mode'] ?? '') ?></td>
-                    <td><?= (($a['mode'] ?? '') === 'vente') ? e(formatPriceEur($a['prix'] ?? 0)) : 'Gratuit' ?></td>
-                    <td><?= $statutLabel ?></td>
-                    <td><?= e(formatDateFr($a['created_at'] ?? '')) ?></td>
-                    <td>
-                        <?php if ($commission > 0 && $statut === 'validee'): ?>
-                            <?php if ($commissionPayee): ?>
-                                <span class="badge-paid">✅ Commission payée</span>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr><th>Titre</th><th>Mode</th><th>Prix</th><th>Statut</th><th>Date</th><th>Commission</th></tr>
+                </thead>
+                <tbody>
+                <?php foreach ($filteredMyAnnonces as $a): ?>
+                    <?php 
+                    $commission = (($a['mode'] ?? '') === 'vente' && ($a['statut'] ?? '') === 'validee') 
+                        ? ($a['prix'] ?? 0) * 0.05 : 0; 
+                    $statut = (string)($a['statut'] ?? '');
+                    $statutLabel = match($statut) {
+                        'en_attente' => '⏳ En attente',
+                        'validee' => '✅ Validée',
+                        'rejetee' => '❌ Rejetée',
+                        default => $statut
+                    };
+                    $commissionPayee = ($a['commission_payee'] ?? 0) == 1;
+                    ?>
+                    <tr class="annonce-row" 
+                        data-id="<?= $a['id_annonce'] ?? 0 ?>" 
+                        data-titre="<?= e($a['titre'] ?? '') ?>"
+                        data-description="<?= e(mb_substr($a['description'] ?? '', 0, 200)) ?>"
+                        data-mode="<?= e($a['mode'] ?? '') ?>"
+                        data-prix="<?= e($a['prix'] ?? 0) ?>"
+                        data-statut="<?= $statutLabel ?>"
+                        data-date="<?= e(formatDateFr($a['created_at'] ?? '')) ?>"
+                        data-photo="<?= e(vc_media_url($a['photo_url'] ?? '')) ?>"
+                        data-commission-payee="<?= $commissionPayee ? '1' : '0' ?>"
+                        onclick="showMyAnnonceModal(this)">
+                        <td><?= e($a['titre'] ?? '') ?></td>
+                        <td><?= e($a['mode'] ?? '') ?></td>
+                        <td><?= (($a['mode'] ?? '') === 'vente') ? e(formatPriceEur($a['prix'] ?? 0)) : 'Gratuit' ?></td>
+                        <td><?= $statutLabel ?></td>
+                        <td><?= e(formatDateFr($a['created_at'] ?? '')) ?></td>
+                        <td>
+                            <?php if ($commission > 0 && $statut === 'validee'): ?>
+                                <?php if ($commissionPayee): ?>
+                                    <span class="badge-paid">✅ Commission payée</span>
+                                <?php else: ?>
+                                    <a class="btn-primary" href="paiement_stripe.php?amount=<?= $commission * 100 ?>&item=Commission+vente+<?= urlencode($a['titre'] ?? '') ?>&annonce_id=<?= $a['id_annonce'] ?>" onclick="event.stopPropagation();">
+                                        Payer (<?= e(formatPriceEur($commission)) ?>)
+                                    </a>
+                                <?php endif; ?>
+                            <?php elseif ($commission > 0): ?>
+                                <span class="badge-paid" style="background:#ff9800;">⏳ En attente validation</span>
                             <?php else: ?>
-                                <a class="btn-primary" href="paiement_stripe.php?amount=<?= $commission * 100 ?>&item=Commission+vente+<?= urlencode($a['titre'] ?? '') ?>&annonce_id=<?= $a['id_annonce'] ?>">
-                                    Payer (<?= e(formatPriceEur($commission)) ?>)
-                                </a>
+                                —
                             <?php endif; ?>
-                        <?php elseif ($commission > 0): ?>
-                            <span class="badge-paid" style="background:#ff9800;">⏳ En attente validation</span>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($filteredMyAnnonces)): ?>
+                    <tr><td colspan="6" style="text-align: center;">Aucune annonce créée pour le moment.<?php endif; ?>
+                </tbody>
+             </div>
+        </div>
+    </section>
+
+    <!-- SECTION MES ACHATS -->
+    <section class="pro-card">
+        <h2 style="font-size:18px;margin-top:0;">🛍️ Mes achats</h2>
+        
+        <?php if (empty($myPurchases)): ?>
+            <div class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                <h3>Aucun achat effectué</h3>
+                <p>Les objets que vous achetez apparaîtront ici.</p>
+            </div>
+        <?php else: ?>
+            <div class="pro-grid">
+                <?php foreach ($myPurchases as $purchase): ?>
+                    <div class="annonce-card" style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer;"
+                         onclick='showMarketplaceAnnonceModal(<?= json_encode([
+                             'titre' => $purchase['titre'] ?? '',
+                             'description' => $purchase['description'] ?? '',
+                             'mode' => 'vente',
+                             'prix' => $purchase['prix'] ?? 0,
+                             'photo_url' => vc_media_url($purchase['photo_url'] ?? ''),
+                             'date' => formatDateFr($purchase['date_achat'] ?? ''),
+                             'statut' => 'Acheté',
+                             'vendeur' => $purchase['vendeur_pseudo'] ?? 'Inconnu'
+                         ], JSON_HEX_TAG) ?>)'>
+                        <?php if (!empty($purchase['photo_url'])): ?>
+                            <img src="<?= e(vc_media_url($purchase['photo_url'])) ?>" class="annonce-img" style="height:140px;">
                         <?php else: ?>
-                            —
+                            <div style="height:140px; background:#f0f0f0; display:flex; align-items:center; justify-content:center; color:#999;">📷 Pas d'image</div>
                         <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-            <?php if (empty($filteredMyAnnonces)): ?>
-                <tr>
-                    <td colspan="6" style="text-align: center;">Aucune annonce créée pour le moment.</td>
-                </tr>
-            <?php endif; ?>
-            </tbody>
-        </table>
+                        <div class="annonce-content">
+                            <h3 style="margin:0 0 8px 0; font-size:16px;"><?= e($purchase['titre'] ?? '') ?></h3>
+                            <p class="muted" style="font-size:12px; margin-bottom:8px;">
+                                📦 Vendu par <strong><?= e($purchase['vendeur_pseudo'] ?? 'Inconnu') ?></strong>
+                            </p>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="badge-paid">✅ Acheté</span>
+                                <span style="font-weight:bold; color:#2e7d32;"><?= formatPriceEur($purchase['prix'] ?? 0) ?></span>
+                            </div>
+                            <div class="muted" style="font-size:11px; margin-top:8px;">
+                                📅 Acheté le <?= formatDateFr($purchase['date_achat'] ?? '') ?>
+                            </div>
+                            <?php if (!empty($purchase['description'])): ?>
+                                <details style="margin-top: 12px;">
+                                    <summary style="font-size:11px; color:#666; cursor:pointer;">📝 Voir description</summary>
+                                    <p style="font-size:12px; margin-top:8px; color:#555;"><?= e($purchase['description']) ?></p>
+                                </details>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
 
     <!-- SECTION MARKETPLACE (annonces publiques) -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🌍 Marketplace - Annonces disponibles</h2>
-        <div class="pro-grid">
-            <?php foreach ($filteredPublic as $a): 
-                $aid = (int)($a['id_annonce'] ?? 0);
-                $owner = (int)($a['id_user'] ?? 0);
-                $isDon = ($a['mode'] ?? '') === 'don';
-                $isVente = ($a['mode'] ?? '') === 'vente';
-                $prix = (float)($a['prix'] ?? 0);
-                $res = isset($a['_id_reserve_par']) ? (int)$a['_id_reserve_par'] : 0;
-                $buyer = isset($a['_id_acheteur']) ? (int)$a['_id_acheteur'] : 0;
-                
-                $badgeClass = $buyer > 0 ? 'badge-sold' : ($res > 0 ? 'badge-reserved' : 'badge-available');
-                $badgeText = $buyer > 0 ? 'Vendu' : ($res > 0 ? 'Réservé' : 'Disponible');
-                $isMyAnnonce = ($owner === $myId);
-                ?>
-                <div class="annonce-card" 
-                     style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); position:relative; cursor:pointer;"
-                     onclick='showMarketplaceAnnonceModal(<?= json_encode([
-                         'titre' => $a['titre'] ?? '',
-                         'description' => $a['description'] ?? '',
-                         'mode' => $a['mode'] ?? '',
-                         'prix' => $a['prix'] ?? 0,
-                         'photo_url' => vc_media_url($a['photo_url'] ?? ''),
-                         'date' => formatDateFr($a['created_at'] ?? ''),
-                         'statut' => $a['statut'] ?? 'Validée'
-                     ], JSON_HEX_TAG) ?>)'>
-                    <div style="position:relative;">
-                        <?php if (!empty($a['photo_url'])): ?>
-                            <img src="<?= e(vc_media_url($a['photo_url'])) ?>" alt="<?= e($a['titre'] ?? 'Annonce') ?>" class="annonce-img <?= ($buyer > 0 || $res > 0) ? 'grayscale' : '' ?>">
-                        <?php else: ?>
-                            <div style="width:100%;height:160px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;">📷 Pas d'image</div>
-                        <?php endif; ?>
-                        <span class="marketplace-badge <?= $badgeClass ?>"><?= e($badgeText) ?></span>
-                    </div>
-                    <div class="annonce-content">
-                        <h3 style="margin:0 0 8px 0;font-size:16px;"><?= e($a['titre'] ?? '') ?></h3>
-                        <p class="muted" style="font-size:12px; margin-bottom:8px;"><?= e(mb_strimwidth((string)($a['description'] ?? ''), 0, 100, '...')) ?></p>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                            <span><?= $isDon ? '🎁 Don' : '💰 Vente' ?></span>
-                            <span style="font-weight:bold; color:#2196f3;"><?= $isVente ? e(formatPriceEur($prix)) : 'Gratuit' ?></span>
-                        </div>
-                        <?php if (!$isMyAnnonce): ?>
-                            <?php if ($isDon): ?>
-                                <?php if ($res > 0): ?>
-                                    <?php if ($res === $myId): ?>
-                                        <span style="color:#4caf50; font-weight:bold;">✓ Réservé par vous</span>
-                                    <?php else: ?>
-                                        <span class="muted">Déjà réservé</span>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <form method="POST" onclick="event.stopPropagation()">
-                                        <input type="hidden" name="reserve_don_id" value="<?= $aid ?>">
-                                        <button class="btn-primary" type="submit" style="width:100%; font-size:12px; padding:8px;">📦 Réserver</button>
-                                    </form>
-                                <?php endif; ?>
-                            <?php elseif ($isVente): ?>
-                                <?php if ($buyer > 0): ?>
-                                    <?php if ($buyer === $myId): ?>
-                                        <span style="color:#4caf50; font-weight:bold;">✓ Acheté</span>
-                                    <?php else: ?>
-                                        <span class="muted">Déjà vendu</span>
-                                    <?php endif; ?>
-                                <?php else: ?>
-                                    <a class="btn-primary" href="paiement_stripe.php?amount=<?= $prix * 100 ?>&item=Achat+annonce+<?= urlencode($a['titre'] ?? '') ?>&annonce_id=<?= $aid ?>" style="display:block; text-align:center; font-size:12px; padding:8px;" onclick="event.stopPropagation();">💳 Acheter</a>
-                                <?php endif; ?>
+        
+        <?php if (empty($filteredPublic)): ?>
+            <div class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                <h3>Aucune annonce disponible</h3>
+                <p>Revenez plus tard pour découvrir de nouvelles annonces.</p>
+            </div>
+        <?php else: ?>
+            <div class="pro-grid">
+                <?php foreach ($filteredPublic as $a): 
+                    $aid = (int)($a['id_annonce'] ?? 0);
+                    $owner = (int)($a['id_user'] ?? 0);
+                    $isDon = ($a['mode'] ?? '') === 'don';
+                    $isVente = ($a['mode'] ?? '') === 'vente';
+                    $prix = (float)($a['prix'] ?? 0);
+                    $res = isset($a['_id_reserve_par']) ? (int)$a['_id_reserve_par'] : 0;
+                    $buyer = isset($a['_id_acheteur']) ? (int)$a['_id_acheteur'] : 0;
+                    
+                    $badgeClass = $buyer > 0 ? 'badge-sold' : ($res > 0 ? 'badge-reserved' : 'badge-available');
+                    $badgeText = $buyer > 0 ? 'Vendu' : ($res > 0 ? 'Réservé' : 'Disponible');
+                    $isMyAnnonce = ($owner === $myId);
+                    ?>
+                    <div class="annonce-card" 
+                         style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08); position:relative; cursor:pointer;"
+                         onclick='showMarketplaceAnnonceModal(<?= json_encode([
+                             'titre' => $a['titre'] ?? '',
+                             'description' => $a['description'] ?? '',
+                             'mode' => $a['mode'] ?? '',
+                             'prix' => $a['prix'] ?? 0,
+                             'photo_url' => vc_media_url($a['photo_url'] ?? ''),
+                             'date' => formatDateFr($a['created_at'] ?? ''),
+                             'statut' => $a['statut'] ?? 'Validée'
+                         ], JSON_HEX_TAG) ?>)'>
+                        <div style="position:relative;">
+                            <?php if (!empty($a['photo_url'])): ?>
+                                <img src="<?= e(vc_media_url($a['photo_url'])) ?>" alt="<?= e($a['titre'] ?? 'Annonce') ?>" class="annonce-img <?= ($buyer > 0 || $res > 0) ? 'grayscale' : '' ?>">
+                            <?php else: ?>
+                                <div style="width:100%;height:160px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;color:#999;">📷 Pas d'image</div>
                             <?php endif; ?>
-                        <?php else: ?>
-                            <span class="muted" style="font-size:12px;">Votre annonce</span>
-                        <?php endif; ?>
+                            <span class="marketplace-badge <?= $badgeClass ?>"><?= e($badgeText) ?></span>
+                        </div>
+                        <div class="annonce-content">
+                            <h3 style="margin:0 0 8px 0;font-size:16px;"><?= e($a['titre'] ?? '') ?></h3>
+                            <p class="muted" style="font-size:12px; margin-bottom:8px;"><?= e(mb_strimwidth((string)($a['description'] ?? ''), 0, 100, '...')) ?></p>
+                            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                                <span><?= $isDon ? '🎁 Don' : '💰 Vente' ?></span>
+                                <span style="font-weight:bold; color:#2196f3;"><?= $isVente ? e(formatPriceEur($prix)) : 'Gratuit' ?></span>
+                            </div>
+                            <?php if (!$isMyAnnonce): ?>
+                                <?php if ($isDon): ?>
+                                    <?php if ($res > 0): ?>
+                                        <?php if ($res === $myId): ?>
+                                            <span style="color:#4caf50; font-weight:bold;">✓ Réservé par vous</span>
+                                        <?php else: ?>
+                                            <span class="muted">Déjà réservé</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <form method="POST" onclick="event.stopPropagation()">
+                                            <input type="hidden" name="reserve_don_id" value="<?= $aid ?>">
+                                            <button class="btn-primary" type="submit" style="width:100%; font-size:12px; padding:8px;">📦 Réserver</button>
+                                        </form>
+                                    <?php endif; ?>
+                                <?php elseif ($isVente): ?>
+                                    <?php if ($buyer > 0): ?>
+                                        <?php if ($buyer === $myId): ?>
+                                            <span style="color:#4caf50; font-weight:bold;">✓ Acheté</span>
+                                        <?php else: ?>
+                                            <span class="muted">Déjà vendu</span>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <a class="btn-primary" href="paiement_stripe.php?amount=<?= $prix * 100 ?>&item=Achat+annonce+<?= urlencode($a['titre'] ?? '') ?>&annonce_id=<?= $aid ?>" style="display:block; text-align:center; font-size:12px; padding:8px;" onclick="event.stopPropagation();">💳 Acheter</a>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="muted" style="font-size:12px;">Votre annonce</span>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
-            <?php endforeach; ?>
-            <?php if (empty($filteredPublic)): ?>
-                <div class="pro-card" style="text-align:center; color:#999;">
-                    Aucune annonce disponible sur le marketplace.
-                </div>
-            <?php endif; ?>
-        </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </section>
 </main>
 
@@ -620,12 +713,13 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             <div class="modal-actions">
                 <button class="btn-modal btn-modal-primary" onclick="modifierAnnonce()">✏️ Modifier</button>
                 <button class="btn-modal btn-modal-danger" onclick="supprimerAnnonce()">🗑️ Supprimer</button>
+                <button class="btn-modal btn-modal-secondary" onclick="closeAnnonceModal()">Fermer</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL MARKETPLACE (zoom sans actions) -->
+<!-- MODAL MARKETPLACE (zoom avec infos vendeur) -->
 <div id="marketplaceAnnonceModal" class="modal-annonce" onclick="closeMarketplaceAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closeMarketplaceAnnonceModal()">&times;</span>
@@ -638,6 +732,7 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             <div class="modal-info-row"><div class="modal-info-label">💶 Prix :</div><div class="modal-info-value" id="marketModalAnnoncePrix"></div></div>
             <div class="modal-info-row"><div class="modal-info-label">📌 Statut :</div><div class="modal-info-value" id="marketModalAnnonceStatut"></div></div>
             <div class="modal-info-row"><div class="modal-info-label">📅 Date :</div><div class="modal-info-value" id="marketModalAnnonceDate"></div></div>
+            <div class="modal-info-row"><div class="modal-info-label">👤 Vendeur :</div><div class="modal-info-value" id="marketModalAnnonceVendeur"></div></div>
             <div><div class="modal-info-label" style="width:auto;margin-bottom:8px;">📝 Description :</div><div class="modal-description-box" id="marketModalAnnonceDesc"></div></div>
             <div class="modal-actions">
                 <button class="btn-modal btn-modal-secondary" onclick="closeMarketplaceAnnonceModal()">Fermer</button>
@@ -660,29 +755,28 @@ function updateCharCount(textarea) {
 
 let currentAnnonceId = null;
 
-document.querySelectorAll('.annonce-row').forEach(row => {
-    row.addEventListener('click', (e) => {
-        if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
-        currentAnnonceId = row.dataset.id;
-        document.getElementById('modalAnnonceTitre').textContent = row.dataset.titre;
-        const mode = row.dataset.mode;
-        document.getElementById('modalAnnonceMode').textContent = mode === 'don' ? 'Don' : 'Vente';
-        document.getElementById('modalAnnoncePrix').textContent = mode === 'vente' ? parseFloat(row.dataset.prix).toFixed(2) + ' €' : 'Gratuit';
-        document.getElementById('modalAnnonceStatut').textContent = row.dataset.statut;
-        document.getElementById('modalAnnonceDate').textContent = row.dataset.date;
-        document.getElementById('modalAnnonceDesc').textContent = row.dataset.description || 'Aucune description';
-        const img = document.getElementById('modalAnnonceImg');
-        if (row.dataset.photo && row.dataset.photo !== '' && row.dataset.photo !== 'null') {
-            img.src = row.dataset.photo;
-            img.style.display = 'block';
-        } else {
-            img.src = '';
-            img.style.display = 'block';
-        }
-        document.getElementById('annonceModal').classList.add('active');
-    });
-});
+// Fonction pour afficher la modale de mes annonces
+function showMyAnnonceModal(row) {
+    currentAnnonceId = row.dataset.id;
+    document.getElementById('modalAnnonceTitre').textContent = row.dataset.titre;
+    const mode = row.dataset.mode;
+    document.getElementById('modalAnnonceMode').textContent = mode === 'don' ? 'Don' : 'Vente';
+    document.getElementById('modalAnnoncePrix').textContent = mode === 'vente' ? parseFloat(row.dataset.prix).toFixed(2) + ' €' : 'Gratuit';
+    document.getElementById('modalAnnonceStatut').textContent = row.dataset.statut;
+    document.getElementById('modalAnnonceDate').textContent = row.dataset.date;
+    document.getElementById('modalAnnonceDesc').textContent = row.dataset.description || 'Aucune description';
+    const img = document.getElementById('modalAnnonceImg');
+    if (row.dataset.photo && row.dataset.photo !== '' && row.dataset.photo !== 'null') {
+        img.src = row.dataset.photo;
+        img.style.display = 'block';
+    } else {
+        img.src = '';
+        img.style.display = 'block';
+    }
+    document.getElementById('annonceModal').classList.add('active');
+}
 
+// Fonction pour afficher la modale de la marketplace
 function showMarketplaceAnnonceModal(annonce) {
     document.getElementById('marketModalAnnonceTitre').textContent = annonce.titre;
     document.getElementById('marketModalAnnonceMode').textContent = annonce.mode === 'don' ? 'Don' : 'Vente';
@@ -690,6 +784,7 @@ function showMarketplaceAnnonceModal(annonce) {
     document.getElementById('marketModalAnnonceStatut').textContent = annonce.statut;
     document.getElementById('marketModalAnnonceDate').textContent = annonce.date;
     document.getElementById('marketModalAnnonceDesc').textContent = annonce.description || 'Aucune description';
+    document.getElementById('marketModalAnnonceVendeur').textContent = annonce.vendeur || 'Inconnu';
     const img = document.getElementById('marketModalAnnonceImg');
     if (annonce.photo_url && annonce.photo_url !== '' && annonce.photo_url !== 'null') {
         img.src = annonce.photo_url;
@@ -755,5 +850,6 @@ if (textarea) {
 </script>
 
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

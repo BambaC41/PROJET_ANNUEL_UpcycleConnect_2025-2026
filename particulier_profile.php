@@ -140,5 +140,6 @@ if (bioTextarea) {
 }
 </script>
 <?php include 'includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

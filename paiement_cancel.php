@@ -41,5 +41,6 @@ $role = (int)($_SESSION['role_id'] ?? 0);
         </div>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

@@ -262,5 +262,6 @@ $users = array_values(array_filter($users, function($u) use ($q, $roleFilter, $a
         </div>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

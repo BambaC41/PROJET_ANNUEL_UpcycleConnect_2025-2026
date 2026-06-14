@@ -103,5 +103,6 @@ foreach ($events as $ev) {
     </section>
 </section>
 </main>
+<?php  ?>
 </body>
 </html>

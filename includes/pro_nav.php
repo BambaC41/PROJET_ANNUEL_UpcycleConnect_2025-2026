@@ -26,18 +26,19 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
         <a class="btn-outline" href="pro.php">📊 Dashboard</a>
         
         <!-- Gestion annonces -->
-        <a class="btn-primary" href="pro_annonces.php">✏️ Créer annonce</a>
+        <a class="btn-outline" href="pro_annonces.php">✏️ Créer annonce</a>
         <a class="btn-outline" href="pro_annonces.php?mode=all">🏪 Marketplace</a>
         
         <!-- Récupération conteneurs -->
         <a class="btn-outline" href="pro_conteneurs.php">🗑️ Conteneurs</a>
         
+        <!-- 🔥 SUPPRIMER CETTE LIGNE : <a class="btn-outline" href="pro_conteneurs_history.php">📜 Historique</a> -->
+        
         <!-- Projets upcycling -->
         <a class="btn-outline" href="pro_projects.php">🔄 Projets</a>
         
         <!-- Facturation & abonnement -->
-        <a class="btn-outline" href="pro_billing.php">💰 Facturation</a>
-        <a class="btn-outline" href="pro_abonnement.php">⭐ Abonnement</a>
+        <a class="btn-outline" href="pro_abonnement.php">💰 Abonnement & Factures</a>
         
         <!-- Documents -->
         <a class="btn-outline" href="pro_documents.php">📄 Documents</a>

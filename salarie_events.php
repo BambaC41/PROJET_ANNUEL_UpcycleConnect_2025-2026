@@ -6,63 +6,165 @@ require_once __DIR__ . '/includes/functions/prestations.php';
 require_once __DIR__ . '/includes/functions/events.php';
 require_once __DIR__ . '/includes/functions/local_db.php';
 require_once __DIR__ . '/includes/notifications.php';
+require_once __DIR__ . '/includes/ui_helpers.php';
 
 $token = $_SESSION['token'];
 $userId = (int)$_SESSION['user_id'];
 $prestations = api_get_prestations($token);
 
-function normalize_datetime_local(string $raw): string
-{
-    $s = str_replace('T', ' ', trim($raw));
-    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $s)) {
-        return $s . ':00';
-    }
-    return $s;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_event'])) {
-    $dateDebut = normalize_datetime_local((string)($_POST['date_debut'] ?? ''));
-    $dateFin = normalize_datetime_local((string)($_POST['date_fin'] ?? ''));
-    $payload = [
-        'id_prestation' => (int)($_POST['id_prestation'] ?? 0),
-        'date_debut' => $dateDebut,
-        'date_fin' => $dateFin,
-        'lieu' => trim((string)($_POST['lieu'] ?? '')),
-        'capacite_max' => (int)($_POST['capacite_max'] ?? 0),
-        'statut' => 'en_attente',
-    ];
-    $res = api_create_event($token, $payload);
-    if (($res['status'] ?? 0) === 201) {
-        notif_create($userId, 'event', 'Événement soumis', 'Votre événement a été soumis et est en attente de validation.');
-        notif_notify_roles([1], 'event', 'Événement à valider', 'Un salarié a soumis un nouvel événement / session.');
-        toast_redirect('salarie_events.php', 'success', 'Événement soumis en attente de validation.');
-    }
-
-    $localId = (int)db_safe_exec(function (PDO $pdo) use ($payload, $userId) {
-        if ($payload['id_prestation'] <= 0 || $payload['capacite_max'] <= 0) {
-            return 0;
+// ============================================
+// 1. MODIFICATION D'UN ÉVÉNEMENT
+// ============================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
+    $eventId = (int)$_POST['event_id'];
+    $dateDebut = date('Y-m-d H:i:s', strtotime((string)($_POST['date_debut'] ?? '')));
+    $dateFin = date('Y-m-d H:i:s', strtotime((string)($_POST['date_fin'] ?? '')));
+    $lieu = trim((string)($_POST['lieu'] ?? ''));
+    $capacite = (int)($_POST['capacite_max'] ?? 0);
+    $newStatut = trim((string)($_POST['statut'] ?? ''));
+    
+    $currentImage = '';
+    db_safe_exec(function (PDO $pdo) use ($eventId, &$currentImage) {
+        $stmt = $pdo->prepare('SELECT image_url FROM session WHERE id_session = ?');
+        $stmt->execute([$eventId]);
+        $currentImage = (string)$stmt->fetchColumn();
+        return true;
+    }, false);
+    
+    $imageUrl = $currentImage;
+    
+    if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
+        $uploadDir = __DIR__ . '/uploads/events/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+        
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $_FILES['event_image']['tmp_name']);
+        finfo_close($finfo);
+        
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (in_array($mimeType, $allowedTypes)) {
+            $ext = match($mimeType) {
+                'image/jpeg', 'image/jpg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                default => 'jpg'
+            };
+            $filename = 'event_' . $eventId . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+            $destination = $uploadDir . $filename;
+            
+            if (move_uploaded_file($_FILES['event_image']['tmp_name'], $destination)) {
+                if (!empty($currentImage) && $currentImage !== 'uploads/events/default.jpg' && file_exists(__DIR__ . '/' . $currentImage)) {
+                    unlink(__DIR__ . '/' . $currentImage);
+                }
+                $imageUrl = 'uploads/events/' . $filename;
+            }
         }
-        $st = $pdo->prepare('INSERT INTO session (date_debut, date_fin, lieu, capacite_max, statut, id_prestation, id_validateur, id_createur) VALUES (?, ?, ?, ?, "en_attente", ?, NULL, ?)');
-        $st->execute([
-            $payload['date_debut'],
-            $payload['date_fin'],
-            $payload['lieu'],
-            $payload['capacite_max'],
-            $payload['id_prestation'],
-            $userId,
-        ]);
-        return (int)$pdo->lastInsertId();
-    }, 0);
-
-    if ($localId > 0) {
-        notif_create($userId, 'event', 'Événement enregistré (local)', 'Session #' . $localId . ' créée en attente (hors API).');
-        notif_notify_roles([1], 'event', 'Événement à valider', 'Événement créé localement par un salarié (#session ' . $localId . ').');
-        toast_redirect('salarie_events.php', 'success', 'Événement soumis en attente de validation (enregistrement local).');
     }
-
-    toast_redirect('salarie_events.php', 'error', 'Création impossible : ' . (string)($res['error'] ?? 'vérifiez les champs et la connexion API.'));
+    
+    if (isset($_POST['delete_image']) && $_POST['delete_image'] == '1') {
+        if (!empty($currentImage) && $currentImage !== 'uploads/events/default.jpg' && file_exists(__DIR__ . '/' . $currentImage)) {
+            unlink(__DIR__ . '/' . $currentImage);
+        }
+        $imageUrl = '';
+    }
+    
+    $belongsToUser = (bool)db_safe_exec(function (PDO $pdo) use ($eventId, $userId) {
+        $st = $pdo->prepare('SELECT COUNT(*) FROM session WHERE id_session = ? AND id_createur = ?');
+        $st->execute([$eventId, $userId]);
+        return $st->fetchColumn() > 0;
+    }, false);
+    
+    if ($belongsToUser) {
+        $payload = [
+            'date_debut' => $dateDebut, 
+            'date_fin' => $dateFin, 
+            'lieu' => $lieu, 
+            'capacite_max' => $capacite,
+            'statut' => $newStatut,
+            'image_url' => $imageUrl
+        ];
+        
+        api_update_event($token, $eventId, $payload);
+        
+        db_safe_exec(function (PDO $pdo) use ($eventId, $dateDebut, $dateFin, $lieu, $capacite, $newStatut, $imageUrl) {
+            $st = $pdo->prepare('UPDATE session SET date_debut = ?, date_fin = ?, lieu = ?, capacite_max = ?, statut = ?, image_url = ? WHERE id_session = ?');
+            $st->execute([$dateDebut, $dateFin, $lieu, $capacite, $newStatut, $imageUrl, $eventId]);
+            return true;
+        }, false);
+        
+        toast_redirect('salarie_events.php', 'success', '✅ Événement modifié avec succès.');
+    } else {
+        toast_redirect('salarie_events.php', 'error', '❌ Vous ne pouvez pas modifier cet événement.');
+    }
 }
 
+// ============================================
+// 2. SUPPRESSION/ANNULATION D'UN ÉVÉNEMENT
+// ============================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
+    $eventId = (int)$_POST['event_id'];
+    
+    $imageToDelete = '';
+    db_safe_exec(function (PDO $pdo) use ($eventId, &$imageToDelete) {
+        $stmt = $pdo->prepare('SELECT image_url FROM session WHERE id_session = ?');
+        $stmt->execute([$eventId]);
+        $imageToDelete = (string)$stmt->fetchColumn();
+        return true;
+    }, false);
+    
+    $belongsToUser = (bool)db_safe_exec(function (PDO $pdo) use ($eventId, $userId) {
+        $st = $pdo->prepare('SELECT COUNT(*) FROM session WHERE id_session = ? AND id_createur = ?');
+        $st->execute([$eventId, $userId]);
+        return $st->fetchColumn() > 0;
+    }, false);
+    
+    if ($belongsToUser) {
+        $inscrits = (int)db_safe_exec(function (PDO $pdo) use ($eventId) {
+            $st = $pdo->prepare('SELECT COUNT(*) FROM inscription WHERE id_session = ?');
+            $st->execute([$eventId]);
+            return (int)$st->fetchColumn();
+        }, 0);
+        
+        if ($inscrits > 0) {
+            api_update_event($token, $eventId, ['statut' => 'annule']);
+            db_safe_exec(function (PDO $pdo) use ($eventId) {
+                $st = $pdo->prepare('UPDATE session SET statut = "annule" WHERE id_session = ?');
+                $st->execute([$eventId]);
+                return true;
+            }, false);
+            
+            $participants = (array)db_safe_exec(function (PDO $pdo) use ($eventId) {
+                $st = $pdo->prepare('SELECT id_user FROM inscription WHERE id_session = ?');
+                $st->execute([$eventId]);
+                return $st->fetchAll(PDO::FETCH_COLUMN);
+            }, []);
+            foreach ($participants as $uid) {
+                notif_create((int)$uid, 'evenement', 'Événement annulé', 'L\'événement auquel vous étiez inscrit a été annulé.');
+            }
+            
+            toast_redirect('salarie_events.php', 'warning', '⚠️ Événement annulé. Les participants ont été notifiés.');
+        } else {
+            api_delete_event($token, $eventId);
+            db_safe_exec(function (PDO $pdo) use ($eventId) {
+                $st = $pdo->prepare('DELETE FROM session WHERE id_session = ?');
+                $st->execute([$eventId]);
+                return true;
+            }, false);
+            
+            if (!empty($imageToDelete) && $imageToDelete !== 'uploads/events/default.jpg' && file_exists(__DIR__ . '/' . $imageToDelete)) {
+                unlink(__DIR__ . '/' . $imageToDelete);
+            }
+            
+            toast_redirect('salarie_events.php', 'success', '✅ Événement supprimé définitivement.');
+        }
+    } else {
+        toast_redirect('salarie_events.php', 'error', '❌ Vous ne pouvez pas modifier cet événement.');
+    }
+}
+
+// ============================================
+// 3. RÉCUPÉRATION DES DONNÉES
+// ============================================
 $events = salarie_events_for_user($token, $userId);
 $q = trim((string)($_GET['q'] ?? ''));
 $status = trim((string)($_GET['status'] ?? 'all'));
@@ -72,101 +174,550 @@ foreach ($prestations as $p) {
     $prestById[(int)($p['id_prestation'] ?? 0)] = $p;
 }
 
+$imageMap = [];
+db_safe_exec(function (PDO $pdo) use (&$imageMap) {
+    $stmt = $pdo->query('SELECT id_session, image_url FROM session WHERE image_url IS NOT NULL AND image_url != ""');
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $imageMap[(int)$row['id_session']] = $row['image_url'];
+    }
+    return true;
+}, false);
+
+$inscritsMap = [];
+db_safe_exec(function (PDO $pdo) use (&$inscritsMap) {
+    $stmt = $pdo->query('SELECT id_session, COUNT(*) as nb FROM inscription GROUP BY id_session');
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $inscritsMap[(int)$row['id_session']] = (int)$row['nb'];
+    }
+    return true;
+}, false);
+
 $filtered = [];
 foreach ($events as $ev) {
-    if ($status !== 'all' && ($ev['statut'] ?? '') !== $status) {
-        continue;
-    }
+    if ($status !== 'all' && ($ev['statut'] ?? '') !== $status) continue;
     $title = $prestById[(int)($ev['id_prestation'] ?? 0)]['titre'] ?? ($ev['prestation_titre'] ?? 'Session');
     $hay = strtolower($title . ' ' . ($ev['lieu'] ?? ''));
-    if ($q !== '' && !str_contains($hay, strtolower($q))) {
-        continue;
-    }
+    if ($q !== '' && !str_contains($hay, strtolower($q))) continue;
     $ev['_title'] = $title;
+    $ev['_image_url'] = $imageMap[(int)($ev['id_session'] ?? 0)] ?? '';
+    $ev['_inscrits'] = $inscritsMap[(int)($ev['id_session'] ?? 0)] ?? 0;
     $filtered[] = $ev;
 }
+
+$totalEvents = count($events);
+$validatedEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') === 'valide'));
+$pendingEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') === 'en_attente'));
+$cancelledEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') === 'annule'));
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Salarie - Evenements</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes événements - Espace Salarié</title>
     <link rel="stylesheet" href="styles/style.css">
-    <link rel="stylesheet" href="styles/public.css">
-    <link rel="stylesheet" href="styles/employee.css">
+    <link rel="stylesheet" href="styles/pro.css">
+    <style>
+        * { box-sizing: border-box; }
+        body { background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        
+        .events-page { max-width: 1300px; margin: 0 auto; padding: 20px; }
+        
+        .page-header-compact {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header-compact h1 { margin: 0; font-size: 20px; }
+        .page-header-compact p { margin: 0; font-size: 13px; opacity: 0.9; }
+        
+        .stats-row-mini {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-mini {
+            background: white;
+            border-radius: 14px;
+            padding: 10px 18px;
+            flex: 1;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .stat-mini .number { font-size: 24px; font-weight: 700; color: #2e7d32; }
+        .stat-mini .label { font-size: 11px; color: #666; margin-top: 2px; }
+        
+        .filter-bar {
+            background: white;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .filter-bar input, .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 13px;
+        }
+        
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+        
+        .event-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .event-card:hover { transform: translateY(-5px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+        
+        .event-card-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+        
+        .event-card-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            z-index: 2;
+        }
+        .badge-valide { background: #4caf50; }
+        .badge-en_attente { background: #ff9800; }
+        .badge-annule { background: #9e9e9e; }
+        
+        .event-card-content { padding: 16px; }
+        .event-card-title { font-size: 18px; font-weight: 700; margin: 0 0 8px 0; color: #1a1a2e; }
+        .event-card-date { font-size: 13px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .event-card-lieu { font-size: 13px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .event-card-capacite { font-size: 12px; color: #4caf50; font-weight: 500; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
+        
+        .btn-create {
+            background: #4caf50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: background 0.2s;
+            display: inline-block;
+        }
+        .btn-create:hover { background: #2e7d32; }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 20px;
+            color: #999;
+        }
+        
+        .modal-event-zoom {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .modal-event-zoom.active { display: flex; }
+        .modal-event-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 550px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 0;
+            position: relative;
+            cursor: default;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        }
+        .modal-event-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            cursor: pointer;
+            font-size: 28px;
+            color: white;
+            z-index: 20;
+            background: rgba(0,0,0,0.5);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-event-image-container {
+            width: 100%;
+            background: #1a1a2e;
+            border-radius: 24px 24px 0 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            max-height: 250px;
+        }
+        .modal-event-img {
+            width: 100%;
+            height: auto;
+            max-height: 250px;
+            object-fit: contain;
+            display: block;
+        }
+        .modal-event-body { padding: 24px; }
+        .modal-event-body h2 { margin: 0 0 20px 0; font-size: 24px; border-bottom: 2px solid #e0e0e0; padding-bottom: 12px; }
+        .modal-info-row { display: flex; margin-bottom: 14px; }
+        .modal-info-label { width: 100px; font-weight: 600; color: #555; }
+        .modal-info-value { flex: 1; color: #333; }
+        .modal-actions { margin-top: 24px; border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn-modal { padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-modal-primary { background: #ff9800; color: white; }
+        .btn-modal-primary:hover { background: #f57c00; }
+        .btn-modal-danger { background: #dc2626; color: white; }
+        .btn-modal-danger:hover { background: #b91c1c; }
+        .btn-modal-secondary { background: #9e9e9e; color: white; }
+        .btn-modal-secondary:hover { background: #757575; }
+        
+        .modal-form-group { margin-bottom: 16px; }
+        .modal-form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #333; }
+        .modal-form-group input, .modal-form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 14px;
+        }
+        .image-preview { max-width: 100%; max-height: 100px; border-radius: 8px; margin-top: 8px; }
+        .current-image { margin-bottom: 10px; }
+        
+        @media (max-width: 768px) {
+            .events-page { padding: 12px; }
+            .events-grid { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
-<body>
+<body class="pro-page">
 <?php include __DIR__ . '/includes/employee_nav.php'; ?>
 <?php include __DIR__ . '/includes/flash_toast.php'; ?>
 
-<main class="container" style="max-width:1100px;margin:20px auto;padding:0 16px;">
-    <section class="hero-block soft" style="margin-top:18px;">
-        <h1>🎓 Evenements (formations / ateliers)</h1>
-        <p class="muted">Les événements sont créés en <strong>en_attente</strong> puis validés par un responsable.</p>
-    </section>
-
-    <section class="emp-card" style="margin-top:14px;">
-        <h3>➕ Soumettre un nouvel evenement</h3>
-        <form method="POST" class="row-actions" style="flex-wrap:wrap;gap:10px;">
-            <input type="hidden" name="create_event" value="1">
-            <select class="input" name="id_prestation" required style="min-width:260px;">
-                <option value="">Choisir une prestation</option>
-                <?php foreach ($prestations as $p): ?>
-                    <option value="<?= e((int)($p['id_prestation'] ?? 0)) ?>"><?= e($p['titre'] ?? 'Prestation') ?> (<?= e($p['type'] ?? '') ?>)</option>
-                <?php endforeach; ?>
-            </select>
-            <input class="input" type="datetime-local" name="date_debut" required>
-            <input class="input" type="datetime-local" name="date_fin" required>
-            <input class="input" name="lieu" placeholder="Lieu" required>
-            <input class="input" type="number" min="1" name="capacite_max" placeholder="Capacite" required style="width:130px;">
-            <button class="btn-primary" type="submit">Soumettre</button>
-        </form>
-    </section>
-
-    <section class="emp-card" style="margin-top:14px;">
-        <h3>📋 Liste des evenements</h3>
-        <form method="GET" class="row-actions" style="flex-wrap:wrap;">
-            <input class="input" name="q" value="<?= e($q) ?>" placeholder="Recherche titre / lieu">
-            <select class="input" name="status">
+<main class="events-page">
+    
+    <div class="page-header-compact">
+        <div>
+            <h1>🎓 Mes événements</h1>
+            <p>Cliquez sur un événement pour le modifier</p>
+        </div>
+        <a href="salarie_events_create.php" class="btn-create">+ Nouvel événement</a>
+    </div>
+    
+    <div class="stats-row-mini">
+        <div class="stat-mini"><div class="number"><?= $totalEvents ?></div><div class="label">Total</div></div>
+        <div class="stat-mini"><div class="number" style="color:#2e7d32;"><?= $validatedEvents ?></div><div class="label">Validés</div></div>
+        <div class="stat-mini"><div class="number" style="color:#ef6c00;"><?= $pendingEvents ?></div><div class="label">En attente</div></div>
+        <div class="stat-mini"><div class="number" style="color:#dc2626;"><?= $cancelledEvents ?></div><div class="label">Annulés</div></div>
+    </div>
+    
+    <div class="filter-bar">
+        <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; width: 100%;">
+            <input type="text" name="q" placeholder="🔍 Rechercher..." value="<?= e($q) ?>" style="flex: 2; min-width: 150px;">
+            <select name="status">
                 <option value="all" <?= $status === 'all' ? 'selected' : '' ?>>Tous statuts</option>
-                <option value="valide" <?= $status === 'valide' ? 'selected' : '' ?>>Valide</option>
+                <option value="valide" <?= $status === 'valide' ? 'selected' : '' ?>>Validés</option>
                 <option value="en_attente" <?= $status === 'en_attente' ? 'selected' : '' ?>>En attente</option>
-                <option value="annule" <?= $status === 'annule' ? 'selected' : '' ?>>Annule</option>
+                <option value="annule" <?= $status === 'annule' ? 'selected' : '' ?>>Annulés</option>
             </select>
-            <button class="btn-outline" type="submit">Filtrer</button>
+            <button type="submit" style="background:#f0f0f0; border:none; padding:8px 16px; border-radius:30px; cursor:pointer;">Filtrer</button>
+            <a href="salarie_events.php" style="background:#f0f0f0; color:#333; padding:8px 16px; border-radius:30px; text-decoration:none;">Reset</a>
         </form>
-
-        <table class="table" style="margin-top:10px;">
-            <thead>
-            <tr>
-                <th>Prestation</th>
-                <th>Debut</th>
-                <th>Fin</th>
-                <th>Lieu</th>
-                <th>Capacité</th>
-                <th>Statut</th>
-                <th>Inscrits</th>
-            </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($filtered as $ev): ?>
-                <tr>
-                    <td><strong><?= e($ev['_title'] ?? 'Session') ?></strong></td>
-                    <td><?= e(formatDateFr($ev['date_debut'] ?? '')) ?></td>
-                    <td><?= e(formatDateFr($ev['date_fin'] ?? '')) ?></td>
-                    <td><?= e($ev['lieu'] ?? '') ?></td>
-                    <td><?= e((int)($ev['capacite_max'] ?? 0)) ?></td>
-                    <td><?= e($ev['statut'] ?? '') ?></td>
-                    <td><?= e((int)($ev['inscrits_count'] ?? 0)) ?>/<?= e((int)($ev['capacite_max'] ?? 0)) ?></td>
-                </tr>
+    </div>
+    
+    <?php if (empty($filtered)): ?>
+        <div class="empty-state">
+            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+            <h3>Aucun événement trouvé</h3>
+            <p>Créez votre premier événement en cliquant sur le bouton ci-dessus.</p>
+        </div>
+    <?php else: ?>
+        <div class="events-grid">
+            <?php foreach ($filtered as $ev): 
+                $statut = $ev['statut'] ?? 'en_attente';
+                $badgeClass = match($statut) {
+                    'valide' => 'badge-valide',
+                    'en_attente' => 'badge-en_attente',
+                    'annule' => 'badge-annule',
+                    default => 'badge-en_attente'
+                };
+                $badgeText = match($statut) {
+                    'valide' => '✅ Validé',
+                    'en_attente' => '⏳ En attente',
+                    'annule' => '❌ Annulé',
+                    default => $statut
+                };
+                $inscrits = $ev['_inscrits'] ?? 0;
+                $capacite = (int)($ev['capacite_max'] ?? 0);
+                $title = $ev['_title'] ?? 'Session';
+                
+                $imageUrl = '/upcycle/' . $ev['_image_url'];
+                if (empty($ev['_image_url']) || !file_exists(__DIR__ . '/' . $ev['_image_url'])) {
+                    $bgImage = 'https://images.unsplash.com/photo-1517430816045-df4b7de11d1d?auto=format&fit=crop&w=600&q=80';
+                    if (str_contains(mb_strtolower($title), 'bois')) {
+                        $bgImage = 'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?auto=format&fit=crop&w=600&q=80';
+                    } elseif (str_contains(mb_strtolower($title), 'velo')) {
+                        $bgImage = 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=600&q=80';
+                    }
+                    $imageUrl = $bgImage;
+                }
+            ?>
+                <div class="event-card" onclick='openEventZoom(<?= htmlspecialchars(json_encode([
+                    'id' => $ev['id_session'],
+                    'title' => $title,
+                    'date_debut' => date('d/m/Y H:i', strtotime($ev['date_debut'] ?? 'now')),
+                    'date_fin' => date('d/m/Y H:i', strtotime($ev['date_fin'] ?? 'now')),
+                    'lieu' => $ev['lieu'] ?? 'Lieu non défini',
+                    'statut' => $statut,
+                    'statut_text' => $badgeText,
+                    'capacite' => $capacite,
+                    'inscrits' => $inscrits,
+                    'image_url' => $imageUrl,
+                    'date_debut_raw' => date('Y-m-d\TH:i', strtotime($ev['date_debut'] ?? 'now')),
+                    'date_fin_raw' => date('Y-m-d\TH:i', strtotime($ev['date_fin'] ?? 'now')),
+                ]), JSON_HEX_TAG) ?>)'>
+                    <img class="event-card-image" src="<?= $imageUrl ?>" alt="<?= e($title) ?>">
+                    <span class="event-card-badge <?= $badgeClass ?>"><?= $badgeText ?></span>
+                    <div class="event-card-content">
+                        <h3 class="event-card-title"><?= e(mb_substr($title, 0, 40)) ?></h3>
+                        <div class="event-card-date">📅 <?= date('d/m/Y H:i', strtotime($ev['date_debut'] ?? 'now')) ?></div>
+                        <div class="event-card-lieu">📍 <?= e(mb_substr($ev['lieu'] ?? 'Lieu non défini', 0, 35)) ?></div>
+                        <div class="event-card-capacite">👥 <?= $inscrits ?> / <?= $capacite ?> inscrits</div>
+                    </div>
+                </div>
             <?php endforeach; ?>
-            <?php if (count($filtered) === 0): ?>
-                <tr><td colspan="7" class="muted">Aucun evenement.</td></tr>
-            <?php endif; ?>
-            </tbody>
-        </table>
-    </section>
+        </div>
+    <?php endif; ?>
 </main>
+
+<!-- MODAL ZOOM -->
+<div id="eventZoomModal" class="modal-event-zoom" onclick="closeEventZoom()">
+    <div class="modal-event-content" onclick="event.stopPropagation()">
+        <span class="modal-event-close" onclick="closeEventZoom()">&times;</span>
+        <div class="modal-event-image-container">
+            <img id="modalEventImg" class="modal-event-img" src="" alt="">
+        </div>
+        <div class="modal-event-body">
+            <h2 id="zoomTitle"></h2>
+            <div class="modal-info-row"><div class="modal-info-label">📅 Date début :</div><div class="modal-info-value" id="zoomDateDebut"></div></div>
+            <div class="modal-info-row"><div class="modal-info-label">📅 Date fin :</div><div class="modal-info-value" id="zoomDateFin"></div></div>
+            <div class="modal-info-row"><div class="modal-info-label">📍 Lieu :</div><div class="modal-info-value" id="zoomLieu"></div></div>
+            <div class="modal-info-row"><div class="modal-info-label">👥 Capacité :</div><div class="modal-info-value" id="zoomCapacite"></div></div>
+            <div class="modal-info-row"><div class="modal-info-label">📌 Statut :</div><div class="modal-info-value" id="zoomStatut"></div></div>
+            <div class="modal-actions" id="modalActions">
+                <!-- Les boutons seront générés dynamiquement en JS -->
+            </div>
+        </div>
+        <div id="editMode" style="display:none; padding:24px; border-top:1px solid #eee;">
+            <form method="POST" enctype="multipart/form-data" id="editEventForm">
+                <input type="hidden" name="update_event" value="1">
+                <input type="hidden" name="event_id" id="edit_event_id">
+                
+                <div class="modal-form-group">
+                    <label>📅 Date de début</label>
+                    <input type="datetime-local" name="date_debut" id="edit_date_debut" required>
+                </div>
+                <div class="modal-form-group">
+                    <label>📅 Date de fin</label>
+                    <input type="datetime-local" name="date_fin" id="edit_date_fin" required>
+                </div>
+                <div class="modal-form-group">
+                    <label>📍 Lieu</label>
+                    <input type="text" name="lieu" id="edit_lieu" required>
+                </div>
+                <div class="modal-form-group">
+                    <label>👥 Capacité maximale</label>
+                    <input type="number" name="capacite_max" id="edit_capacite" min="1" required>
+                </div>
+                <div class="modal-form-group">
+                    <label>📌 Statut</label>
+                    <select name="statut" id="edit_statut">
+                        <option value="en_attente">⏳ En attente</option>
+                        <option value="valide">✅ Validé</option>
+                        <option value="annule">❌ Annulé</option>
+                    </select>
+                    <small style="color:#666; display:block; margin-top:4px;">Vous pouvez modifier le statut même si l'événement est déjà validé.</small>
+                </div>
+                <div class="modal-form-group">
+                    <label>🖼️ Changer l'image</label>
+                    <div id="currentImagePreview" class="current-image"></div>
+                    <input type="file" name="event_image" accept="image/jpeg,image/png,image/webp">
+                    <label style="margin-top:8px;">
+                        <input type="checkbox" name="delete_image" value="1"> Supprimer l'image actuelle
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-modal btn-modal-primary">💾 Enregistrer</button>
+                    <button type="button" class="btn-modal btn-modal-secondary" onclick="toggleEditMode()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEventData = null;
+
+function openEventZoom(event) {
+    currentEventData = event;
+    
+    document.getElementById('zoomTitle').textContent = event.title;
+    document.getElementById('zoomDateDebut').textContent = event.date_debut;
+    document.getElementById('zoomDateFin').textContent = event.date_fin;
+    document.getElementById('zoomLieu').textContent = event.lieu;
+    document.getElementById('zoomCapacite').textContent = event.inscrits + ' / ' + event.capacite + ' inscrits';
+    
+    let statutHtml = '';
+    if (event.statut === 'valide') statutHtml = '<span class="badge-valide" style="background:#e8f5e9; color:#2e7d32; padding:4px 12px; border-radius:30px;">✅ Validé</span>';
+    else if (event.statut === 'en_attente') statutHtml = '<span class="badge-en_attente" style="background:#fff3e0; color:#ef6c00; padding:4px 12px; border-radius:30px;">⏳ En attente</span>';
+    else statutHtml = '<span class="badge-annule" style="background:#f5f5f5; color:#757575; padding:4px 12px; border-radius:30px;">❌ Annulé</span>';
+    document.getElementById('zoomStatut').innerHTML = statutHtml;
+    
+    const modalImg = document.getElementById('modalEventImg');
+    modalImg.src = event.image_url;
+    modalImg.alt = event.title;
+    
+    // Générer les boutons dynamiquement selon le statut
+    const actionsDiv = document.getElementById('modalActions');
+    actionsDiv.innerHTML = '';
+    
+    // Bouton Modifier (toujours présent)
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-modal btn-modal-primary';
+    editBtn.innerHTML = '✏️ Modifier';
+    editBtn.onclick = () => toggleEditMode();
+    actionsDiv.appendChild(editBtn);
+    
+    // Bouton Annuler/Supprimer (si événement non annulé)
+    if (event.statut !== 'annule') {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn-modal btn-modal-danger';
+        if (event.inscrits > 0) {
+            cancelBtn.innerHTML = '❌ Annuler l\'événement';
+        } else {
+            cancelBtn.innerHTML = '🗑️ Supprimer l\'événement';
+        }
+        cancelBtn.onclick = () => confirmDeleteOrCancel();
+        actionsDiv.appendChild(cancelBtn);
+    }
+    
+    // Bouton Fermer
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn-modal btn-modal-secondary';
+    closeBtn.innerHTML = 'Fermer';
+    closeBtn.onclick = () => closeEventZoom();
+    actionsDiv.appendChild(closeBtn);
+    
+    document.getElementById('edit_event_id').value = event.id;
+    document.getElementById('edit_date_debut').value = event.date_debut_raw;
+    document.getElementById('edit_date_fin').value = event.date_fin_raw;
+    document.getElementById('edit_lieu').value = event.lieu;
+    document.getElementById('edit_capacite').value = event.capacite;
+    document.getElementById('edit_statut').value = event.statut;
+    
+    const previewDiv = document.getElementById('currentImagePreview');
+    if (event.image_url && !event.image_url.includes('unsplash')) {
+        previewDiv.innerHTML = '<img src="' + event.image_url + '" class="image-preview"><br><small>Image actuelle</small>';
+    } else {
+        previewDiv.innerHTML = '<small>Aucune image personnalisée</small>';
+    }
+    
+    const editDiv = document.getElementById('editMode');
+    if (editDiv) editDiv.style.display = 'none';
+    
+    document.getElementById('eventZoomModal').classList.add('active');
+}
+
+function closeEventZoom() {
+    document.getElementById('eventZoomModal').classList.remove('active');
+    currentEventData = null;
+}
+
+function toggleEditMode() {
+    const editDiv = document.getElementById('editMode');
+    if (editDiv.style.display === 'none') {
+        editDiv.style.display = 'block';
+    } else {
+        editDiv.style.display = 'none';
+    }
+}
+
+function confirmDeleteOrCancel() {
+    var hasInscrits = currentEventData && currentEventData.inscrits > 0;
+    var message = hasInscrits 
+        ? '⚠️ Attention : ' + currentEventData.inscrits + ' personne(s) sont inscrites à cet événement.\n\n' +
+          'L\'annulation enverra une notification aux participants et l\'événement ne sera plus accessible.\n\n' +
+          'Confirmez-vous l\'ANNULATION de cet événement ?'
+        : '⚠️ Êtes-vous sûr de vouloir SUPPRIMER définitivement cet événement ?\n\n' +
+          'Cette action est irréversible.';
+    
+    if (confirm(message)) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '';
+        var input1 = document.createElement('input');
+        input1.type = 'hidden';
+        input1.name = 'delete_event';
+        input1.value = '1';
+        var input2 = document.createElement('input');
+        input2.type = 'hidden';
+        input2.name = 'event_id';
+        input2.value = currentEventData.id;
+        form.appendChild(input1);
+        form.appendChild(input2);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEventZoom();
+});
+</script>
+
+<?php include __DIR__ . '/includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

@@ -67,5 +67,6 @@ $totalScore = (int)($score['score_global'] ?? 0);
 <?php endif; ?>
 
 <?php include __DIR__ . '/includes/flash_toast.php'; ?>
+<?php  ?>
 </body>
 </html>

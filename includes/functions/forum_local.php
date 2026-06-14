@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/local_db.php';
+require_once __DIR__ . '/../notifications.php';
 
 function forum_schema_ready(): bool
 {
@@ -238,19 +239,29 @@ function forum_moderate_topic(int $topicId, int $moderatorId, string $action, st
         return $ok;
     }, false);
 }
-
+// Remplacer la fonction forum_moderate_post par celle-ci:
 function forum_moderate_post(int $postId, int $moderatorId, string $action, string $reason = ''): bool
 {
     if ($postId <= 0 || !forum_schema_ready()) {
         return false;
     }
+    
     $hide = $action === 'hide' ? 1 : ($action === 'restore' ? 0 : null);
     if ($hide === null) {
         return false;
     }
+    
     return (bool)db_safe_exec(static function (PDO $pdo) use ($postId, $moderatorId, $hide, $reason, $action): bool {
-        $stmt = $pdo->prepare('UPDATE forum_posts SET is_hidden = ?, hidden_reason = ?, hidden_by = ?, hidden_at = NOW() WHERE id_post = ?');
-        $ok = $stmt->execute([$hide, $reason, $moderatorId, $postId]);
+        if ($hide == 1) {
+            // Masquer avec toutes les infos
+            $stmt = $pdo->prepare('UPDATE forum_posts SET is_hidden = ?, hidden_reason = ?, hidden_by = ?, hidden_at = NOW() WHERE id_post = ?');
+            $ok = $stmt->execute([$hide, $reason, $moderatorId, $postId]);
+        } else {
+            // Restaurer
+            $stmt = $pdo->prepare('UPDATE forum_posts SET is_hidden = ?, hidden_reason = NULL, hidden_by = NULL, hidden_at = NULL WHERE id_post = ?');
+            $ok = $stmt->execute([$hide, $postId]);
+        }
+        
         if ($ok && $moderatorId > 0) {
             $log = $pdo->prepare('INSERT INTO forum_moderation_logs (moderator_id, action, target_type, target_id, reason, created_at)
                 VALUES (?, ?, "post", ?, ?, NOW())');
@@ -259,7 +270,6 @@ function forum_moderate_post(int $postId, int $moderatorId, string $action, stri
         return $ok;
     }, false);
 }
-
 function forum_get_pending_reports(int $limit = 50): array
 {
     if (!forum_schema_ready()) {
@@ -302,6 +312,55 @@ function forum_get_moderation_logs(int $limit = 15): array
 
 function forum_notify_moderators(string $title, string $content): void
 {
-    require_once __DIR__ . '/../notifications.php';
     notif_notify_roles([1, 4], 'forum', $title, $content);
+}
+
+// ============================================
+// NOUVELLES FONCTIONS POUR LA MODÉRATION
+// ============================================
+
+function forum_is_user_banned(int $userId): bool
+{
+    if ($userId <= 0) return false;
+    return (bool)db_safe_exec(function (PDO $pdo) use ($userId): bool {
+        $st = $pdo->prepare('SELECT COUNT(*) FROM forum_bans WHERE user_id = ? AND banned_until > NOW()');
+        $st->execute([$userId]);
+        return $st->fetchColumn() > 0;
+    }, false);
+}
+
+function forum_get_user_warnings(int $userId, bool $onlyUnread = false): array
+{
+    if ($userId <= 0) return [];
+    return (array)db_safe_exec(function (PDO $pdo) use ($userId, $onlyUnread): array {
+        $sql = 'SELECT w.*, adm.pseudo as admin_pseudo 
+                FROM user_warnings w
+                JOIN utilisateur adm ON adm.id_user = w.issued_by
+                WHERE w.user_id = ?';
+        $params = [$userId];
+        if ($onlyUnread) {
+            $sql .= ' AND w.is_read = 0';
+        }
+        $sql .= ' ORDER BY w.created_at DESC';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }, []);
+}
+
+function forum_mark_warning_read(int $warningId, int $userId): bool
+{
+    return (bool)db_safe_exec(function (PDO $pdo) use ($warningId, $userId): bool {
+        $st = $pdo->prepare('UPDATE user_warnings SET is_read = 1 WHERE id_warning = ? AND user_id = ?');
+        return $st->execute([$warningId, $userId]);
+    }, false);
+}
+function forum_timeAgo($datetime) {
+    $timestamp = strtotime($datetime);
+    $diff = time() - $timestamp;
+    if ($diff < 60) return 'à l\'instant';
+    if ($diff < 3600) return floor($diff / 60) . ' min';
+    if ($diff < 86400) return floor($diff / 3600) . ' h';
+    if ($diff < 604800) return floor($diff / 86400) . ' j';
+    return date('d/m/Y', $timestamp);
 }

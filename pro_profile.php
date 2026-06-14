@@ -65,4 +65,5 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
     <textarea class="input" name="bio" placeholder="Bio" style="grid-column:1/-1;min-height:96px;"><?= e($me['bio'] ?? '') ?></textarea>
     <button class="btn-primary" type="submit" style="grid-column:1/-1;">💾 Enregistrer</button>
 </form>
-</section></main><?php include 'includes/flash_toast.php'; ?></body></html>
+</section></main><?php  ?>
+</body></html>

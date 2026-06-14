@@ -30,6 +30,15 @@ func AnnoncesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// VÉRIFICATION DES LIMITES D'ANNONCES POUR LES PROS
+		if claims.RoleID == RolePro {
+			if !CanUserCreateAnnonce(claims.UserID, claims.RoleID) {
+				remaining := GetRemainingAnnoncesCount(claims.UserID, claims.RoleID)
+				http.Error(w, "Limite d'annonces atteinte. Compte gratuit: 5 annonces max. Il vous reste "+strconv.Itoa(remaining)+" annonces disponibles. Passez à l'abonnement Premium pour plus d'annonces.", http.StatusForbidden)
+				return
+			}
+		}
+
 		var a model.Annonce
 		if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)

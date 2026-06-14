@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/admin_bootstrap.php';
-require_once 'includes/functions/forum.php';
+require_once 'includes/functions/forum_api.php';  // CORRIGÉ
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create_category'])) {
@@ -108,13 +108,14 @@ foreach ($categories as $c) {
                                 <input type="hidden" name="delete_category_id" value="<?= (int)($c['id'] ?? 0) ?>">
                                 <button class="btn-danger" type="submit">🗑️ Supprimer</button>
                             </form>
-                        </td>
-                    </tr>
+                         </div>
+                     </tr>
                 <?php endforeach; ?>
                 </tbody>
-            </table>
+             </div>
         </div>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>

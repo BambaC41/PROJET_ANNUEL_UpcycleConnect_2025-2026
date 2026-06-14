@@ -18,7 +18,7 @@ require_once __DIR__ . '/functions/conteneur.php';
 require_once __DIR__ . '/functions/paiements.php';
 require_once __DIR__ . '/functions/annonce.php';
 require_once __DIR__ . '/functions/conseils.php';
-require_once __DIR__ . '/functions/forum.php';
+require_once __DIR__ . '/functions/forum_api.php';
 require_once __DIR__ . '/functions/view_context.php';
 require_once __DIR__ . '/functions/local_db.php';
 require_once __DIR__ . '/functions/bootstrap_notify.php';

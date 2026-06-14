@@ -8,7 +8,7 @@ set_lang_from_request();
 require_once __DIR__ . '/functions/api_core.php';
 require_once __DIR__ . '/functions/events.php';
 require_once __DIR__ . '/functions/conseils.php';
-require_once __DIR__ . '/functions/forum.php';
+require_once __DIR__ . '/functions/forum_api.php';
 require_once __DIR__ . '/functions/view_context.php';
 
 if (!isset($_SESSION['token']) || empty($_SESSION['token'])) {
@@ -64,3 +64,14 @@ function toast_redirect(string $url, string $type, string $message): void
     exit;
 }
 
+// Fonction pour récupérer la connexion PDO
+if (!function_exists('getDbConnection')) {
+    function getDbConnection(): PDO {
+        $host = 'localhost';
+        $dbname = 'upcycleconnect';
+        $user = 'root';
+        $pass = 'root';
+        return new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+    }
+}
+?>

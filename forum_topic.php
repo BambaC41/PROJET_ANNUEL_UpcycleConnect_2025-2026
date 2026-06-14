@@ -232,5 +232,6 @@ function updateCharCount(textarea) {
     }
 }
 </script>
+<?php  ?>
 </body>
 </html>

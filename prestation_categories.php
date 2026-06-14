@@ -168,6 +168,6 @@ $categories = api_get_categories($_SESSION['token']);
 </div>
 
 <script src="scripts/categories.js" defer></script>
-<?php include 'includes/footer.php'; ?>
+<?php  ?>
 </body>
 </html>

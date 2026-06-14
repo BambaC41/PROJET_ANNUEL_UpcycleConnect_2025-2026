@@ -171,5 +171,6 @@ if (modeSel) {
     togglePrix();
 }
 </script>
+<?php  ?>
 </body>
 </html>

@@ -62,3 +62,14 @@ function formatPriceEur($amount): string
 {
     return number_format((float)$amount, 2, ',', ' ') . ' EUR';
 }
+// Vérification directe du statut premium en BDD
+function isUserPremiumDirect($userId) {
+    global $pdo;
+    if (!isset($pdo)) {
+        require_once __DIR__ . '/functions/local_db.php';
+        $pdo = getDbConnection();
+    }
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM abonnement_pro WHERE id_pro = ? AND statut = "actif" AND (date_fin IS NULL OR date_fin >= CURDATE())');
+    $stmt->execute([$userId]);
+    return $stmt->fetchColumn() > 0;
+}

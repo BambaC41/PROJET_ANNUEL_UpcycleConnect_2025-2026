@@ -36,5 +36,6 @@ $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
         </table>
     </section>
 </main>
+<?php  ?>
 </body>
 </html>
