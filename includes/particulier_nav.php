@@ -2,6 +2,7 @@
 require_once __DIR__ . '/functions/view_context.php';
 require_once __DIR__ . '/notifications.php';
 require_once __DIR__ . '/i18n.php';
+
 $cu = vc_current_user();
 $displayPseudo = $cu['pseudo'] ?? 'Particulier';
 $displayPhoto = vc_media_url($cu['photo_profil'] ?? '');
@@ -10,7 +11,7 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
 ?>
 <header class="navbar">
     <div class="logo"><a href="particulier.php" style="text-decoration:none;color:#16a34a;">UpcycleConnect Particulier</a></div>
-    <nav class="auth-buttons">
+    <nav class="auth-buttons" style="display:flex;flex-wrap:wrap;align-items:center;gap:4px;">
         <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:rgba(22,163,74,.08);">
             <span style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#16a34a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;">
                 <?php if ($displayPhoto !== ''): ?>
@@ -21,9 +22,8 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
             </span>
             <strong><?= vc_escape($displayPseudo) ?></strong>
         </span>
-        <!-- Mon espace - gardé, Dashboard SUPPRIMÉ -->
-        <a class="btn-outline" href="particulier.php">Mon espace</a>
-        <!-- <a class="btn-outline" href="particulier.php">Dashboard</a> SUPPRIMÉ -->
+        
+        <a class="btn-outline" href="particulier.php">🏠 Accueil</a>
         <a class="btn-outline" href="particulier_annonces.php">📦 Annonces</a>
         <a class="btn-outline" href="particulier_conteneurs.php">🗳️ Conteneurs</a>
         <a class="btn-outline" href="particulier_conseils.php">💡 Conseils</a>
@@ -31,10 +31,9 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
         <a class="btn-outline" href="particulier_catalogue.php">🛍️ Catalogue</a>
         <a class="btn-outline" href="particulier_planning.php">🗓️ Planning</a>
         <a class="btn-outline" href="particulier_documents.php">📄 Documents</a>
+        <a class="btn-outline" href="particulier_chat.php">💬 Chat</a>
         <a class="btn-outline" href="notifications.php">🔔 Notifications<?= $notifCount > 0 ? ' (' . (int)$notifCount . ')' : '' ?></a>
         <a class="btn-outline" href="particulier_profile.php">👤 Profil</a>
-        <a class="btn-outline" href="<?= vc_escape(lang_url('fr')) ?>">FR</a>
-        <a class="btn-outline" href="<?= vc_escape(lang_url('en')) ?>">EN</a>
-        <a class="btn-primary" href="logout.php">Déconnexion</a>
+        <a class="btn-primary" href="logout.php" style="padding:6px 14px;border-radius:8px;background:#f44336;color:white;text-decoration:none;">Déconnexion</a>
     </nav>
 </header>

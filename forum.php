@@ -31,7 +31,6 @@ if ($userId <= 0) {
 }
 bootstrap_flash_unread_notifications();
 
-// Vérifier si l'utilisateur est banni du forum
 function forum_is_user_banned_check(int $userId): bool {
     return (bool)db_safe_exec(function (PDO $pdo) use ($userId): bool {
         $st = $pdo->prepare('SELECT COUNT(*) FROM forum_bans WHERE user_id = ? AND banned_until > NOW()');
@@ -61,15 +60,13 @@ if (forum_is_user_banned_check($userId)) {
                 <a href="<?= nav_role_dashboard_url() ?>" class="btn-primary" style="margin-top: 20px;">Retour au tableau de bord</a>
             </div>
         </main>
-    <?php  ?>
-</body>
+    </body>
     </html>
     <?php
     exit;
 }
 
 $navFile = match ($roleId) {
-    1 => null,
     3 => 'includes/pro_nav.php',
     4 => 'includes/employee_nav.php',
     default => 'includes/particulier_nav.php',
@@ -237,15 +234,15 @@ $showCreate = $roleId >= 1 && $roleId <= 4;
 </head>
 <body class="<?= e($bodyClass) ?>">
 <?php
-if ($roleId === 1) {
-    include __DIR__ . '/includes/header.php';
-    echo '<main class="admin-layout">';
-    include __DIR__ . '/includes/sidebar.php';
-    echo '<section class="admin-content"><section class="admin-section">';
-} elseif ($navFile) {
+
+include __DIR__ . '/includes/header.php';
+
+echo '<main class="page-shell" style="max-width:1200px;margin:0 auto;padding:24px 20px 48px;">';
+
+if ($roleId !== 1) {
     include __DIR__ . '/' . $navFile;
-    echo '<main class="page-shell" style="max-width:1200px;margin:0 auto;padding:24px 20px 48px;">';
 }
+
 include __DIR__ . '/includes/flash_toast.php';
 ?>
 
@@ -341,11 +338,8 @@ include __DIR__ . '/includes/flash_toast.php';
 
 <?php endif; ?>
 <?php
-if ($roleId === 1) {
-    echo '</section></section></main>';
-} else {
-    echo '</main>';
-}
+
+echo '</main>';
 ?>
 <script>
 function updateCharCount(textarea) {
@@ -358,6 +352,5 @@ function updateCharCount(textarea) {
     }
 }
 </script>
-<?php  ?>
 </body>
 </html>

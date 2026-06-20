@@ -14,7 +14,6 @@ type Conseil struct {
 	AuteurEmail  string `json:"auteur_email,omitempty"`
 }
 
-// ConseilFilter filtres pour GET /admin/conseils
 type ConseilFilter struct {
 	Status   string
 	AuthorID int

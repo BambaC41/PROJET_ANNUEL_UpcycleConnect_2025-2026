@@ -19,7 +19,7 @@ import (
 
 func init() {
 	stripe.Key = "sk_test_51TgtT9V05VqXDcgMFj94nV75YrYO67bcoLXokkldSJLCDaQeNsTaX26jpc5RJp7Y0IE2Zkt3VDdxpgZ3fjma2KFd00AmEOIMOG"
-	log.Println("✅ Stripe key loaded")
+	log.Println("Stripe key loaded")
 }
 
 func CreateCheckoutSession(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +222,6 @@ func generatePaymentReceipt(userID int, amount float64, itemName string, metadat
 	log.Printf("Facture PDF generee: %s", fullPath)
 	return filename, nil
 }
-
 func VerifyPayment(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.URL.Query().Get("session_id")
 	if sessionID == "" {
@@ -252,31 +251,54 @@ func VerifyPayment(w http.ResponseWriter, r *http.Request) {
 		userID, _ := strconv.Atoi(s.Metadata["user_id"])
 		itemName := s.Metadata["item_name"]
 		annonceID := s.Metadata["annonce_id"]
+		inscriptionID := s.Metadata["inscription_id"] //
 
 		if annonceID != "" {
-			db.DB.Exec(`UPDATE annonce SET commission_payee = 1, commission_payee_at = NOW() WHERE id_annonce = ?`, annonceID)
-			log.Printf("Commission payee pour l'annonce %s", annonceID)
+			_, err := db.DB.Exec(`UPDATE annonce SET commission_payee = 1, commission_payee_at = NOW() WHERE id_annonce = ?`, annonceID)
+			if err != nil {
+				log.Printf("Erreur mise à jour commission annonce %s: %v", annonceID, err)
+			} else {
+				log.Printf("Commission payée pour l'annonce %s", annonceID)
+			}
+		}
+
+		if inscriptionID != "" {
+			_, err := db.DB.Exec(`
+				INSERT INTO paiement (provider, payment_ref, montant, devise, statut, paid_at, id_inscription, user_id)
+				VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)
+			`, "stripe", s.ID, amount, "EUR", "paid", inscriptionID, userID)
+			if err != nil {
+				log.Printf("Erreur insertion paiement inscription %s: %v", inscriptionID, err)
+			} else {
+				log.Printf("Paiement enregistré pour l'inscription %s", inscriptionID)
+			}
 		}
 
 		pdfFilename, err := generatePaymentReceipt(userID, amount, itemName, s.Metadata)
 		if err != nil {
 			log.Printf("Erreur generation PDF: %v", err)
 		} else {
-			db.DB.Exec(`INSERT INTO document_genere (id_user, type, titre, file_path, created_at) VALUES (?, 'facture', ?, ?, NOW())`,
+			_, err = db.DB.Exec(`INSERT INTO document_genere (id_user, type, titre, file_path, created_at) VALUES (?, 'facture', ?, ?, NOW())`,
 				userID, "Facture - "+itemName, pdfFilename)
-			log.Printf("Facture PDF enregistree: %s", pdfFilename)
+			if err != nil {
+				log.Printf("Erreur insertion document_genere: %v", err)
+			} else {
+				log.Printf("Facture PDF enregistrée: %s", pdfFilename)
+			}
 		}
 
-		db.DB.Exec(`INSERT INTO notification (id_user, type, titre, contenu, created_at) VALUES (?, 'paiement', 'Facture disponible', ?, NOW())`,
-			userID, fmt.Sprintf("Votre facture a ete generee et est disponible dans votre espace Documents."))
-		log.Printf("Notification envoyee")
+		_, err = db.DB.Exec(`INSERT INTO notification (id_user, type, titre, contenu, created_at) VALUES (?, 'paiement', 'Facture disponible', ?, NOW())`,
+			userID, fmt.Sprintf("Votre facture a été générée et est disponible dans votre espace Documents."))
+		if err != nil {
+			log.Printf("Erreur insertion notification: %v", err)
+		} else {
+			log.Printf("Notification envoyée")
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
-
-// callStripeAPI - Fonction pour appeler directement l'API REST Stripe
 func callStripeAPI(endpoint string, method string) (map[string]interface{}, error) {
 	url := "https://api.stripe.com/v1/" + endpoint
 
@@ -307,15 +329,12 @@ func callStripeAPI(endpoint string, method string) (map[string]interface{}, erro
 	return result, nil
 }
 
-// GetStripeBalance récupère le solde et les transactions Stripe via API REST
 func GetStripeBalance() (map[string]interface{}, error) {
-	// Récupérer le solde
 	balanceData, err := callStripeAPI("balance", "GET")
 	if err != nil {
 		return nil, err
 	}
 
-	// Récupérer les transactions (paiements)
 	chargesData, err := callStripeAPI("charges?limit=50", "GET")
 	if err != nil {
 		return nil, err
@@ -343,7 +362,6 @@ func GetStripeBalance() (map[string]interface{}, error) {
 		}
 	}
 
-	// Extraire les transactions
 	var transactions []map[string]interface{}
 	totalRevenue := 0.0
 
@@ -386,14 +404,12 @@ func GetStripeBalance() (map[string]interface{}, error) {
 	}, nil
 }
 
-// GetAllStripePaymentsHandler - Handler pour récupérer tous les paiements Stripe
 func GetAllStripePaymentsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Vérifier que l'utilisateur est admin
 	if _, ok := requireAdmin(w, r); !ok {
 		return
 	}

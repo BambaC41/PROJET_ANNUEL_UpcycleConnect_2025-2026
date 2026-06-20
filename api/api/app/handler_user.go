@@ -15,11 +15,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// ============================================
-// FONCTIONS DE VÉRIFICATION PREMIUM
-// ============================================
-
-// CheckUserPremium vérifie si un utilisateur pro a un abonnement premium actif
 func CheckUserPremium(userID int) bool {
 	var count int
 	err := db.DB.QueryRow(`
@@ -41,7 +36,6 @@ func CheckUserPremium(userID int) bool {
 	return result
 }
 
-// GetUserSubscription récupère l'abonnement actif d'un utilisateur
 func GetUserSubscription(userID int) map[string]interface{} {
 	var idAbonnement int
 	var formule, statut, dateDebut, dateFin string
@@ -86,21 +80,19 @@ func GetUserSubscription(userID int) map[string]interface{} {
 	}
 }
 
-// GetMaxAnnoncesByUserID retourne le nombre max d'annonces selon l'abonnement
 func GetMaxAnnoncesByUserID(userID int, roleID int) int {
-	// Les particuliers n'ont pas de limite stricte
+
 	if roleID == RoleUser {
 		return 999
 	}
-	// Les pros gratuits : 5 annonces max
+
 	if !CheckUserPremium(userID) {
 		return 5
 	}
-	// Pros premium : illimité
+
 	return 999
 }
 
-// CanUserCreateAnnonce vérifie si l'utilisateur peut créer une nouvelle annonce
 func CanUserCreateAnnonce(userID int, roleID int) bool {
 	maxAnnonces := GetMaxAnnoncesByUserID(userID, roleID)
 
@@ -118,7 +110,6 @@ func CanUserCreateAnnonce(userID int, roleID int) bool {
 	return currentCount < maxAnnonces
 }
 
-// GetRemainingAnnoncesCount retourne le nombre d'annonces restantes
 func GetRemainingAnnoncesCount(userID int, roleID int) int {
 	maxAnnonces := GetMaxAnnoncesByUserID(userID, roleID)
 
@@ -140,36 +131,29 @@ func GetRemainingAnnoncesCount(userID int, roleID int) int {
 	return remaining
 }
 
-// UpdateUpcyclingScore calcule et met à jour le score d'un utilisateur
 func UpdateUpcyclingScore(userID int) error {
 	var score int
 
-	// Dépôts validés (15 pts chacun)
 	var depots int
 	db.DB.QueryRow("SELECT COUNT(*) FROM demande_depot WHERE id_user = ? AND statut = 'deposee'", userID).Scan(&depots)
 	score += depots * 15
 
-	// Annonces validées (10 pts chacune)
 	var annonces int
 	db.DB.QueryRow("SELECT COUNT(*) FROM annonce WHERE id_user = ? AND statut = 'validee'", userID).Scan(&annonces)
 	score += annonces * 10
 
-	// Inscriptions à des événements (20 pts chacune)
 	var inscriptions int
 	db.DB.QueryRow("SELECT COUNT(*) FROM inscription WHERE id_user = ? AND statut = 'confirmee'", userID).Scan(&inscriptions)
 	score += inscriptions * 20
 
-	// Projets upcycling (25 pts chacun)
 	var projets int
 	db.DB.QueryRow("SELECT COUNT(*) FROM projet_upcycling WHERE id_pro = ?", userID).Scan(&projets)
 	score += projets * 25
 
-	// Mettre à jour le score
 	_, err := db.DB.Exec("UPDATE utilisateur SET upcycling_score = ? WHERE id_user = ?", score, userID)
 	return err
 }
 
-// GetUpcyclingScore récupère le score d'un utilisateur
 func GetUpcyclingScore(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -187,7 +171,6 @@ func GetUpcyclingScore(w http.ResponseWriter, r *http.Request) {
 		score = 0
 	}
 
-	// Récupérer les détails pour le front
 	var details struct {
 		AnnoncesValidees int     `json:"annonces_validees"`
 		DepotsRealises   int     `json:"depots_realises"`
@@ -389,14 +372,15 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if user.RoleID == RolePro && !user.IsApproved {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusForbidden)
-		json.NewEncoder(w).Encode(map[string]string{
-			"error": "pro account pending admin approval",
-		})
-		return
-	}
+	// 🔥 SUPPRESSION DU BLOC QUI BLOQUAIT LES PROS NON APPROUVÉS
+	// if user.RoleID == RolePro && !user.IsApproved {
+	//     w.Header().Set("Content-Type", "application/json")
+	//     w.WriteHeader(http.StatusForbidden)
+	//     json.NewEncoder(w).Encode(map[string]string{
+	//         "error": "pro account pending admin approval",
+	//     })
+	//     return
+	// }
 
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
@@ -441,7 +425,6 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ajouter les infos premium à la réponse
 	response := map[string]interface{}{
 		"id_user":             user.ID,
 		"email":               user.Email,
@@ -573,7 +556,7 @@ func UserByIDHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-		if req.RoleID < 1 || req.RoleID > 4 {
+		if req.RoleID != nil && (*req.RoleID < 1 || *req.RoleID > 4) {
 			http.Error(w, "Invalid role_id", http.StatusBadRequest)
 			return
 		}
@@ -754,7 +737,6 @@ func UsersRouter(w http.ResponseWriter, r *http.Request) {
 	UserByIDHandler(w, r)
 }
 
-// GetMySubscriptionHandler - Récupérer l'abonnement du pro connecté
 func GetMySubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -766,7 +748,6 @@ func GetMySubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vérifier que c'est un professionnel (role_id = 3)
 	if claims.RoleID != RolePro {
 		http.Error(w, "Accès réservé aux professionnels", http.StatusForbidden)
 		return
@@ -776,7 +757,6 @@ func GetMySubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, subscription)
 }
 
-// CancelSubscriptionHandler - Résilier l'abonnement
 func CancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -793,7 +773,6 @@ func CancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Mettre à jour le statut à "resilie"
 	_, err := db.DB.Exec(`
 		UPDATE abonnement_pro 
 		SET statut = 'resilie' 
@@ -808,7 +787,6 @@ func CancelSubscriptionHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"message": "Abonnement résilié avec succès"})
 }
 
-// GetMyProjectsHandler - Récupérer les projets du pro connecté
 func GetMyProjectsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

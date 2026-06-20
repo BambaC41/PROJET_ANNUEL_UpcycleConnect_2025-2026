@@ -3,7 +3,6 @@ require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/local_db.php';
 require_once 'includes/ui_helpers.php';
 
-// Récupérer les données Stripe
 $stripeData = api_get_stripe_balance();
 $totalRevenue = 0;
 $transactionsCount = 0;
@@ -22,7 +21,6 @@ if (($stripeData['status'] ?? 0) === 200) {
     }
 }
 
-// Revenus mensuels depuis la BDD
 $monthlyRevenue = (array)db_safe_exec(function (PDO $pdo) {
     $stmt = $pdo->prepare("
         SELECT 
@@ -178,69 +176,65 @@ $monthlyRevenue = (array)db_safe_exec(function (PDO $pdo) {
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<div class="admin-layout">
-    <?php include 'includes/sidebar.php'; ?>
-    <main class="admin-content">
-        <section class="admin-section">
-            <?php include 'includes/flash_toast.php'; ?>
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                <h1>💰 Finance & Paiements Stripe</h1>
-                <button class="refresh-btn" onclick="location.reload()">🔄 Actualiser</button>
+<main class="pro-shell page-shell">
+    <section class="admin-section">
+        <?php include 'includes/flash_toast.php'; ?>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <h1>💰 Finance & Paiements Stripe</h1>
+            <button class="refresh-btn" onclick="location.reload()">🔄 Actualiser</button>
+        </div>
+        
+        <div class="finance-stats">
+            <div class="stat-card stripe">
+                <div class="stat-icon">💳</div>
+                <div class="stat-amount"><?= number_format($totalRevenue, 2, ',', ' ') ?> €</div>
+                <div class="stat-label">Total des transactions Stripe</div>
+                <div class="stat-sub"><?= $transactionsCount ?> paiement(s) effectué(s)</div>
             </div>
-            
-            <div class="finance-stats">
-                <div class="stat-card stripe">
-                    <div class="stat-icon">💳</div>
-                    <div class="stat-amount"><?= number_format($totalRevenue, 2, ',', ' ') ?> €</div>
-                    <div class="stat-label">Total des transactions Stripe</div>
-                    <div class="stat-sub"><?= $transactionsCount ?> paiement(s) effectué(s)</div>
-                </div>
+        </div>
+        
+        <?php if (!empty($monthlyRevenue)): ?>
+        <div class="chart-container">
+            <h3>📈 Évolution des revenus mensuels</h3>
+            <canvas id="revenueChart" height="80" style="max-height: 250px;"></canvas>
+        </div>
+        <?php endif; ?>
+        
+        <h2 style="margin: 30px 0 20px 0;">📋 Historique des transactions Stripe</h2>
+        
+        <?php if (empty($stripeTransactions)): ?>
+            <div class="empty-state">
+                <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                <h3>Aucune transaction Stripe</h3>
             </div>
-            
-            <?php if (!empty($monthlyRevenue)): ?>
-            <div class="chart-container">
-                <h3>📈 Évolution des revenus mensuels</h3>
-                <canvas id="revenueChart" height="80" style="max-height: 250px;"></canvas>
-            </div>
-            <?php endif; ?>
-            
-            <h2 style="margin: 30px 0 20px 0;">📋 Historique des transactions Stripe</h2>
-            
-            <?php if (empty($stripeTransactions)): ?>
-                <div class="empty-state">
-                    <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-                    <h3>Aucune transaction Stripe</h3>
-                </div>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="payment-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Montant</th>
-                                <th>Statut</th>
-                                <th>Date</th>
+        <?php else: ?>
+            <div class="table-responsive">
+                <table class="payment-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Montant</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($stripeTransactions as $index => $tx): ?>
+                            <tr class="payment-row" onclick="showTransactionDetails(<?= $index ?>)">
+                                <td><small><?= e(substr($tx['id'] ?? '', 0, 16)) ?>...</small></td>
+                                <td><strong><?= number_format($tx['amount'] ?? 0, 2, ',', ' ') ?> €</strong></td>
+                                <td><span class="status-paid">✅ <?= e($tx['status'] ?? 'succeeded') ?></span></td>
+                                <td><?= e($tx['created'] ?? '—') ?></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($stripeTransactions as $index => $tx): ?>
-                                <tr class="payment-row" onclick="showTransactionDetails(<?= $index ?>)">
-                                    <td><small><?= e(substr($tx['id'] ?? '', 0, 16)) ?>...</small></td>
-                                    <td><strong><?= number_format($tx['amount'] ?? 0, 2, ',', ' ') ?> €</strong></td>
-                                    <td><span class="status-paid">✅ <?= e($tx['status'] ?? 'succeeded') ?></span></td>
-                                    <td><?= e($tx['created'] ?? '—') ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </section>
-    </main>
-</div>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php endif; ?>
+    </section>
+</main>
 
-<!-- Modal détails transaction -->
 <div id="transactionModal" class="modal-transaction" onclick="closeTransactionModal()">
     <div class="modal-transaction-content" onclick="event.stopPropagation()">
         <div class="modal-header">
@@ -319,6 +313,5 @@ new Chart(revenueCtx, {
 });
 <?php endif; ?>
 </script>
-<?php  ?>
 </body>
 </html>

@@ -8,10 +8,8 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
 $annonces = api_get_my_annonces()['data'] ?? [];
 $annoncesPubliques = api_get_annonces()['data'] ?? [];
 
-// 🔥 CORRECTION : Récupérer TOUTES les demandes de dépôt (y compris retiree)
 $totalRecuperations = 0;
 db_safe_exec(function(PDO $pdo) use (&$totalRecuperations) {
-    // Compter toutes les demandes du professionnel avec statut retiree
     $stmt = $pdo->prepare('
         SELECT COUNT(*) as total
         FROM demande_depot d
@@ -25,7 +23,6 @@ db_safe_exec(function(PDO $pdo) use (&$totalRecuperations) {
 
 $paiements = api_get_my_paiements()['data'] ?? [];
 
-// Statistiques
 $stats = [
     'annonces' => count($annonces),
     'annonces_validees' => count(array_filter($annonces, fn($a) => ($a['statut'] ?? '') === 'validee')),
@@ -36,7 +33,6 @@ $stats = [
     'total_revenue' => array_reduce($paiements, fn($c, $p) => $c + (float)($p['montant'] ?? 0), 0),
 ];
 
-// Abonnement - Vérification DIRECTE en BDD
 $abonnement = callAPI('GET', '/me/abonnement', $_SESSION['token'])['data'] ?? [];
 
 $premiumCount = 0;
@@ -65,7 +61,6 @@ if ($premiumCount > 0) {
 
 $annonceLimit = $isPremium ? 999 : 5;
 
-// Projets
 $projectsCount = (int)db_safe_exec(function(PDO $pdo) {
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM projet_upcycling WHERE id_pro = ?');
     $stmt->execute([(int)$_SESSION['user_id']]);
@@ -73,10 +68,8 @@ $projectsCount = (int)db_safe_exec(function(PDO $pdo) {
 }, 0);
 $stats['projets'] = $projectsCount;
 
-// Notifications
 $notifUnread = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
 
-// Documents
 $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
 $stats['documents'] = count($docs);
 ?>
@@ -301,15 +294,15 @@ $stats['documents'] = count($docs);
             <div class="action-title">Récupération conteneurs</div>
             <div class="action-desc">Scanner et récupérer les objets</div>
         </a>
-        <a href="pro_billing.php" class="action-card">
-            <div class="action-icon">💰</div>
-            <div class="action-title">Facturation</div>
-            <div class="action-desc">Gérer vos abonnements et factures</div>
-        </a>
         <a href="pro_abonnement.php" class="action-card">
             <div class="action-icon">⭐</div>
             <div class="action-title">Abonnement Premium</div>
             <div class="action-desc">Débloquez toutes les fonctionnalités</div>
+        </a>
+        <a href="pro_chat.php" class="action-card">
+            <div class="action-icon">💬</div>
+            <div class="action-title">Messagerie</div>
+            <div class="action-desc">Discutez avec les membres de la communauté</div>
         </a>
     </div>
 

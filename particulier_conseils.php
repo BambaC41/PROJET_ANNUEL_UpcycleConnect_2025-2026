@@ -18,7 +18,6 @@ function conseilImageByCategory(string $cat): string {
     return 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80';
 }
 
-// Limitation du contenu à 300 caractères pour l'affichage
 function getShortContent($content, $max = 300) {
     if (empty($content)) return '';
     if (mb_strlen($content) <= $max) return $content;
@@ -42,16 +41,12 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
     <link rel="stylesheet" href="styles/pro.css">
     <?php include 'includes/onesignal_head.php'; ?>
     <style>
-        /* ============================================
-           STYLES CONSEILS
-        ============================================ */
         .conseils-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 24px;
             margin-top: 20px;
         }
-        
         .conseil-card {
             background: white;
             border-radius: 16px;
@@ -60,23 +55,19 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
             transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
         }
-        
         .conseil-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
-        
         .conseil-image {
             width: 100%;
             height: 180px;
             object-fit: cover;
             background: #f0f2f5;
         }
-        
         .conseil-content {
             padding: 20px;
         }
-        
         .conseil-category {
             display: inline-block;
             font-size: 11px;
@@ -88,7 +79,6 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
             border-radius: 20px;
             margin-bottom: 12px;
         }
-        
         .conseil-title {
             font-size: 18px;
             font-weight: 700;
@@ -96,17 +86,12 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
             margin: 0 0 12px 0;
             line-height: 1.4;
         }
-        
         .conseil-preview {
             font-size: 14px;
             color: #666;
             line-height: 1.5;
             margin-bottom: 16px;
         }
-        
-        /* ============================================
-           MODAL STYLES
-        ============================================ */
         .modal-conseil {
             display: none;
             position: fixed;
@@ -185,7 +170,6 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -196,7 +180,6 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
         .empty-state p {
             margin: 8px 0;
         }
-        
         @media (max-width: 768px) {
             .conseils-grid {
                 grid-template-columns: 1fr;
@@ -231,14 +214,15 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
                 <?php foreach ($filtered as $c): 
                     $img = !empty($c['image_url']) ? $c['image_url'] : conseilImageByCategory((string)($c['categorie'] ?? ''));
                     $shortContent = getShortContent($c['contenu'] ?? '', 300);
-                ?>
-                    <div class="conseil-card" onclick='showConseilModal(<?= json_encode([
+                    $data = [
                         'titre' => $c['titre'] ?? '',
                         'contenu' => $c['contenu'] ?? '',
                         'categorie' => $c['categorie'] ?? 'Conseil',
                         'image_url' => $img,
                         'date' => formatDateFr($c['created_at'] ?? '')
-                    ], JSON_HEX_TAG) ?>)'>
+                    ];
+                ?>
+                    <div class="conseil-card" data-conseil='<?= htmlspecialchars(json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS), ENT_QUOTES, 'UTF-8') ?>'>
                         <img class="conseil-image" src="<?= e($img) ?>" alt="<?= e($c['titre'] ?? 'Conseil') ?>">
                         <div class="conseil-content">
                             <span class="conseil-category">📖 <?= e($c['categorie'] ?? 'Conseil') ?></span>
@@ -268,6 +252,22 @@ $filtered = array_values(array_filter($conseils, function($c) use ($query) {
 </div>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.conseil-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            var dataAttr = this.getAttribute('data-conseil');
+            if (dataAttr) {
+                try {
+                    var conseil = JSON.parse(dataAttr);
+                    showConseilModal(conseil);
+                } catch (e) {
+                    console.error('Erreur de parsing du conseil:', e);
+                }
+            }
+        });
+    });
+});
+
 function showConseilModal(conseil) {
     document.getElementById('modalConseilTitre').textContent = conseil.titre;
     document.getElementById('modalConseilContenu').innerHTML = conseil.contenu.replace(/\n/g, '<br>');
@@ -289,8 +289,7 @@ function closeConseilModal() {
     document.getElementById('conseilModal').classList.remove('active');
 }
 
-// Fermer avec Echap
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && document.getElementById('conseilModal').classList.contains('active')) {
         closeConseilModal();
     }
@@ -298,6 +297,5 @@ document.addEventListener('keydown', (e) => {
 </script>
 
 <?php include 'includes/flash_toast.php'; ?>
-<?php  ?>
 </body>
 </html>

@@ -535,12 +535,12 @@ CREATE TABLE user_warnings (
     INDEX idx_warnings_user (user_id),
     INDEX idx_warnings_unread (user_id, is_read)
 ) ENGINE=InnoDB;
--- Table des commissions
+
 
 INSERT INTO user_warnings (user_id, warning_type, message, issued_by, created_at) VALUES
 (3, 'forum', 'Merci de respecter les règles du forum. Évitez le langage inapproprié.', 1, NOW()),
 (6, 'forum', 'Attention au spam', 5, DATE_SUB(NOW(), INTERVAL 1 DAY));
--- Table des commissions
+
 CREATE TABLE IF NOT EXISTS commissions (
     id_commission INT AUTO_INCREMENT PRIMARY KEY,
     annonce_id INT NOT NULL,
@@ -556,6 +556,43 @@ CREATE TABLE IF NOT EXISTS commissions (
     FOREIGN KEY (acheteur_id) REFERENCES utilisateur(id_user),
     INDEX idx_commissions_vendeur (vendeur_id),
     INDEX idx_commissions_statut (statut)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS conversation (
+    id_conversation INT AUTO_INCREMENT PRIMARY KEY,
+    user1_id INT NOT NULL,
+    user2_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1_id) REFERENCES utilisateur(id_user) ON DELETE CASCADE,
+    FOREIGN KEY (user2_id) REFERENCES utilisateur(id_user) ON DELETE CASCADE,
+    UNIQUE KEY uk_conversation_users (user1_id, user2_id),
+    INDEX idx_conversation_updated (updated_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS message (
+    id_message INT AUTO_INCREMENT PRIMARY KEY,
+    conversation_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    content TEXT,
+    file_path VARCHAR(255) NULL,
+    file_name VARCHAR(255) NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (conversation_id) REFERENCES conversation(id_conversation) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES utilisateur(id_user) ON DELETE CASCADE,
+    INDEX idx_message_conversation (conversation_id),
+    INDEX idx_message_created (created_at)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS unread_messages (
+    id_unread INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    conversation_id INT NOT NULL,
+    last_read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES utilisateur(id_user) ON DELETE CASCADE,
+    FOREIGN KEY (conversation_id) REFERENCES conversation(id_conversation) ON DELETE CASCADE,
+    UNIQUE KEY uk_unread_user_conversation (user_id, conversation_id)
 ) ENGINE=InnoDB;
 UPDATE forum_topics SET posts_count = 5 WHERE id_topic = 1;
 UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 2;
@@ -577,4 +614,4 @@ UPDATE forum_topics SET last_post_at = '2026-06-10 12:00:00' WHERE id_topic = 8;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
-SELECT '✅ Base upcycleconnect prete' AS message;
+SELECT ' Base upcycleconnect prete' AS message;

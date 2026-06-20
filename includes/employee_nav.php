@@ -27,8 +27,7 @@ $notifCount = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
         <a class="btn-outline" href="salarie_conseils.php">💡 Conseils / News</a>
         <a class="btn-outline" href="forum.php">💬 Forum</a>
         <a class="btn-outline" href="notifications.php">🔔 Notifications<?= $notifCount > 0 ? ' (' . (int)$notifCount . ')' : '' ?></a>
-        <a class="btn-outline" href="<?= vc_escape(lang_url('fr')) ?>">FR</a>
-        <a class="btn-outline" href="<?= vc_escape(lang_url('en')) ?>">EN</a>
+        <a class="btn-outline" href="salarie_chat.php">💬 Chat</a>
         <a class="btn-primary" href="logout.php">🚪 Déconnexion</a>
     </nav>
 </header>

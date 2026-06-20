@@ -31,8 +31,6 @@ func EventsHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
-
-		// Employees can only create pending events tied to their account
 		if claims.RoleID == RoleSalarie {
 			e.Statut = "en_attente"
 			e.IDValidateur = 0

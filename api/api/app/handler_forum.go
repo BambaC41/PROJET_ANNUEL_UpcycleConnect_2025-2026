@@ -50,7 +50,7 @@ func ForumRouter(w http.ResponseWriter, r *http.Request) {
 	case "posts":
 		if len(parts) == 2 {
 			if r.Method == http.MethodPost && parts[1] != "" {
-				// handled below
+
 			}
 			forumPostByIDHandler(w, r, parts[1])
 			return
@@ -100,8 +100,6 @@ func AdminForumRouter(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Error(w, "Invalid path", http.StatusBadRequest)
 }
-
-// --- Categories ---
 
 func forumCategoriesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -189,8 +187,6 @@ func forumCategoryByIDHandler(w http.ResponseWriter, r *http.Request, idStr stri
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
-
-// --- Topics ---
 
 func forumTopicsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
@@ -358,9 +354,6 @@ func forumTopicsCreateHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "topic created", "id": tid})
 }
-
-// POST /forum/topics handled in forumTopicsHandler - need to add POST to forumTopicsHandler
-// Fix: add POST case to forumTopicsHandler
 
 func forumTopicPostsHandler(w http.ResponseWriter, r *http.Request, idStr string) {
 	topicID, err := strconv.Atoi(idStr)
@@ -536,8 +529,6 @@ func forumPostReportHandler(w http.ResponseWriter, r *http.Request, idStr string
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "report created", "id": id})
 }
-
-// --- Admin ---
 
 func adminForumReportsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {

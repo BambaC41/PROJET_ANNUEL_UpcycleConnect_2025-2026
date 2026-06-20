@@ -16,6 +16,7 @@ $localTutorial = db_safe_exec(function (PDO $pdo) {
 }, 0);
 $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
 $notifUnread = notif_unread_count((int)($_SESSION['user_id'] ?? 0));
+
 $tutorialCompleted = ((int)($me['tutorial_completed'] ?? -1) === 1) || ((int)$localTutorial === 1);
 $totalScore = (int)($score['score_global'] ?? 0);
 ?>
@@ -28,18 +29,75 @@ $totalScore = (int)($score['score_global'] ?? 0);
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <?php include 'includes/onesignal_head.php'; ?>
+    <style>
+        .pro-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .pro-kpi {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        .pro-kpi h3 {
+            font-size: 13px;
+            color: #666;
+            margin: 0 0 8px 0;
+            font-weight: 500;
+        }
+        .pro-kpi p {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin: 0;
+        }
+        .pro-kpi .kpi-icon {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>
 <main class="pro-shell page-shell">
     <section class="pro-kpis">
-        <article class="pro-kpi"><h3>📦 Mes annonces</h3><p><?= e(count($annonces)) ?></p></article>
-        <article class="pro-kpi"><h3>🗓️ Inscriptions</h3><p><?= e(count($inscriptions)) ?></p></article>
-        <article class="pro-kpi"><h3>🗳️ Dépôts</h3><p><?= e(count($demandes)) ?></p></article>
-        <article class="pro-kpi"><h3>♻️ Upcycling Score</h3><p><?= e($totalScore) ?></p></article>
-        <article class="pro-kpi"><h3>🔔 Notifications</h3><p><?= e($notifUnread) ?></p></article>
-        <article class="pro-kpi"><h3>📄 Documents</h3><p><?= e(count($docs)) ?></p></article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">📦</span>
+            <h3>Mes annonces</h3>
+            <p><?= e(count($annonces)) ?></p>
+        </article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">🗓️</span>
+            <h3>Inscriptions</h3>
+            <p><?= e(count($inscriptions)) ?></p>
+        </article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">🗳️</span>
+            <h3>Dépôts</h3>
+            <p><?= e(count($demandes)) ?></p>
+        </article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">♻️</span>
+            <h3>Upcycling Score</h3>
+            <p><?= e($totalScore) ?></p>
+        </article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">🔔</span>
+            <h3>Notifications</h3>
+            <p><?= e($notifUnread) ?></p>
+        </article>
+        <article class="pro-kpi">
+            <span class="kpi-icon">📄</span>
+            <h3>Documents</h3>
+            <p><?= e(count($docs)) ?></p>
+        </article>
     </section>
+
     <section class="pro-grid">
         <a class="pro-card pro-link" href="particulier_annonces.php"><h2>📦 Gérer mes annonces</h2><p>Dépôt don/vente, suivi des validations.</p></a>
         <a class="pro-card pro-link" href="particulier_conteneurs.php"><h2>🗳️ Dépôts conteneur</h2><p>Codes d'accès et code-barres.</p></a>
@@ -49,6 +107,7 @@ $totalScore = (int)($score['score_global'] ?? 0);
         <a class="pro-card pro-link" href="particulier_documents.php"><h2>📄 Mes documents</h2><p>Reçus, attestations et fiches de dépôt.</p></a>
         <a class="pro-card pro-link" href="particulier_score.php"><h2>♻️ Mon Upcycling Score</h2><p>Détail de votre impact environnemental.</p></a>
         <a class="pro-card pro-link" href="notifications.php"><h2>🔔 Notifications</h2><p>Suivre validations et confirmations importantes.</p></a>
+        <a class="pro-card pro-link" href="particulier_chat.php"><h2>💬 Messagerie</h2><p>Discutez avec la communauté UpcycleConnect.</p></a>
         <a class="pro-card pro-link" href="particulier_profile.php"><h2>👤 Mon profil</h2><p><?= e($me['prenom'] ?? 'Utilisateur') ?>, gérer mon compte.</p></a>
     </section>
     <?php $dash_uid = (int)($_SESSION['user_id'] ?? 0); include __DIR__ . '/includes/dashboard_notifications.php'; ?>
@@ -67,6 +126,5 @@ $totalScore = (int)($score['score_global'] ?? 0);
 <?php endif; ?>
 
 <?php include __DIR__ . '/includes/flash_toast.php'; ?>
-<?php  ?>
 </body>
 </html>

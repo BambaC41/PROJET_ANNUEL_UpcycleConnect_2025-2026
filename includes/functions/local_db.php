@@ -50,9 +50,6 @@ function db_safe_exec(callable $callback, mixed $fallback = null): mixed
     }
 }
 
-/**
- * Ensure $_SESSION['user_id'] is set using /me when missing (API returns id_user).
- */
 function session_ensure_user_id(): int
 {
     if (session_status() === PHP_SESSION_NONE) {
@@ -78,4 +75,21 @@ function session_ensure_user_id(): int
         return (int)($_SESSION['user_id'] ?? 0);
     }
     return 0;
+}
+function get_db_connection() {
+    static $pdo = null;
+    if ($pdo === null) {
+        $host = 'localhost';
+        $dbname = 'upcycleconnect';
+        $user = 'root';
+        $pass = 'root';
+        
+        try {
+            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        } catch (PDOException $e) {
+            die('Database connection failed: ' . $e->getMessage());
+        }
+    }
+    return $pdo;
 }

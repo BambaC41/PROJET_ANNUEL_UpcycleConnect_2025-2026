@@ -1,6 +1,5 @@
 <?php
 
-// Chargement simple du fichier .env pour l'environnement local
 $envFile = __DIR__ . '/../../.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -130,15 +129,43 @@ function api_delete($endpoint, $requireAuth = false) {
     $token = $requireAuth ? (isset($_SESSION['token']) ? $_SESSION['token'] : null) : null;
     return callAPI('DELETE', $endpoint, $token);
 }
-// Récupérer le vrai chiffre d'affaires Stripe
+
 function api_get_stripe_balance() {
     $result = api_get('/admin/stripe/balance', true);
-    
-    // Debug - afficher ce que retourne l'API (à enlever en production)
+
     if (($result['status'] ?? 0) !== 200) {
         error_log("Stripe API error: " . print_r($result, true));
     }
     
     return $result;
 }
-?>
+
+function api_update_user_password($token, $userId, $newPassword) {
+    return api_put('/users/' . $userId, ['password' => $newPassword], true);
+}
+function api_approve_pro($token, $userId) {
+    return api_put('/users/' . $userId . '/approve', null, true);
+}
+
+function api_ban_user($token, $userId, $reason, $until) {
+    return api_put('/users/' . $userId . '/ban', ['ban_reason' => $reason, 'ban_until' => $until], true);
+}
+
+function api_unban_user($token, $userId) {
+    return api_put('/users/' . $userId . '/unban', null, true);
+}
+
+function api_update_user_role($token, $userId, $newRole) {
+    return api_put('/users/' . $userId, ['id_role' => $newRole], true);
+}
+function api_get_users($token) {
+    return api_get('/users', true);
+}
+
+function api_get_pending_pros($token) {
+    return api_get('/pros/pending', true);
+}
+
+function api_get_user_by_id($token, $userId) {
+    return api_get('/users/' . $userId, true);
+}

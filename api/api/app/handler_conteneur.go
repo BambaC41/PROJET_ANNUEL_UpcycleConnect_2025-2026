@@ -16,23 +16,18 @@ import (
 	"github.com/boombuler/barcode/ean"
 )
 
-// generateEAN13 genere un code-barres EAN-13 valide avec prefixe francais 376
 func generateEAN13() string {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	// Prefixe francais 376 (France)
 	prefix := "376"
 
-	// Generer 9 chiffres aleatoires (total 12 chiffres sans checksum)
 	middle := ""
 	for i := 0; i < 9; i++ {
 		middle += fmt.Sprintf("%d", rng.Intn(10))
 	}
 
-	// Base de 12 chiffres
 	base := prefix + middle
 
-	// Calcul du checksum EAN-13
 	sum := 0
 	for i := 0; i < 12; i++ {
 		digit, _ := strconv.Atoi(string(base[i]))
@@ -47,31 +42,26 @@ func generateEAN13() string {
 	return base + fmt.Sprintf("%d", checksum)
 }
 
-// generateBarcodeSVG genere un SVG de code-barres EAN-13 avec le numero en dessous
 func generateBarcodeSVG(code string) (string, error) {
 	if len(code) != 13 {
 		code = generateEAN13()
 	}
 
-	// Generer le code-barres avec la bibliotheque
 	barCode, err := ean.Encode(code)
 	if err != nil {
 		return "", err
 	}
 
-	// Redimensionner pour une meilleure lisibilite
 	scaledBarcode, err := barcode.Scale(barCode, 250, 100)
 	if err != nil {
 		return "", err
 	}
 
-	// Construction du SVG manuellement
 	width := scaledBarcode.Bounds().Dx()
 	height := scaledBarcode.Bounds().Dy()
 
 	svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" style="background:white;">`, width, height+30, width, height+30)
 
-	// Dessiner les barres
 	for x := 0; x < width; x++ {
 		for y := 0; y < height; y++ {
 			r, g, b, _ := scaledBarcode.At(x, y).RGBA()
@@ -81,7 +71,6 @@ func generateBarcodeSVG(code string) (string, error) {
 		}
 	}
 
-	// Formater le code avec espaces tous les 4 chiffres
 	formattedCode := ""
 	for i, c := range code {
 		if i > 0 && i%4 == 0 {
@@ -90,7 +79,6 @@ func generateBarcodeSVG(code string) (string, error) {
 		formattedCode += string(c)
 	}
 
-	// Ajouter le libelle
 	svg += fmt.Sprintf(`<text x="%d" y="%d" font-family="Courier New, monospace" font-size="14" text-anchor="middle" font-weight="bold" fill="black">%s</text>`, width/2, height+15, formattedCode)
 	svg += fmt.Sprintf(`<text x="%d" y="%d" font-family="Arial" font-size="9" text-anchor="middle" fill="gray">CODE EAN-13</text>`, width/2, height+25)
 
@@ -99,7 +87,6 @@ func generateBarcodeSVG(code string) (string, error) {
 	return svg, nil
 }
 
-// BarcodeHandler sert le SVG du code-barres
 func BarcodeHandler(w http.ResponseWriter, r *http.Request) {
 	code := strings.TrimPrefix(r.URL.Path, "/barcode/")
 	if len(code) != 13 {
@@ -116,18 +103,15 @@ func BarcodeHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write([]byte(svg))
 }
 
-// generateAccessCode genere un code d'acces pour le conteneur
 func generateAccessCode() string {
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return fmt.Sprintf("%04d-%04d", rng.Intn(10000), rng.Intn(10000))
 }
 
-// getBarcodeValue retourne un code-barres EAN-13 valide
 func getBarcodeValue() string {
 	return generateEAN13()
 }
 
-// calculateEAN13Checksum calcule la somme de controle EAN-13
 func calculateEAN13Checksum(base12 string) int {
 	sum := 0
 	for i, c := range base12 {
@@ -141,7 +125,6 @@ func calculateEAN13Checksum(base12 string) int {
 	return (10 - (sum % 10)) % 10
 }
 
-// ConteneursHandler gere les requetes sur /conteneurs
 func ConteneursHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -180,7 +163,6 @@ func ConteneursHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// ConteneurByIDHandler gere les requetes sur /conteneurs/{id}
 func ConteneurByIDHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/conteneurs/")
 	id, err := strconv.Atoi(idStr)
@@ -239,7 +221,6 @@ func ConteneurByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// DemandesDepotHandler gere les requetes sur /demandes-depot
 func DemandesDepotHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
@@ -289,7 +270,6 @@ func DemandesDepotHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// MyDemandesDepotHandler gere les requetes sur /me/demandes-depot
 func MyDemandesDepotHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -308,7 +288,6 @@ func MyDemandesDepotHandler(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(demandes)
 }
 
-// DemandeDepotByIDHandler gere les requetes sur /demandes-depot/{id}
 func DemandeDepotByIDHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/demandes-depot/")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
@@ -389,7 +368,6 @@ func DemandeDepotByIDHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleGetDepotCodes gere la recuperation des codes d'une demande
 func handleGetDepotCodes(w http.ResponseWriter, r *http.Request, id int) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -411,7 +389,6 @@ func handleGetDepotCodes(w http.ResponseWriter, r *http.Request, id int) {
 	_ = json.NewEncoder(w).Encode(codes)
 }
 
-// handleValidateDemandeDepot valide une demande et genere un code-barres EAN-13
 func handleValidateDemandeDepot(w http.ResponseWriter, r *http.Request, id int) {
 	if r.Method != http.MethodPut {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -422,7 +399,7 @@ func handleValidateDemandeDepot(w http.ResponseWriter, r *http.Request, id int) 
 	}
 
 	codeAcces := generateAccessCode()
-	// Generer un vrai code-barres EAN-13 valide
+
 	barcodeValue := getBarcodeValue()
 
 	if err := db.ValidateDemandeDepot(id, codeAcces, barcodeValue); err != nil {
@@ -430,7 +407,6 @@ func handleValidateDemandeDepot(w http.ResponseWriter, r *http.Request, id int) 
 		return
 	}
 
-	// Generer le SVG du code-barres
 	barcodeSVG, _ := generateBarcodeSVG(barcodeValue)
 
 	w.Header().Set("Content-Type", "application/json")

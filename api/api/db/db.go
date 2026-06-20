@@ -119,7 +119,7 @@ func GetUserByEmail(email string) (*model.User, error) {
 
 func CreateUser(req model.RegisterRequest, passwordHash string) error {
 	isApproved := true
-	if req.RoleID == 4 {
+	if req.RoleID == 3 {
 		isApproved = false
 	}
 	_, err := DB.Exec(`
@@ -133,55 +133,6 @@ func CreateUser(req model.RegisterRequest, passwordHash string) error {
 		req.Telephone, req.AdresseRue, req.AdresseVille, req.AdresseCodePostal, req.AdressePays,
 		req.PhotoProfil, req.Bio, req.RoleID, "actif", isApproved)
 	return err
-}
-
-func UpdateUser(id int, req model.UpdateUserRequest, passwordHash string) error {
-	current, err := GetUserByID(id)
-	if err != nil {
-		return err
-	}
-	if current == nil {
-		return errors.New("user not found")
-	}
-
-	isApproved := current.IsApproved
-	if req.IsApproved != nil {
-		isApproved = *req.IsApproved
-	}
-
-	var result sql.Result
-	if passwordHash != "" {
-		result, err = DB.Exec(`
-			UPDATE utilisateur
-			SET email = ?, password_hash = ?, pseudo = ?, prenom = ?, nom = ?, telephone = ?,
-			    adresse_rue = ?, adresse_ville = ?, adresse_code_postal = ?, adresse_pays = ?,
-			    photo_profil = ?, bio = ?, statut = ?, id_role = ?, is_approved = ?
-			WHERE id_user = ?
-		`, req.Email, passwordHash, req.Pseudo, req.Prenom, req.Nom, req.Telephone,
-			req.AdresseRue, req.AdresseVille, req.AdresseCodePostal, req.AdressePays,
-			req.PhotoProfil, req.Bio, req.Statut, req.RoleID, isApproved, id)
-	} else {
-		result, err = DB.Exec(`
-			UPDATE utilisateur
-			SET email = ?, pseudo = ?, prenom = ?, nom = ?, telephone = ?,
-			    adresse_rue = ?, adresse_ville = ?, adresse_code_postal = ?, adresse_pays = ?,
-			    photo_profil = ?, bio = ?, statut = ?, id_role = ?, is_approved = ?
-			WHERE id_user = ?
-		`, req.Email, req.Pseudo, req.Prenom, req.Nom, req.Telephone,
-			req.AdresseRue, req.AdresseVille, req.AdresseCodePostal, req.AdressePays,
-			req.PhotoProfil, req.Bio, req.Statut, req.RoleID, isApproved, id)
-	}
-	if err != nil {
-		return err
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return errors.New("user not found")
-	}
-	return nil
 }
 
 func UpdateOwnProfile(id int, req model.UpdateUserRequest) error {
@@ -751,7 +702,7 @@ func UnbanUser(id int) error {
 }
 
 func GetPendingPros() ([]model.User, error) {
-	rows, err := DB.Query(userSelect + ` WHERE id_role = 4 AND COALESCE(is_approved, 1) = 0 ORDER BY id_user DESC`)
+	rows, err := DB.Query(userSelect + ` WHERE id_role = 3 AND is_approved = 0 ORDER BY id_user DESC`)
 	if err != nil {
 		return nil, err
 	}
@@ -770,10 +721,10 @@ func GetPendingPros() ([]model.User, error) {
 
 func ApprovePro(id int) error {
 	result, err := DB.Exec(`
-		UPDATE utilisateur
-		SET is_approved = TRUE
-		WHERE id_user = ? AND id_role = 4
-	`, id)
+        UPDATE utilisateur
+        SET is_approved = TRUE
+        WHERE id_user = ? AND id_role = 3
+    `, id)
 	if err != nil {
 		return err
 	}
@@ -786,11 +737,6 @@ func ApprovePro(id int) error {
 	}
 	return nil
 }
-
-// ============================================
-// FONCTIONS ANNONCES AVEC COMMISSION
-// ============================================
-
 func GetAnnoncesByUserID(userID int) ([]model.Annonce, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -1330,10 +1276,6 @@ func ModerateAnnonce(annonceID int, validateurID int, statut string) error {
 	return nil
 }
 
-// ============================================
-// AUTRES FONCTIONS (conteneurs, demandes, etc.)
-// ============================================
-
 func GetConteneurs() ([]model.Conteneur, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -1749,10 +1691,6 @@ func GetAllDemandesDepot() ([]model.DemandeDepotView, error) {
 	return demandes, nil
 }
 
-// ============================================
-// FONCTIONS INSCRIPTIONS ET PAIEMENTS
-// ============================================
-
 func countActiveInscriptionsBySessionID(sessionID int) (int, error) {
 	var count int
 	err := DB.QueryRow(`
@@ -2090,10 +2028,6 @@ func GetAllPaiements() ([]model.MyPaiementView, error) {
 	return paiements, nil
 }
 
-// ============================================
-// FONCTIONS CONSEILS
-// ============================================
-
 func scanConseilRow(scanner interface{ Scan(dest ...any) error }, c *model.Conseil) error {
 	return scanner.Scan(
 		&c.IDConseil,
@@ -2367,10 +2301,6 @@ func DeleteConseil(id int) error {
 	return nil
 }
 
-// ============================================
-// FONCTIONS SCORE
-// ============================================
-
 func GetUserScore(userID int) (*model.UserScore, error) {
 	var annoncesCount int
 	var depotsValidesCount int
@@ -2443,4 +2373,114 @@ func GetUserScore(userID int) (*model.UserScore, error) {
 		PaiementsCount:     paiementsCount,
 		CO2EconomiseKg:     co2,
 	}, nil
+}
+func UpdateUser(id int, req model.UpdateUserRequest, passwordHash string) error {
+	current, err := GetUserByID(id)
+	if err != nil {
+		return err
+	}
+	if current == nil {
+		return errors.New("user not found")
+	}
+
+	// Construire la requête dynamiquement
+	setParts := []string{}
+	args := []any{}
+
+	if req.Email != nil {
+		setParts = append(setParts, "email = ?")
+		args = append(args, *req.Email)
+	}
+	if passwordHash != "" {
+		setParts = append(setParts, "password_hash = ?")
+		args = append(args, passwordHash)
+	}
+	if req.Pseudo != nil {
+		setParts = append(setParts, "pseudo = ?")
+		args = append(args, *req.Pseudo)
+	}
+	if req.Prenom != nil {
+		setParts = append(setParts, "prenom = ?")
+		args = append(args, *req.Prenom)
+	}
+	if req.Nom != nil {
+		setParts = append(setParts, "nom = ?")
+		args = append(args, *req.Nom)
+	}
+	if req.Telephone != nil {
+		setParts = append(setParts, "telephone = ?")
+		args = append(args, *req.Telephone)
+	}
+	if req.AdresseRue != nil {
+		setParts = append(setParts, "adresse_rue = ?")
+		args = append(args, *req.AdresseRue)
+	}
+	if req.AdresseVille != nil {
+		setParts = append(setParts, "adresse_ville = ?")
+		args = append(args, *req.AdresseVille)
+	}
+	if req.AdresseCodePostal != nil {
+		setParts = append(setParts, "adresse_code_postal = ?")
+		args = append(args, *req.AdresseCodePostal)
+	}
+	if req.AdressePays != nil {
+		setParts = append(setParts, "adresse_pays = ?")
+		args = append(args, *req.AdressePays)
+	}
+	if req.PhotoProfil != nil {
+		setParts = append(setParts, "photo_profil = ?")
+		args = append(args, *req.PhotoProfil)
+	}
+	if req.Bio != nil {
+		setParts = append(setParts, "bio = ?")
+		args = append(args, *req.Bio)
+	}
+	if req.Statut != nil {
+		setParts = append(setParts, "statut = ?")
+		args = append(args, *req.Statut)
+	}
+	if req.RoleID != nil {
+		setParts = append(setParts, "id_role = ?")
+		args = append(args, *req.RoleID)
+	}
+	if req.IsApproved != nil {
+		setParts = append(setParts, "is_approved = ?")
+		args = append(args, *req.IsApproved)
+	}
+
+	if len(setParts) == 0 {
+		return errors.New("no fields to update")
+	}
+
+	query := "UPDATE utilisateur SET " + strings.Join(setParts, ", ") + " WHERE id_user = ?"
+	args = append(args, id)
+
+	result, err := DB.Exec(query, args...)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+func GetUsersByRole(roleID int) ([]model.User, error) {
+	rows, err := DB.Query(userSelect+` WHERE id_role = ? ORDER BY id_user DESC`, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var users []model.User
+	for rows.Next() {
+		var user model.User
+		if err := scanUser(rows, &user); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

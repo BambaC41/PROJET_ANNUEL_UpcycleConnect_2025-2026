@@ -62,7 +62,7 @@ function formatPriceEur($amount): string
 {
     return number_format((float)$amount, 2, ',', ' ') . ' EUR';
 }
-// Vérification directe du statut premium en BDD
+
 function isUserPremiumDirect($userId) {
     global $pdo;
     if (!isset($pdo)) {

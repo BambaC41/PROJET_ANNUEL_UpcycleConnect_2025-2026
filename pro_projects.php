@@ -43,13 +43,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$projects = (array)db_safe_exec(static function (PDO $pdo) use ($proId) {
+$myProjects = (array)db_safe_exec(static function (PDO $pdo) use ($proId) {
     $st = $pdo->prepare('SELECT * FROM projet_upcycling WHERE id_pro = ? ORDER BY id_projet DESC');
     $st->execute([$proId]);
     return $st->fetchAll(PDO::FETCH_ASSOC);
 }, []);
 
-$countStat = static fn(string $s) => count(array_filter($projects, static fn($p) => ($p['statut'] ?? '') === $s));
+$publicProjects = (array)db_safe_exec(static function (PDO $pdo) use ($proId) {
+    $st = $pdo->prepare('
+        SELECT p.*, u.pseudo AS pro_pseudo, u.email AS pro_email
+        FROM projet_upcycling p
+        JOIN utilisateur u ON u.id_user = p.id_pro
+        WHERE p.is_public = 1 AND p.statut = "publie" AND p.id_pro != ?
+        ORDER BY p.created_at DESC
+    ');
+    $st->execute([$proId]);
+    return $st->fetchAll(PDO::FETCH_ASSOC);
+}, []);
+
+$countStat = static fn(string $s) => count(array_filter($myProjects, static fn($p) => ($p['statut'] ?? '') === $s));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -61,15 +73,121 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/ui-components.css">
     <script src="scripts/modal.js" defer></script>
-    <!-- OneSignal Push Notifications -->
     <?php include 'includes/onesignal_head.php'; ?>
+    <style>
+        .project-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .project-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .modal-project-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 650px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 0;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-project-header {
+            background: linear-gradient(135deg, #2e7d32, #4caf50);
+            padding: 24px;
+            border-radius: 24px 24px 0 0;
+            color: white;
+        }
+        .modal-project-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .modal-project-header .subtitle {
+            opacity: 0.8;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        .modal-project-body {
+            padding: 24px;
+        }
+        .modal-project-body .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .modal-project-body .detail-label {
+            width: 120px;
+            font-weight: 600;
+            color: #555;
+            flex-shrink: 0;
+        }
+        .modal-project-body .detail-value {
+            flex: 1;
+            color: #333;
+        }
+        .modal-project-body .description-box {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin-top: 4px;
+        }
+        .modal-close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            cursor: pointer;
+            font-size: 28px;
+            color: white;
+            z-index: 10;
+            background: rgba(0,0,0,0.3);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .modal-close-btn:hover {
+            background: rgba(0,0,0,0.6);
+        }
+        .progression-bar {
+            background: #e2e8f0;
+            border-radius: 6px;
+            height: 10px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+        .progression-bar .fill {
+            background: #4caf50;
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+        .badge-statut {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-brouillon { background: #f5f5f5; color: #757575; }
+        .badge-en_cours { background: #fff3e0; color: #ef6c00; }
+        .badge-publie { background: #e8f5e9; color: #2e7d32; }
+        .badge-termine { background: #e3f2fd; color: #1565c0; }
+        .badge-archive { background: #fce4ec; color: #c62828; }
+    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
 <?php include 'includes/flash_toast.php'; ?>
 <main class="pro-shell page-shell">
     <section class="pro-card page-card">
-        <h1>Projets upcycling</h1>
+        <h1>📁 Mes projets upcycling</h1>
         <div class="admin-kpi-grid">
             <div class="admin-card"><h3>Brouillon</h3><p><?= $countStat('brouillon') ?></p></div>
             <div class="admin-card"><h3>En cours</h3><p><?= $countStat('en_cours') ?></p></div>
@@ -77,23 +195,53 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
             <div class="admin-card"><h3>Terminés</h3><p><?= $countStat('termine') ?></p></div>
         </div>
         <button class="btn-primary" type="button" onclick="openModal('modal-new-project')">+ Nouveau projet</button>
-        <?php if (empty($projects)): ?>
-            <?php render_empty_state('Aucun projet', 'Créez votre premier projet upcycling.', '+ Créer', '#'); ?>
+
+        <?php if (empty($myProjects)): ?>
+            <?php render_empty_state('Aucun projet personnel', 'Créez votre premier projet upcycling.', '+ Créer', '#'); ?>
         <?php else: ?>
         <div class="pro-grid" style="margin-top:18px;">
-            <?php foreach ($projects as $p): ?>
+            <?php foreach ($myProjects as $p): ?>
                 <article class="pro-card">
                     <h2><?= e($p['titre'] ?? '') ?></h2>
                     <p class="muted"><?= e($p['statut'] ?? '') ?> · <?= (int)($p['progression'] ?? 0) ?>%</p>
-                    <div style="background:#e2e8f0;border-radius:6px;height:8px;margin:8px 0;"><div style="width:<?= (int)($p['progression']??0) ?>%;background:#16a34a;height:8px;border-radius:6px;"></div></div>
+                    <div class="progression-bar"><div class="fill" style="width:<?= (int)($p['progression']??0) ?>%;"></div></div>
                     <p><?= e(mb_substr((string)($p['description'] ?? ''), 0, 120)) ?></p>
                     <button class="btn-outline" type="button" onclick="openModal('modal-proj-<?= (int)$p['id_projet'] ?>')">Modifier</button>
                 </article>
             <?php endforeach; ?>
         </div>
         <?php endif; ?>
+
+        <?php if (!empty($publicProjects)): ?>
+        <hr style="margin: 40px 0 20px;">
+        <h2>🌍 Projets publics des autres professionnels</h2>
+        <div class="pro-grid" style="margin-top:18px;">
+            <?php foreach ($publicProjects as $p): ?>
+                <article class="pro-card project-card" onclick='viewPublicProject(<?= htmlspecialchars(json_encode([
+                    'id' => $p['id_projet'],
+                    'titre' => $p['titre'],
+                    'description' => $p['description'],
+                    'statut' => $p['statut'],
+                    'progression' => (int)$p['progression'],
+                    'pro_pseudo' => $p['pro_pseudo'],
+                    'pro_email' => $p['pro_email'],
+                    'is_public' => (bool)$p['is_public'],
+                    'created_at' => formatDateFr($p['created_at']),
+                ]), JSON_HEX_TAG) ?>)'>
+                    <h3><?= e($p['titre'] ?? '') ?></h3>
+                    <p class="muted">Par <?= e($p['pro_pseudo'] ?? 'Inconnu') ?></p>
+                    <div class="progression-bar"><div class="fill" style="width:<?= (int)($p['progression']??0) ?>%;"></div></div>
+                    <p><?= e(mb_substr((string)($p['description'] ?? ''), 0, 100)) ?></p>
+                    <span class="badge-statut badge-<?= e($p['statut'] ?? 'brouillon') ?>"><?= e($p['statut'] ?? '') ?></span>
+                    <span style="font-size:12px;color:#999;margin-left:8px;">👁️ Cliquez pour voir plus</span>
+                </article>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
     </section>
 </main>
+
+<!-- Modal création -->
 <div id="modal-new-project" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
 <h2>Nouveau projet</h2>
 <form method="POST"><input type="hidden" name="create_project" value="1">
@@ -104,7 +252,9 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
 <label><input type="checkbox" name="is_public" value="1"> Public</label>
 <button class="btn-primary" type="submit">Enregistrer</button>
 </form></div></div>
-<?php foreach ($projects as $p): ?>
+
+<!-- Modals modification personnelles -->
+<?php foreach ($myProjects as $p): ?>
 <div id="modal-proj-<?= (int)$p['id_projet'] ?>" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
 <h2>Modifier projet</h2>
 <form method="POST"><input type="hidden" name="update_project_id" value="<?= (int)$p['id_projet'] ?>">
@@ -116,6 +266,69 @@ $countStat = static fn(string $s) => count(array_filter($projects, static fn($p)
 <button class="btn-primary" type="submit">Enregistrer</button>
 </form></div></div>
 <?php endforeach; ?>
+
+<!-- Modal visualisation projet public -->
+<div id="modal-public-project" class="modal" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-project-content">
+        <span class="modal-close-btn" onclick="closeModal('modal-public-project')">&times;</span>
+        <div class="modal-project-header">
+            <h2 id="publicProjectTitle"></h2>
+            <div class="subtitle">Par <span id="publicProjectAuthor"></span></div>
+        </div>
+        <div class="modal-project-body">
+            <div class="detail-row">
+                <div class="detail-label">📌 Statut</div>
+                <div class="detail-value"><span id="publicProjectStatut" class="badge-statut"></span></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">📊 Progression</div>
+                <div class="detail-value">
+                    <span id="publicProjectProgress">0%</span>
+                    <div class="progression-bar"><div id="publicProjectProgressFill" class="fill" style="width:0%;"></div></div>
+                </div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">👤 Auteur</div>
+                <div class="detail-value"><span id="publicProjectAuthorEmail"></span></div>
+            </div>
+            <div class="detail-row">
+                <div class="detail-label">📅 Créé le</div>
+                <div class="detail-value"><span id="publicProjectDate"></span></div>
+            </div>
+            <div class="detail-row" style="border-bottom: none;">
+                <div class="detail-label">📝 Description</div>
+                <div class="detail-value">
+                    <div class="description-box" id="publicProjectDescription"></div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #eee; display: flex; justify-content: flex-end;">
+                <button class="btn-secondary" onclick="closeModal('modal-public-project')">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewPublicProject(project) {
+    document.getElementById('publicProjectTitle').textContent = project.titre || 'Sans titre';
+    document.getElementById('publicProjectAuthor').textContent = project.pro_pseudo || 'Inconnu';
+    document.getElementById('publicProjectAuthorEmail').textContent = project.pro_email || 'Email non renseigné';
+    document.getElementById('publicProjectDate').textContent = project.created_at || 'Date inconnue';
+    document.getElementById('publicProjectDescription').textContent = project.description || 'Aucune description.';
+    
+    const progress = project.progression || 0;
+    document.getElementById('publicProjectProgress').textContent = progress + '%';
+    document.getElementById('publicProjectProgressFill').style.width = progress + '%';
+    
+    const statut = project.statut || 'brouillon';
+    const statutBadge = document.getElementById('publicProjectStatut');
+    statutBadge.textContent = statut;
+    statutBadge.className = 'badge-statut badge-' + statut;
+    
+    openModal('modal-public-project');
+}
+</script>
 <?php  ?>
 </body>
 </html>

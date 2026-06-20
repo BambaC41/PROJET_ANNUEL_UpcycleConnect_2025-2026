@@ -2,8 +2,8 @@ package app
 
 import (
 	"api/db"
-	"os"
 	"net/http"
+	"os"
 	"strings"
 	"unicode"
 
@@ -17,14 +17,12 @@ func getJWTSecret() string {
 	if secret != "" {
 		return secret
 	}
-	// Fallback de developpement local pour simplifier la soutenance.
-	// En production, JWT_SECRET doit etre fourni via variable d'environnement.
 	return "upcycle_dev_only_change_me_2026"
 }
 
 const (
 	RoleAdmin    = 1
-	RoleUser     = 2 // Particulier
+	RoleUser     = 2
 	RolePro      = 3
 	RoleSalarie  = 4
 	RoleEmployee = RoleSalarie

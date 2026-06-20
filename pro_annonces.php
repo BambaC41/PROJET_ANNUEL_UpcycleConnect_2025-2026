@@ -11,9 +11,6 @@ $flash = $_SESSION['flash_message'] ?? '';
 $flashType = $_SESSION['flash_type'] ?? 'success';
 unset($_SESSION['flash_message'], $_SESSION['flash_type']);
 
-// ============================================
-// TRAITEMENT CREATION ANNONCE
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_annonce'])) {
     $photo = '';
     if (isset($_FILES['photo_file']) && ($_FILES['photo_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
@@ -58,9 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_annonce'])) {
     exit;
 }
 
-// ============================================
-// RÉSERVATION D'UN DON (MARKETPLACE)
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['reserve_don_id'])) {
     $aid = (int)$_POST['reserve_don_id'];
     $ok = (bool)db_safe_exec(function (PDO $pdo) use ($aid, $myId) {
@@ -81,19 +75,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['reserve_don_id'])) {
     exit;
 }
 
-// ============================================
-// RECUPERATION DES DONNEES
-// ============================================
 $query = mb_strtolower(trim((string)($_GET['q'] ?? '')));
 $mode = trim((string)($_GET['mode'] ?? 'all'));
 
-// MES ANNONCES (celles que j'ai créées)
 $myAnnonces = api_get_my_annonces()['data'] ?? [];
 
-// ANNONCES PUBLIQUES (marketplace)
 $publicAnnonces = api_get_annonces()['data'] ?? [];
 
-// MES ACHATS
 $myPurchases = (array)db_safe_exec(function (PDO $pdo) use ($myId) {
     $stmt = $pdo->prepare('
         SELECT a.*, o.titre, o.description, o.photo_url, u.pseudo AS vendeur_pseudo,
@@ -108,7 +96,6 @@ $myPurchases = (array)db_safe_exec(function (PDO $pdo) use ($myId) {
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }, []);
 
-// Récupérer les infos de réservation/achat
 $locks = (array)db_safe_exec(static function (PDO $pdo) {
     $stmt = $pdo->query('SELECT id_annonce, id_reserve_par, id_acheteur FROM annonce');
     return $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
@@ -127,7 +114,6 @@ foreach ($publicAnnonces as &$a) {
 }
 unset($a);
 
-// Filtrer mes annonces
 $filteredMyAnnonces = array_values(array_filter($myAnnonces, function($a) use ($query, $mode) {
     $okQ = ($query === '') 
         || str_contains(mb_strtolower((string)($a['titre'] ?? '')), $query) 
@@ -137,7 +123,6 @@ $filteredMyAnnonces = array_values(array_filter($myAnnonces, function($a) use ($
     return $okQ && $okM;
 }));
 
-// Filtrer les annonces publiques (marketplace)
 $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($query, $mode) {
     $okQ = ($query === '') 
         || str_contains(mb_strtolower((string)($a['titre'] ?? '')), $query) 
@@ -443,9 +428,8 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
 <?php include 'includes/pro_nav.php'; ?>
 
 <main class="pro-shell page-shell">
-    <!-- SECTION CREATION ANNONCE -->
     <section class="pro-card">
-        <h1>📦 Mes annonces</h1>
+        <h1>📦 annonces</h1>
         
         <?php if ($flash !== ''): ?>
             <div class="<?= $flashType === 'error' ? 'error-box' : 'success-box' ?>">
@@ -482,7 +466,6 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
         </form>
     </section>
 
-    <!-- SECTION MES ANNONCES -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">📋 Mes annonces</h2>
         
@@ -554,8 +537,6 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
              </div>
         </div>
     </section>
-
-    <!-- SECTION MES ACHATS -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🛍️ Mes achats</h2>
         
@@ -608,8 +589,6 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             </div>
         <?php endif; ?>
     </section>
-
-    <!-- SECTION MARKETPLACE (annonces publiques) -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🌍 Marketplace - Annonces disponibles</h2>
         
@@ -695,8 +674,6 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
         <?php endif; ?>
     </section>
 </main>
-
-<!-- MODAL MES ANNONCES -->
 <div id="annonceModal" class="modal-annonce" onclick="closeAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closeAnnonceModal()">&times;</span>
@@ -719,7 +696,6 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
     </div>
 </div>
 
-<!-- MODAL MARKETPLACE (zoom avec infos vendeur) -->
 <div id="marketplaceAnnonceModal" class="modal-annonce" onclick="closeMarketplaceAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closeMarketplaceAnnonceModal()">&times;</span>
@@ -755,7 +731,6 @@ function updateCharCount(textarea) {
 
 let currentAnnonceId = null;
 
-// Fonction pour afficher la modale de mes annonces
 function showMyAnnonceModal(row) {
     currentAnnonceId = row.dataset.id;
     document.getElementById('modalAnnonceTitre').textContent = row.dataset.titre;
@@ -776,7 +751,6 @@ function showMyAnnonceModal(row) {
     document.getElementById('annonceModal').classList.add('active');
 }
 
-// Fonction pour afficher la modale de la marketplace
 function showMarketplaceAnnonceModal(annonce) {
     document.getElementById('marketModalAnnonceTitre').textContent = annonce.titre;
     document.getElementById('marketModalAnnonceMode').textContent = annonce.mode === 'don' ? 'Don' : 'Vente';

@@ -11,7 +11,6 @@ $pendingAnnonces = (($pendingAnnoncesRes['status'] ?? 0) === 200 && is_array($pe
 $demandesRes = api_get_all_demandes_depot();
 $demandes = (($demandesRes['status'] ?? 0) === 200 && is_array($demandesRes['data'] ?? null)) ? $demandesRes['data'] : [];
 
-// 🔥 Récupérer le vrai chiffre d'affaires Stripe
 $stripeData = api_get_stripe_balance();
 $totalRevenue = 0;
 $transactionsCount = 0;
@@ -27,7 +26,6 @@ if (($stripeData['status'] ?? 0) === 200) {
     }
 }
 
-// Fallback BDD locale si Stripe n'a pas répondu
 if ($totalRevenue == 0) {
     $totalRevenue = (float)db_safe_exec(function (PDO $pdo) {
         $st = $pdo->query("SELECT COALESCE(SUM(montant), 0) FROM paiement WHERE statut = 'paid'");

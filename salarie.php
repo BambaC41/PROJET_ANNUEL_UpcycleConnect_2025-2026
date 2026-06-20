@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/employee_bootstrap.php';
 require_once __DIR__ . '/includes/functions/salarie_stats.php';
 require_once __DIR__ . '/includes/ui_helpers.php';
+require_once __DIR__ . '/includes/functions/chat_local.php';
 
 $token = $_SESSION['token'];
 $userId = (int)$_SESSION['user_id'];
@@ -22,6 +23,8 @@ $upcomingEvents = array_filter($events, function($e) {
 });
 usort($upcomingEvents, fn($a, $b) => strtotime((string)($a['date_debut'] ?? '')) <=> strtotime((string)($b['date_debut'] ?? '')));
 $upcomingEvents = array_slice($upcomingEvents, 0, 5);
+
+$unreadCount = chat_get_unread_count($userId);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -194,7 +197,7 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
 <?php include 'includes/employee_nav.php'; ?>
 
 <main class="pro-shell page-shell">
-    <!-- Bannière de bienvenue -->
+   
     <div class="welcome-banner">
         <div>
             <h1>👋 Bonjour, <?= e($_SESSION['pseudo'] ?? 'Salarié') ?> !</h1>
@@ -203,7 +206,6 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
        
     </div>
 
-    <!-- Statistiques KPI -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon">🎓</div>
@@ -226,15 +228,19 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
             <div class="stat-value"><?= (int)$publishedConseils ?></div>
             <div class="stat-label">Conseils publiés</div>
         </div>
+        <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-value"><?= (int)$unreadCount ?></div>
+            <div class="stat-label">Messages non lus</div>
+        </div>
     </div>
 
-    <!-- Graphique d'activité -->
+    
     <div class="chart-container">
         <h3 style="margin: 0 0 16px 0;">📊 Activité du mois</h3>
         <canvas id="activityChart" height="80" style="max-height: 200px;"></canvas>
     </div>
 
-    <!-- Actions rapides -->
     <div class="actions-grid">
         <a href="salarie_events.php" class="action-card">
             <div class="action-icon">🎓</div>
@@ -251,14 +257,18 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
             <div class="action-title">Conseils & News</div>
             <div class="action-desc">Rédigez des articles et astuces</div>
         </a>
-        <a href="salarie_forum.php" class="action-card">
+        <a href="forum.php" class="action-card">
             <div class="action-icon">💬</div>
             <div class="action-title">Modération forum</div>
             <div class="action-desc">Gérez les signalements et sujets</div>
         </a>
+        <a href="salarie_chat.php" class="action-card">
+            <div class="action-icon">💬</div>
+            <div class="action-title">Messagerie</div>
+            <div class="action-desc">Discutez avec les membres de la communauté</div>
+        </a>
     </div>
 
-    <!-- Prochains événements -->
     <div class="action-card" style="padding: 0; overflow: hidden; margin-bottom: 24px;">
         <div style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
             <h3 style="margin: 0;">📅 Prochains événements</h3>
@@ -301,7 +311,6 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
         </div>
     </div>
 
-    <!-- Derniers conseils -->
     <div class="action-card" style="padding: 0; overflow: hidden;">
         <div style="padding: 20px; border-bottom: 1px solid #e5e7eb;">
             <h3 style="margin: 0;">📝 Vos derniers conseils</h3>
@@ -341,7 +350,7 @@ $upcomingEvents = array_slice($upcomingEvents, 0, 5);
 </main>
 
 <script>
-// Graphique d'activité avec les couleurs vertes
+
 const ctx = document.getElementById('activityChart').getContext('2d');
 new Chart(ctx, {
     type: 'line',

@@ -15,7 +15,6 @@ if (empty($score) || !isset($score['score_global'])) {
             'annonces_validees' => 0,
             'depots_realises' => 0,
             'inscriptions' => 0,
-            'poids_total_kg' => 0,
         ];
 
         // Annonces validées
@@ -33,17 +32,12 @@ if (empty($score) || !isset($score['score_global'])) {
         $stmt->execute([$userId]);
         $data['inscriptions'] = (int)$stmt->fetchColumn();
 
-        // Poids total
-        $stmt = $pdo->prepare('SELECT COALESCE(SUM(o.poids), 0) FROM demande_depot d LEFT JOIN objet o ON d.id_objet = o.id_objet WHERE d.id_user = ? AND d.statut = "deposee"');
-        $stmt->execute([$userId]);
-        $data['poids_total_kg'] = (float)$stmt->fetchColumn();
-
         // Calcul du score
         $data['total_score'] = ($data['annonces_validees'] * 10) + ($data['depots_realises'] * 15) + ($data['inscriptions'] * 20);
         $data['score_global'] = $data['total_score'];
 
         return $data;
-    }, ['score_global' => 0, 'annonces_validees' => 0, 'depots_realises' => 0, 'inscriptions' => 0, 'poids_total_kg' => 0, 'total_score' => 0]);
+    }, ['score_global' => 0, 'annonces_validees' => 0, 'depots_realises' => 0, 'inscriptions' => 0, 'total_score' => 0]);
 }
 
 $totalScore = (int)($score['score_global'] ?? $score['total_score'] ?? 0);
@@ -59,8 +53,6 @@ if ($totalScore >= 200) {
     $badge = 'Débutant';
     $badgeColor = '#6c757d';
 }
-
-$co2Estimate = (float)($score['poids_total_kg'] ?? 0) * 2;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -101,11 +93,6 @@ $co2Estimate = (float)($score['poids_total_kg'] ?? 0) * 2;
                 <div style="font-size: 24px; font-weight: 700; color: #667eea;"><?= (int)($score['inscriptions'] ?? 0) ?></div>
                 <div style="font-size: 13px; color: #999;">Formations/Ateliers</div>
             </div>
-            <div class="pro-card" style="text-align:center;">
-                <div style="font-size: 32px;">⚖️</div>
-                <div style="font-size: 24px; font-weight: 700; color: #667eea;"><?= round((float)($score['poids_total_kg'] ?? 0), 1) ?> kg</div>
-                <div style="font-size: 13px; color: #999;">Poids détourné</div>
-            </div>
         </div>
 
         <h2>🧮 Calcul du score</h2>
@@ -121,22 +108,6 @@ $co2Estimate = (float)($score['poids_total_kg'] ?? 0) * 2;
             <div style="display: flex; justify-content: space-between; padding: 12px 0;">
                 <span>Formations/Ateliers</span>
                 <span><strong><?= (int)($score['inscriptions'] ?? 0) ?> × 20 pts = <?= (int)($score['inscriptions'] ?? 0) * 20 ?> pts</strong></span>
-            </div>
-        </div>
-
-        <h2>🌍 Impact écologique estimé</h2>
-        <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ddd;">
-                <span>Poids détourné des déchets</span>
-                <span><strong><?= round((float)($score['poids_total_kg'] ?? 0), 2) ?> kg</strong></span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #ddd;">
-                <span>CO₂ non émis (estimation)</span>
-                <span><strong><?= round($co2Estimate, 2) ?> kg</strong></span>
-            </div>
-            <div style="display: flex; justify-content: space-between; padding: 12px 0;">
-                <span>Équivalent à</span>
-                <span><strong><?= round($co2Estimate / 4.6, 1) ?> km en voiture évités</strong></span>
             </div>
         </div>
 

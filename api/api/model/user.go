@@ -25,27 +25,6 @@ type User struct {
 }
 
 type RegisterRequest struct {
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	Pseudo      string `json:"pseudo"`
-	Prenom      string `json:"prenom"`
-	Nom         string `json:"nom"`
-	Telephone   string `json:"telephone"`
-	AdresseRue  string `json:"adresse_rue"`
-	AdresseVille string `json:"adresse_ville"`
-	AdresseCodePostal string `json:"adresse_code_postal"`
-	AdressePays string `json:"adresse_pays"`
-	PhotoProfil string `json:"photo_profil"`
-	Bio         string `json:"bio"`
-	RoleID      int    `json:"role_id"`
-}
-
-type LoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type UpdateUserRequest struct {
 	Email             string `json:"email"`
 	Password          string `json:"password"`
 	Pseudo            string `json:"pseudo"`
@@ -58,9 +37,30 @@ type UpdateUserRequest struct {
 	AdressePays       string `json:"adresse_pays"`
 	PhotoProfil       string `json:"photo_profil"`
 	Bio               string `json:"bio"`
-	Statut            string `json:"statut"`
-	RoleID            int    `json:"id_role"`
-	IsApproved        *bool  `json:"is_approved,omitempty"`
+	RoleID            int    `json:"role_id"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type UpdateUserRequest struct {
+	Email             *string `json:"email,omitempty"`
+	Password          string  `json:"password,omitempty"`
+	Pseudo            *string `json:"pseudo,omitempty"`
+	Prenom            *string `json:"prenom,omitempty"`
+	Nom               *string `json:"nom,omitempty"`
+	Telephone         *string `json:"telephone,omitempty"`
+	AdresseRue        *string `json:"adresse_rue,omitempty"`
+	AdresseVille      *string `json:"adresse_ville,omitempty"`
+	AdresseCodePostal *string `json:"adresse_code_postal,omitempty"`
+	AdressePays       *string `json:"adresse_pays,omitempty"`
+	PhotoProfil       *string `json:"photo_profil,omitempty"`
+	Bio               *string `json:"bio,omitempty"`
+	Statut            *string `json:"statut,omitempty"`
+	RoleID            *int    `json:"id_role,omitempty"`
+	IsApproved        *bool   `json:"is_approved,omitempty"`
 }
 
 type BanUserRequest struct {

@@ -53,6 +53,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 header("Location: particulier.php");
                 exit();
             } elseif (($data['role_id'] ?? null) == 3) {
+                if (empty($data['is_approved'])) {
+                    header("Location: pro_non_approuve_chat.php");
+                    exit();
+                }
                 header("Location: pro.php");
                 exit();
             } elseif (($data['role_id'] ?? null) == 4) {
@@ -69,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if (str_contains($apiError, 'invalid credentials')) {
             $error = "Mot de passe incorrect.";
         } elseif (str_contains($apiError, 'pending admin approval') || str_contains($apiError, 'not approved') || str_contains($apiError, 'appr')) {
-            $error = "Compte professionnel non approuvé pour le moment.";
+            $error = "Compte professionnel en attente de validation.";
         } elseif (str_contains($apiError, 'banned')) {
             $error = "Compte suspendu. Contactez l'administration.";
         } else {
@@ -86,7 +90,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/public.css">
-    <!-- OneSignal Push Notifications -->
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>
@@ -133,10 +136,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <section class="register-cta">
         <h2>Vous n'avez pas encore de compte ?</h2>
-        <p class="muted">Créez votre compte particulier ou professionnel en quelques minutes.</p>
+        <p class="muted">Créez votre compte en quelques minutes.</p>
         <div class="cta-actions">
             <a class="btn-primary" href="register.php">Creer un compte</a>
-            <a class="btn-outline" href="create_particulier.php">Creer un particulier</a>
         </div>
     </section>
 </main>

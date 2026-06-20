@@ -252,85 +252,147 @@ $kpis = [
             border-radius: 20px;
             cursor: pointer;
         }
+        .admin-section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }
+        .pro-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .pro-kpi {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+        .pro-kpi h3 {
+            font-size: 13px;
+            color: #666;
+            margin: 0 0 8px 0;
+            font-weight: 500;
+        }
+        .pro-kpi p {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin: 0;
+        }
+        .row-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #333;
+            display: inline-block;
+        }
+        .btn-primary {
+            background: #4caf50;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+        }
+        .input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
     </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
-<div class="admin-layout">
-    <?php include 'includes/sidebar.php'; ?>
-    <main class="admin-content">
-        <section class="admin-section">
-            <?php include 'includes/flash_toast.php'; ?>
-            
-            <h1>🛍️ Catalogue des offres</h1>
-            
-            <div class="pro-kpis" style="margin-bottom:24px;">
-                <article class="pro-kpi"><h3>Total offres</h3><p><?= (int)$kpis['total'] ?></p></article>
-                <article class="pro-kpi"><h3>Actives</h3><p><?= (int)$kpis['actives'] ?></p></article>
-                <article class="pro-kpi"><h3>Formations</h3><p><?= (int)$kpis['formations'] ?></p></article>
-                <article class="pro-kpi"><h3>Ateliers</h3><p><?= (int)$kpis['ateliers'] ?></p></article>
-            </div>
-            
-            <button class="btn-primary" onclick="openModal('createModal')">➕ Nouvelle offre</button>
-            
-            <form method="GET" class="row-actions" style="margin:20px 0; flex-wrap:wrap;">
-                <input class="input" type="search" name="q" value="<?= e($_GET['q'] ?? '') ?>" placeholder="Recherche" style="width:200px;">
-                <select class="input" name="type" style="width:150px;">
-                    <option value="">📋 Tous types</option>
-                    <option value="atelier" <?= $typeFilter === 'atelier' ? 'selected' : '' ?>>Atelier</option>
-                    <option value="formation" <?= $typeFilter === 'formation' ? 'selected' : '' ?>>Formation</option>
-                    <option value="service" <?= $typeFilter === 'service' ? 'selected' : '' ?>>Service</option>
-                </select>
-                <select class="input" name="cat" style="width:180px;">
-                    <option value="0">📁 Toutes catégories</option>
-                    <?php foreach ($categories as $c): ?>
-                        <option value="<?= (int)$c['id_categorie'] ?>" <?= $catFilter === (int)$c['id_categorie'] ? 'selected' : '' ?>><?= e($c['nom']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <select class="input" name="active" style="width:130px;">
-                    <option value="all" <?= $activeFilter === 'all' ? 'selected' : '' ?>>Tous statuts</option>
-                    <option value="1" <?= $activeFilter === '1' ? 'selected' : '' ?>>Actifs</option>
-                    <option value="0" <?= $activeFilter === '0' ? 'selected' : '' ?>>Inactifs</option>
-                </select>
-                <button class="btn-outline" type="submit">🔍 Filtrer</button>
-                <a href="admin_catalog.php" class="btn-outline">⟳ Réinitialiser</a>
-            </form>
-            
-            <div class="offers-grid">
-                <?php foreach ($filtered as $p): 
-                    $isActive = !empty($p['is_active']);
-                    $typeClass = 'type-' . ($p['type'] ?? 'service');
-                ?>
-                    <div class="offer-card">
-                        <div class="offer-title"><?= e($p['titre']) ?></div>
-                        <span class="offer-type <?= $typeClass ?>"><?= e($p['type']) ?></span>
-                        <div class="offer-price"><?= formatPriceEur($p['prix'] ?? 0) ?></div>
-                        <div class="offer-actions">
-                            <button class="btn-outline btn-sm" onclick='openEditModal(<?= htmlspecialchars(json_encode([
-                                'id' => $p['id_prestation'],
-                                'titre' => $p['titre'],
-                                'description' => $p['description'],
-                                'type' => $p['type'],
-                                'categorie' => $p['id_categorie'],
-                                'prix' => $p['prix'],
-                                'is_active' => $isActive
-                            ])) ?>)'>✏️ Modifier</button>
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="action" value="toggle">
-                                <input type="hidden" name="id_prestation" value="<?= (int)$p['id_prestation'] ?>">
-                                <button class="btn-outline btn-sm" type="submit">🔄 <?= $isActive ? 'Désactiver' : 'Activer' ?></button>
-                            </form>
-                        </div>
-                    </div>
+<main class="pro-shell page-shell">
+    <section class="admin-section">
+        <?php include 'includes/flash_toast.php'; ?>
+        
+        <h1>🛍️ Catalogue des offres</h1>
+        
+        <div class="pro-kpis">
+            <article class="pro-kpi"><h3>Total offres</h3><p><?= (int)$kpis['total'] ?></p></article>
+            <article class="pro-kpi"><h3>Actives</h3><p><?= (int)$kpis['actives'] ?></p></article>
+            <article class="pro-kpi"><h3>Formations</h3><p><?= (int)$kpis['formations'] ?></p></article>
+            <article class="pro-kpi"><h3>Ateliers</h3><p><?= (int)$kpis['ateliers'] ?></p></article>
+        </div>
+        
+        <button class="btn-primary" onclick="openModal('createModal')">➕ Nouvelle offre</button>
+        
+        <form method="GET" class="row-actions" style="margin:20px 0;">
+            <input class="input" type="search" name="q" value="<?= e($_GET['q'] ?? '') ?>" placeholder="Recherche" style="width:200px;">
+            <select class="input" name="type" style="width:150px;">
+                <option value="">📋 Tous types</option>
+                <option value="atelier" <?= $typeFilter === 'atelier' ? 'selected' : '' ?>>Atelier</option>
+                <option value="formation" <?= $typeFilter === 'formation' ? 'selected' : '' ?>>Formation</option>
+                <option value="service" <?= $typeFilter === 'service' ? 'selected' : '' ?>>Service</option>
+            </select>
+            <select class="input" name="cat" style="width:180px;">
+                <option value="0">📁 Toutes catégories</option>
+                <?php foreach ($categories as $c): ?>
+                    <option value="<?= (int)$c['id_categorie'] ?>" <?= $catFilter === (int)$c['id_categorie'] ? 'selected' : '' ?>><?= e($c['nom']) ?></option>
                 <?php endforeach; ?>
-            </div>
-            
-            <?php if (empty($filtered)): ?>
-                <div class="empty-state" style="text-align:center; padding:60px;">📭 Aucune offre trouvée.</div>
-            <?php endif; ?>
-        </section>
-    </main>
-</div>
+            </select>
+            <select class="input" name="active" style="width:130px;">
+                <option value="all" <?= $activeFilter === 'all' ? 'selected' : '' ?>>Tous statuts</option>
+                <option value="1" <?= $activeFilter === '1' ? 'selected' : '' ?>>Actifs</option>
+                <option value="0" <?= $activeFilter === '0' ? 'selected' : '' ?>>Inactifs</option>
+            </select>
+            <button class="btn-outline" type="submit">🔍 Filtrer</button>
+            <a href="admin_catalog.php" class="btn-outline">⟳ Réinitialiser</a>
+        </form>
+        
+        <div class="offers-grid">
+            <?php foreach ($filtered as $p): 
+                $isActive = !empty($p['is_active']);
+                $typeClass = 'type-' . ($p['type'] ?? 'service');
+            ?>
+                <div class="offer-card">
+                    <div class="offer-title"><?= e($p['titre']) ?></div>
+                    <span class="offer-type <?= $typeClass ?>"><?= e($p['type']) ?></span>
+                    <div class="offer-price"><?= formatPriceEur($p['prix'] ?? 0) ?></div>
+                    <div class="offer-actions">
+                        <button class="btn-outline btn-sm" onclick='openEditModal(<?= htmlspecialchars(json_encode([
+                            'id' => $p['id_prestation'],
+                            'titre' => $p['titre'],
+                            'description' => $p['description'],
+                            'type' => $p['type'],
+                            'categorie' => $p['id_categorie'],
+                            'prix' => $p['prix'],
+                            'is_active' => $isActive
+                        ])) ?>)'>✏️ Modifier</button>
+                        <form method="POST" style="display:inline;">
+                            <input type="hidden" name="action" value="toggle">
+                            <input type="hidden" name="id_prestation" value="<?= (int)$p['id_prestation'] ?>">
+                            <button class="btn-outline btn-sm" type="submit">🔄 <?= $isActive ? 'Désactiver' : 'Activer' ?></button>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <?php if (empty($filtered)): ?>
+            <div class="empty-state">📭 Aucune offre trouvée.</div>
+        <?php endif; ?>
+    </section>
+</main>
 
 <!-- Modal Création -->
 <div id="createModal" class="modal">
@@ -457,6 +519,5 @@ window.onclick = function(e) {
     }
 }
 </script>
-<?php  ?>
 </body>
 </html>

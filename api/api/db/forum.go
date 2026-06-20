@@ -40,8 +40,6 @@ func nullIfEmpty(s string) any {
 	return s
 }
 
-// --- Categories ---
-
 func ListForumCategories(activeOnly bool) ([]model.ForumCategory, error) {
 	q := `
 		SELECT id_category, name, slug, COALESCE(description,''), sort_order, is_active,
@@ -134,8 +132,6 @@ func DeleteForumCategory(id int) error {
 	}
 	return nil
 }
-
-// --- Topics ---
 
 func scanForumTopic(scanner interface{ Scan(dest ...any) error }, t *model.ForumTopic, withMeta bool) error {
 	var pinned, locked, hidden int
@@ -363,8 +359,6 @@ func DeleteForumTopic(id int) error {
 	return nil
 }
 
-// --- Posts ---
-
 func ListForumPosts(topicID int, includeHidden bool) ([]model.ForumPost, error) {
 	q := `
 		SELECT p.id_post, p.topic_id, p.author_id, p.content, p.is_hidden,
@@ -492,8 +486,6 @@ func DeleteForumPost(id int) error {
 	}
 	return nil
 }
-
-// --- Reports ---
 
 func CreateForumReport(r model.ForumReport) (int64, error) {
 	res, err := DB.Exec(`

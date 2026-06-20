@@ -6,24 +6,19 @@ require_once __DIR__ . '/includes/functions/local_db.php';
 
 $token = $_SESSION['token'];
 $userId = (int)$_SESSION['user_id'];
-
-// Récupération des données
 $events = salarie_events_for_user($token, $userId);
 $prestations = api_get_prestations($token);
 
-// Map des prestations
 $prestationsMap = [];
 foreach ($prestations as $p) {
     $prestationsMap[(int)($p['id_prestation'] ?? 0)] = $p['titre'] ?? 'N/A';
 }
 
-// Paramètres
-$viewMode = $_GET['view'] ?? 'week'; // week ou month
+$viewMode = $_GET['view'] ?? 'week'; 
 $offset = (int)($_GET['offset'] ?? 0);
 $statusFilter = $_GET['status'] ?? 'all';
 $lieuFilter = $_GET['lieu'] ?? 'all';
 
-// Liste des salles (conformément au sujet)
 $salles = [
     '10e - Siège social' => '174 rue La Fayette, 75010 Paris',
     '11e - Annexe' => '11e arrondissement, Paris',
@@ -34,7 +29,6 @@ $salles = [
     'Montreuil' => 'Montreuil, 93100',
 ];
 
-// Calcul de la plage de dates
 if ($viewMode === 'month') {
     $currentMonth = strtotime(($offset >= 0 ? '+' : '') . $offset . ' months', strtotime('first day of this month'));
     $startDate = strtotime(date('Y-m-01', $currentMonth));
@@ -58,7 +52,6 @@ if ($viewMode === 'month') {
 
 $dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
-// Filtrage et organisation des événements
 $eventsByDate = [];
 foreach ($events as $ev) {
     if ($statusFilter !== 'all' && ($ev['statut'] ?? '') !== $statusFilter) continue;
@@ -84,13 +77,11 @@ foreach ($events as $ev) {
     }
 }
 
-// Statistiques
 $totalEvents = count($events);
 $validatedEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') === 'valide'));
 $pendingEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') === 'en_attente'));
 $weekEvents = count($eventsByDate);
 
-// Récupération des signalements forum en attente
 $pendingReports = 0;
 db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
     $stmt = $pdo->query('SELECT COUNT(*) FROM forum_reports WHERE status = "pending"');
@@ -114,7 +105,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         
         .planning-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         
-        /* En-tête avec infos */
         .header-stats {
             display: flex;
             justify-content: space-between;
@@ -148,7 +138,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         .stat-badge .number { font-size: 24px; font-weight: 700; }
         .stat-badge .label { font-size: 12px; opacity: 0.9; }
         
-        /* Barre d'outils */
         .toolbar {
             background: white;
             border-radius: 16px;
@@ -229,7 +218,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         
         .btn-primary:hover { background: #2e7d32; }
         
-        /* Vue planning */
         .planning-table {
             background: white;
             border-radius: 20px;
@@ -359,7 +347,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
             justify-content: center;
         }
         
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -403,7 +390,7 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
 <?php include __DIR__ . '/includes/employee_nav.php'; ?>
 
 <main class="planning-container">
-    <!-- En-tête -->
+  
     <div class="header-stats">
         <div>
             <h1>🗓️ Mon planning</h1>
@@ -419,7 +406,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         </div>
     </div>
     
-    <!-- Barre d'outils -->
     <div class="toolbar">
         <div class="view-switch">
             <a href="?view=week&offset=<?= $offset ?>&status=<?= $statusFilter ?>&lieu=<?= $lieuFilter ?>" class="view-btn <?= $viewMode === 'week' ? 'active' : '' ?>">📅 Semaine</a>
@@ -471,19 +457,17 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         </div>
     </div>
     
-    <!-- Actions rapides -->
     <div class="action-buttons">
         <a href="salarie_events.php" class="btn-primary">+ Créer un événement</a>
         <a href="salarie_conseils.php" class="btn-primary" style="background:#2196f3;">📝 Rédiger un conseil</a>
         <?php if ($pendingReports > 0): ?>
-            <a href="salarie_forum.php" class="btn-primary" style="background:#f44336;">⚠️ Modérer le forum (<?= $pendingReports ?>)</a>
+            <a href="forum.php" class="btn-primary" style="background:#f44336;">⚠️ Modérer le forum (<?= $pendingReports ?>)</a>
         <?php endif; ?>
     </div>
     
-    <!-- Planning -->
     <div class="planning-table">
         <div class="planning-grid">
-            <!-- En-têtes des jours -->
+           
             <div class="grid-header">Horaire</div>
             <?php foreach ($dates as $idx => $ts): ?>
                 <div class="grid-header">
@@ -494,7 +478,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
                 </div>
             <?php endforeach; ?>
             
-            <!-- Créneaux horaires (8h-20h pour semaine, pas d'heure pour mois) -->
             <?php if ($viewMode === 'week'): ?>
                 <?php for ($hour = 8; $hour <= 20; $hour++): ?>
                     <?php for ($min = 0; $min < 60; $min += 60): ?>
@@ -522,7 +505,7 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
                     <?php endfor; ?>
                 <?php endfor; ?>
             <?php else: ?>
-                <!-- Vue mois : un événement par jour -->
+    
                 <?php foreach ($dates as $ts): ?>
                     <div class="grid-hour" style="background:#f8f9fa; font-weight:600;"><?= date('d/m', $ts) ?></div>
                     <?php $dateKey = date('Y-m-d', $ts); ?>
@@ -547,7 +530,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
         </div>
     </div>
     
-    <!-- Légende -->
     <div style="display: flex; gap: 24px; margin-top: 24px; padding: 16px; background: white; border-radius: 16px; flex-wrap: wrap; justify-content: center;">
         <div><span style="background:#e8f5e9; border-left:4px solid #4caf50; padding:4px 12px;">✅ Validé</span> = Événement confirmé</div>
         <div><span style="background:#fff3e0; border-left:4px solid #ff9800; padding:4px 12px;">⏳ En attente</span> = Validation responsable requise</div>
@@ -555,7 +537,6 @@ db_safe_exec(function(PDO $pdo) use (&$pendingReports) {
     </div>
 </main>
 
-<!-- Modal -->
 <div id="eventModal" class="modal" onclick="closeModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <span class="modal-close" onclick="closeModal()">&times;</span>

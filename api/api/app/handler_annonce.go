@@ -30,7 +30,6 @@ func AnnoncesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// VÉRIFICATION DES LIMITES D'ANNONCES POUR LES PROS
 		if claims.RoleID == RolePro {
 			if !CanUserCreateAnnonce(claims.UserID, claims.RoleID) {
 				remaining := GetRemainingAnnoncesCount(claims.UserID, claims.RoleID)
@@ -131,17 +130,13 @@ func handleAnnonceModeration(w http.ResponseWriter, r *http.Request, annonceID i
 }
 
 func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
-	// Extraire l'ID de l'URL /annonces/123
 	path := strings.TrimPrefix(r.URL.Path, "/annonces/")
-	// Enlever un éventuel trailing slash
 	path = strings.TrimSuffix(path, "/")
 
 	if path == "" {
 		http.Error(w, "Invalid path", http.StatusBadRequest)
 		return
 	}
-
-	// Vérifier si c'est une route de modération /annonces/123/validate
 	parts := strings.Split(path, "/")
 	idStr := parts[0]
 
@@ -151,7 +146,6 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Route de modération
 	if len(parts) == 2 && parts[1] == "validate" {
 		handleAnnonceModeration(w, r, id)
 		return
@@ -169,7 +163,6 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Vérifier les droits d'accès
 		if annonce.Statut != "validee" {
 			claims, err := getClaimsFromRequest(r)
 			if err != nil {
@@ -219,7 +212,6 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// Vérifier que l'annonce appartient bien à l'utilisateur
 		existing, err := db.GetAnnonceByID(id)
 		if err != nil || existing == nil {
 			http.Error(w, "Annonce non trouvée", http.StatusNotFound)
@@ -230,10 +222,9 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Conserver l'ID et l'UserID
 		a.ID = id
 		a.UserID = claims.UserID
-		a.Statut = "en_attente" // Repasse en attente après modification
+		a.Statut = "en_attente"
 		a.ValidateurID = nil
 		a.ValidatedAt = nil
 
@@ -255,7 +246,6 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Vérifier que l'annonce appartient à l'utilisateur
 		existing, err := db.GetAnnonceByID(id)
 		if err != nil || existing == nil {
 			http.Error(w, "Annonce non trouvée", http.StatusNotFound)
@@ -266,7 +256,6 @@ func AnnonceByIDHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Empêcher suppression d'une annonce validée
 		if existing.Statut == "validee" {
 			http.Error(w, "Une annonce validée ne peut pas être supprimée", http.StatusBadRequest)
 			return
