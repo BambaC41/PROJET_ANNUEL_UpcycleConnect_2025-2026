@@ -46,7 +46,7 @@ services:
     container_name: upcycle-api
     restart: always
     ports:
-      - "8080:8080"
+      - "8888:80"  
     environment:
       - DB_HOST=db
       - DB_NAME=${DB_NAME}
