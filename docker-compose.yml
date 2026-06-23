@@ -21,7 +21,7 @@ services:
     container_name: upcycle-web
     restart: always
     ports:
-      - "80:80"
+      - "8888:80"   # <- ICI : le site est accessible sur le port 8888
     volumes:
       - ./:/var/www/html
       - ./uploads:/var/www/html/uploads
@@ -46,7 +46,7 @@ services:
     container_name: upcycle-api
     restart: always
     ports:
-      - "8888:80"  
+      - "8080:8080"   # <- API sur le port 8080 (comme prévu)
     environment:
       - DB_HOST=db
       - DB_NAME=${DB_NAME}
