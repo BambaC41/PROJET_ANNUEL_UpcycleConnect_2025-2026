@@ -3,8 +3,6 @@
 .vscode/
 *.swp
 
-.env
-.env.*
 *.key
 *.pem
 
