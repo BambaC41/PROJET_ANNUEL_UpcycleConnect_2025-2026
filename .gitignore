@@ -4,8 +4,6 @@
 *.swp
 
 *.key
-*.pem
-
 # Logs
 *.log
 stripe_debug.log
