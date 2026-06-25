@@ -1,0 +1,9 @@
+tunnel: e578ba46-05ab-4d87-af3c-97bb9cae28f3
+credentials-file: /home/pab/.cloudflared/e578ba46-05ab-4d87-af3c-97bb9cae28f3.json
+
+ingress:
+  - hostname: upcycle-connect.tech
+    service: http://localhost:8888
+  - hostname: www.upcycle-connect.tech
+    service: http://localhost:8888
+  - service: http_status:404
