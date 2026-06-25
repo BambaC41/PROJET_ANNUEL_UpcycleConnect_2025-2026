@@ -76,16 +76,19 @@ function session_ensure_user_id(): int
     }
     return 0;
 }
+
+// ✅ CORRECTION : cette fonction utilise maintenant les variables d'environnement
 function get_db_connection() {
     static $pdo = null;
     if ($pdo === null) {
-        $host = 'localhost';
-        $dbname = 'upcycleconnect';
-        $user = 'root';
-        $pass = 'root';
-        
+        $host = getenv('DB_HOST') ?: 'localhost';
+        $port = getenv('DB_PORT') ?: '3306';
+        $dbname = getenv('DB_NAME') ?: 'upcycleconnect';
+        $user = getenv('DB_USER') ?: 'root';
+        $pass = getenv('DB_PASSWORD') ?: '';
+
         try {
-            $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
+            $pdo = new PDO("mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4", $user, $pass);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
             die('Database connection failed: ' . $e->getMessage());
