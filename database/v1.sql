@@ -4,6 +4,7 @@ USE upcycleconnect;
 
 SET FOREIGN_KEY_CHECKS = 0;
 SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 CREATE TABLE role (
     id_role INT AUTO_INCREMENT PRIMARY KEY,
@@ -400,6 +401,7 @@ INSERT INTO forum_categories (id_category, name, slug, description, sort_order, 
 (4, 'Conteneurs', 'conteneurs', 'Depots, collecte et logistique des conteneurs', 4, 1),
 (5, 'Formations', 'formations', 'Ateliers et sessions de formation', 5, 1);
 
+-- Correction : category_id ne peut pas être NOT NULL avec ON DELETE SET NULL
 CREATE TABLE forum_topics (
     id_topic INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
@@ -415,7 +417,7 @@ CREATE TABLE forum_topics (
     last_post_at DATETIME NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES forum_categories(id_category) ON DELETE SET NULL,
+    FOREIGN KEY (category_id) REFERENCES forum_categories(id_category) ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES utilisateur(id_user)
 ) ENGINE=InnoDB;
 
@@ -536,7 +538,6 @@ CREATE TABLE user_warnings (
     INDEX idx_warnings_unread (user_id, is_read)
 ) ENGINE=InnoDB;
 
-
 INSERT INTO user_warnings (user_id, warning_type, message, issued_by, created_at) VALUES
 (3, 'forum', 'Merci de respecter les règles du forum. Évitez le langage inapproprié.', 1, NOW()),
 (6, 'forum', 'Attention au spam', 5, DATE_SUB(NOW(), INTERVAL 1 DAY));
@@ -594,6 +595,7 @@ CREATE TABLE IF NOT EXISTS unread_messages (
     FOREIGN KEY (conversation_id) REFERENCES conversation(id_conversation) ON DELETE CASCADE,
     UNIQUE KEY uk_unread_user_conversation (user_id, conversation_id)
 ) ENGINE=InnoDB;
+
 UPDATE forum_topics SET posts_count = 5 WHERE id_topic = 1;
 UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 2;
 UPDATE forum_topics SET posts_count = 8 WHERE id_topic = 3;
