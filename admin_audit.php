@@ -2,7 +2,7 @@
 require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/local_db.php';
 
-// Fonction pour traduire les actions en français lisible
+// Fonction de traduction (inchangée)
 function traduireActionAudit($action) {
     $traductions = [
         'TOGGLE_PRESTATION' => '🔁 Activation/Désactivation d\'offre',
@@ -30,13 +30,11 @@ function traduireActionAudit($action) {
         'create_category' => '➕ Création de catégorie forum',
     ];
     
-    // Rechercher une correspondance partielle
     foreach ($traductions as $key => $label) {
         if (stripos($action, $key) !== false) {
             return $label;
         }
     }
-    
     return $action ?: 'Action inconnue';
 }
 
@@ -52,85 +50,8 @@ $rows = db_safe_exec(fn(PDO $pdo) => $pdo->query('SELECT a.*, u.email FROM audit
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .audit-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .audit-table th, .audit-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .audit-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #555;
-        }
-        .audit-table tr:hover {
-            background: #fafbfc;
-        }
-        .action-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .action-success { background: #e8f5e9; color: #2e7d32; }
-        .action-warning { background: #fff3e0; color: #ef6c00; }
-        .action-danger { background: #fee2e2; color: #dc2626; }
-        .action-info { background: #e3f2fd; color: #1565c0; }
-        .stats-bar {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px 24px;
-            border: 1px solid #e5e7eb;
-        }
-        .stat-number {
-            font-size: 28px;
-            font-weight: 700;
-            color: #2e7d32;
-        }
-        .stat-label {
-            font-size: 12px;
-            color: #666;
-        }
-        .filter-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .filter-btn {
-            padding: 6px 16px;
-            border-radius: 20px;
-            text-decoration: none;
-            font-size: 13px;
-        }
-        .filter-btn.active {
-            background: #2e7d32;
-            color: white;
-        }
-        .filter-btn:not(.active) {
-            background: #f0f0f0;
-            color: #333;
-        }
-        .search-input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            width: 250px;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -161,7 +82,6 @@ $rows = db_safe_exec(fn(PDO $pdo) => $pdo->query('SELECT a.*, u.email FROM audit
             </div>
         </div>
         
-        <!-- Filtres rapides -->
         <div class="filter-bar">
             <button class="filter-btn active" onclick="filterTable('all')">📋 Toutes</button>
             <button class="filter-btn" onclick="filterTable('prestation')">🛍️ Offres</button>

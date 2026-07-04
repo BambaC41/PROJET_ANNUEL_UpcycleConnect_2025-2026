@@ -97,14 +97,7 @@ $filtered = array_values(array_filter($cards, function ($c) use ($q) {
     <title>Catalogue particulier - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <style>
-        .payment-btn-group { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-        .btn-pay { background: #4caf50; color: white; padding: 8px 20px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block; transition: background 0.2s; }
-        .btn-pay:hover { background: #2e7d32; }
-        .btn-inscrire { background: #2196f3; color: white; padding: 8px 20px; border-radius: 30px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block; transition: background 0.2s; border: none; cursor: pointer; }
-        .btn-inscrire:hover { background: #1976d2; }
-        .btn-disabled { background: #ccc; color: #666; padding: 8px 20px; border-radius: 30px; font-weight: 600; font-size: 14px; display: inline-block; cursor: not-allowed; }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
@@ -150,7 +143,7 @@ $filtered = array_values(array_filter($cards, function ($c) use ($q) {
                 <?php elseif ($insRow && $isConfirmed && !$isPaid && $pr > 0): ?>
                     <span class="status-badge status-warn" style="display:block; margin-top:8px;">⏳ Paiement requis</span>
                     <div class="payment-btn-group">
-                        <a class="btn-pay" href="paiement_stripe.php?amount=<?= $pr * 100 ?>&item=Inscription+<?= urlencode($c['title']) ?>&inscription_id=<?= $iid ?>">
+                        <a class="btn-pay-catalogue" href="paiement_stripe.php?amount=<?= $pr * 100 ?>&item=Inscription+<?= urlencode($c['title']) ?>&inscription_id=<?= $iid ?>">
                             💳 Payer maintenant (<?= number_format($pr, 2) ?>€)
                         </a>
                     </div>

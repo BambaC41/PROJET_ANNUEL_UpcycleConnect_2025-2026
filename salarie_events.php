@@ -12,9 +12,6 @@ $token = $_SESSION['token'];
 $userId = (int)$_SESSION['user_id'];
 $prestations = api_get_prestations($token);
 
-// ============================================
-// 1. MODIFICATION D'UN ÉVÉNEMENT
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
     $eventId = (int)$_POST['event_id'];
     $dateDebut = date('Y-m-d H:i:s', strtotime((string)($_POST['date_debut'] ?? '')));
@@ -98,9 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
     }
 }
 
-// ============================================
-// 2. SUPPRESSION/ANNULATION D'UN ÉVÉNEMENT
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
     $eventId = (int)$_POST['event_id'];
     
@@ -162,9 +156,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event'])) {
     }
 }
 
-// ============================================
-// 3. RÉCUPÉRATION DES DONNÉES
-// ============================================
 $events = salarie_events_for_user($token, $userId);
 $q = trim((string)($_GET['q'] ?? ''));
 $status = trim((string)($_GET['status'] ?? 'all'));
@@ -218,219 +209,8 @@ $cancelledEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') ==
     <title>Mes événements - Espace Salarié</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <style>
-        * { box-sizing: border-box; }
-        body { background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        
-        .events-page { max-width: 1300px; margin: 0 auto; padding: 20px; }
-        
-        .page-header-compact {
-            background: linear-gradient(135deg, #2e7d32, #4caf50);
-            border-radius: 16px;
-            padding: 16px 24px;
-            margin-bottom: 20px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .page-header-compact h1 { margin: 0; font-size: 20px; }
-        .page-header-compact p { margin: 0; font-size: 13px; opacity: 0.9; }
-        
-        .stats-row-mini {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-        .stat-mini {
-            background: white;
-            border-radius: 14px;
-            padding: 10px 18px;
-            flex: 1;
-            min-width: 100px;
-            text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        .stat-mini .number { font-size: 24px; font-weight: 700; color: #2e7d32; }
-        .stat-mini .label { font-size: 11px; color: #666; margin-top: 2px; }
-        
-        .filter-bar {
-            background: white;
-            border-radius: 14px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        .filter-bar input, .filter-bar select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 30px;
-            font-size: 13px;
-        }
-        
-        .events-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-        }
-        
-        .event-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-        .event-card:hover { transform: translateY(-5px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
-        
-        .event-card-image {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-        }
-        
-        .event-card-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 600;
-            color: white;
-            z-index: 2;
-        }
-        .badge-valide { background: #4caf50; }
-        .badge-en_attente { background: #ff9800; }
-        .badge-annule { background: #9e9e9e; }
-        
-        .event-card-content { padding: 16px; }
-        .event-card-title { font-size: 18px; font-weight: 700; margin: 0 0 8px 0; color: #1a1a2e; }
-        .event-card-date { font-size: 13px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        .event-card-lieu { font-size: 13px; color: #666; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
-        .event-card-capacite { font-size: 12px; color: #4caf50; font-weight: 500; margin-top: 8px; padding-top: 8px; border-top: 1px solid #eee; }
-        
-        .btn-create {
-            background: #4caf50;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
-            transition: background 0.2s;
-            display: inline-block;
-        }
-        .btn-create:hover { background: #2e7d32; }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 20px;
-            color: #999;
-        }
-        
-        .modal-event-zoom {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .modal-event-zoom.active { display: flex; }
-        .modal-event-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            cursor: default;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .modal-event-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 20;
-            background: rgba(0,0,0,0.5);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-event-image-container {
-            width: 100%;
-            background: #1a1a2e;
-            border-radius: 24px 24px 0 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            max-height: 250px;
-        }
-        .modal-event-img {
-            width: 100%;
-            height: auto;
-            max-height: 250px;
-            object-fit: contain;
-            display: block;
-        }
-        .modal-event-body { padding: 24px; }
-        .modal-event-body h2 { margin: 0 0 20px 0; font-size: 24px; border-bottom: 2px solid #e0e0e0; padding-bottom: 12px; }
-        .modal-info-row { display: flex; margin-bottom: 14px; }
-        .modal-info-label { width: 100px; font-weight: 600; color: #555; }
-        .modal-info-value { flex: 1; color: #333; }
-        .modal-actions { margin-top: 24px; border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
-        .btn-modal { padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
-        .btn-modal-primary { background: #ff9800; color: white; }
-        .btn-modal-primary:hover { background: #f57c00; }
-        .btn-modal-danger { background: #dc2626; color: white; }
-        .btn-modal-danger:hover { background: #b91c1c; }
-        .btn-modal-secondary { background: #9e9e9e; color: white; }
-        .btn-modal-secondary:hover { background: #757575; }
-        
-        .modal-form-group { margin-bottom: 16px; }
-        .modal-form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #333; }
-        .modal-form-group input, .modal-form-group select {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .image-preview { max-width: 100%; max-height: 100px; border-radius: 8px; margin-top: 8px; }
-        .current-image { margin-bottom: 10px; }
-        
-        @media (max-width: 768px) {
-            .events-page { padding: 12px; }
-            .events-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include __DIR__ . '/includes/employee_nav.php'; ?>
@@ -532,7 +312,6 @@ $cancelledEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') ==
     <?php endif; ?>
 </main>
 
-<!-- MODAL ZOOM -->
 <div id="eventZoomModal" class="modal-event-zoom" onclick="closeEventZoom()">
     <div class="modal-event-content" onclick="event.stopPropagation()">
         <span class="modal-event-close" onclick="closeEventZoom()">&times;</span>
@@ -547,7 +326,7 @@ $cancelledEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') ==
             <div class="modal-info-row"><div class="modal-info-label">👥 Capacité :</div><div class="modal-info-value" id="zoomCapacite"></div></div>
             <div class="modal-info-row"><div class="modal-info-label">📌 Statut :</div><div class="modal-info-value" id="zoomStatut"></div></div>
             <div class="modal-actions" id="modalActions">
-                <!-- Les boutons seront générés dynamiquement en JS -->
+                <!-- Généré dynamiquement -->
             </div>
         </div>
         <div id="editMode" style="display:none; padding:24px; border-top:1px solid #eee;">
@@ -619,18 +398,15 @@ function openEventZoom(event) {
     modalImg.src = event.image_url;
     modalImg.alt = event.title;
     
-    // Générer les boutons dynamiquement selon le statut
     const actionsDiv = document.getElementById('modalActions');
     actionsDiv.innerHTML = '';
     
-    // Bouton Modifier (toujours présent)
     const editBtn = document.createElement('button');
     editBtn.className = 'btn-modal btn-modal-primary';
     editBtn.innerHTML = '✏️ Modifier';
     editBtn.onclick = () => toggleEditMode();
     actionsDiv.appendChild(editBtn);
     
-    // Bouton Annuler/Supprimer (si événement non annulé)
     if (event.statut !== 'annule') {
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn-modal btn-modal-danger';
@@ -643,7 +419,6 @@ function openEventZoom(event) {
         actionsDiv.appendChild(cancelBtn);
     }
     
-    // Bouton Fermer
     const closeBtn = document.createElement('button');
     closeBtn.className = 'btn-modal btn-modal-secondary';
     closeBtn.innerHTML = 'Fermer';

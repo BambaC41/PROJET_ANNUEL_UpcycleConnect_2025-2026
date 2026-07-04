@@ -10,9 +10,6 @@ require_once 'includes/functions/prestations.php';
 $msg_success = "";
 $msg_error = "";
 
-// --- ACTIONS (Create, Update, Delete) ---
-
-// 1. Suppression
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $res = api_delete_category($_SESSION['token'], $_GET['id']);
     if ($res['status'] === 200 || $res['status'] === 204) {
@@ -23,7 +20,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// 2. Création et Modification
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payload = [
         'nom' => $_POST['nom'] ?? '',
@@ -50,12 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// --- RECUPERATION DONNEES ---
 $categories = api_get_categories($_SESSION['token']);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <?php include 'includes/head.php'; ?>
+<link rel="stylesheet" href="styles/admin_global.css">
 <body>
 <main class="admin-layout">
     <?php include 'includes/header.php'; ?>
@@ -67,7 +63,6 @@ $categories = api_get_categories($_SESSION['token']);
             <button type="button" class="btn-primary" onclick="openCreateModal()">Ajouter une catégorie</button>
         </div>
 
-        <!-- Feedback Messages -->
         <?php if ($msg_error): ?><p class="error" style="text-align: center;"><?= htmlspecialchars($msg_error) ?></p><?php endif; ?>
         <?php if (isset($_GET['msg'])): ?>
             <?php if($_GET['msg'] == 'created'): ?><p class="pill pill-green" style="display:block; text-align:center;">Catégorie de prestation créée.</p><?php endif; ?>
@@ -75,7 +70,6 @@ $categories = api_get_categories($_SESSION['token']);
             <?php if($_GET['msg'] == 'deleted'): ?><p class="pill pill-green" style="display:block; text-align:center;">Catégorie de prestation supprimée.</p><?php endif; ?>
         <?php endif; ?>
 
-        <!-- Table -->
         <section class="admin-section">
             <table class="admin-table">
                 <thead>
@@ -121,7 +115,6 @@ $categories = api_get_categories($_SESSION['token']);
     </section>
 </main>
 
-<!-- MODAL CREATE / EDIT -->
 <div id="categoryModal" class="modal-overlay">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -143,7 +136,6 @@ $categories = api_get_categories($_SESSION['token']);
     </div>
 </div>
 
-<!-- MODAL VUE DÉTAILLÉE -->
 <div id="viewModal" class="modal-overlay">
     <div class="modal-card" style="max-width: 500px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">

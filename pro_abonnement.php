@@ -7,12 +7,8 @@ $flash = $_SESSION['flash_message'] ?? '';
 $flashType = $_SESSION['flash_type'] ?? 'success';
 unset($_SESSION['flash_message'], $_SESSION['flash_type']);
 
-// ============================================
-// VERIFICATION DIRECTE EN BASE DE DONNEES
-// ============================================
 $userId = (int)$_SESSION['user_id'];
 
-// Compter les abonnements actifs en BDD directe
 $premiumCount = 0;
 db_safe_exec(function(PDO $pdo) use ($userId, &$premiumCount) {
     $stmt = $pdo->prepare('
@@ -26,13 +22,10 @@ db_safe_exec(function(PDO $pdo) use ($userId, &$premiumCount) {
     return true;
 }, false);
 
-// Récupérer l'abonnement actuel via API
 $abonnement = callAPI('GET', '/me/abonnement', $_SESSION['token'])['data'] ?? [];
 
-// Le statut premium est vrai si BDD directe OU API
 $isPremium = ($premiumCount > 0) || (($abonnement['formule'] ?? 'gratuit') !== 'gratuit' && ($abonnement['statut'] ?? '') === 'actif');
 
-// Si BDD a trouve un abonnement mais pas l'API, on force les infos
 if ($premiumCount > 0 && ($abonnement['formule'] ?? '') === 'gratuit') {
     db_safe_exec(function(PDO $pdo) use ($userId, &$abonnement) {
         $stmt = $pdo->prepare('
@@ -56,11 +49,6 @@ if ($premiumCount > 0 && ($abonnement['formule'] ?? '') === 'gratuit') {
 
 $dateFin = $abonnement['date_fin'] ?? null;
 
-// ============================================
-// STATISTIQUES DES PAIEMENTS (Version BDD directe)
-// ============================================
-
-// 🔥 Récupération directe en BDD au lieu de l'API
 $paiements = [];
 db_safe_exec(function(PDO $pdo) use (&$paiements, $userId) {
     $stmt = $pdo->prepare("
@@ -75,7 +63,6 @@ db_safe_exec(function(PDO $pdo) use (&$paiements, $userId) {
     return true;
 }, false);
 
-// Statistiques globales
 $totalPaid = array_reduce(array_filter($paiements, fn($p) => ($p['statut'] ?? '') === 'paid'), 
     fn($c, $p) => $c + (float)($p['montant'] ?? 0), 0);
 $totalPending = array_reduce(array_filter($paiements, fn($p) => ($p['statut'] ?? '') === 'pending'), 
@@ -84,7 +71,6 @@ $totalFailed = array_reduce(array_filter($paiements, fn($p) => ($p['statut'] ?? 
     fn($c, $p) => $c + (float)($p['montant'] ?? 0), 0);
 $countPaid = count(array_filter($paiements, fn($p) => ($p['statut'] ?? '') === 'paid'));
 
-// Statistiques d'utilisation des annonces
 $annonces = api_get_my_annonces()['data'] ?? [];
 $statsAnnonces = [
     'total' => count($annonces),
@@ -92,7 +78,6 @@ $statsAnnonces = [
     'en_attente' => count(array_filter($annonces, fn($a) => ($a['statut'] ?? '') === 'en_attente')),
 ];
 
-// Statistiques par mois pour le graphique
 $monthlyStats = [];
 db_safe_exec(function(PDO $pdo) use (&$monthlyStats, $userId) {
     $stmt = $pdo->prepare('
@@ -113,7 +98,6 @@ db_safe_exec(function(PDO $pdo) use (&$monthlyStats, $userId) {
 $annonceLimit = $isPremium ? 999 : 5;
 $pourcentageAnnonces = min(100, round(($statsAnnonces['total'] / $annonceLimit) * 100));
 
-// Filtres pour l'historique
 $statusFilter = trim((string)($_GET['status'] ?? 'all'));
 $periodFilter = trim((string)($_GET['period'] ?? 'all'));
 
@@ -133,9 +117,6 @@ if ($periodFilter !== 'all') {
 }
 $totalFiltered = array_reduce($filteredPaiements, fn($c, $p) => $c + (float)($p['montant'] ?? 0), 0);
 
-// ============================================
-// TRAITEMENT SOUSCRIPTION
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_premium'])) {
     $formule = $_POST['formule'] ?? 'monthly';
     $amount = $formule === 'monthly' ? 2999 : 29900;
@@ -151,9 +132,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_premium']))
     exit;
 }
 
-// ============================================
-// TRAITEMENT RESILIATION
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_subscription'])) {
     $res = callAPI('POST', '/me/abonnement/cancel', $_SESSION['token']);
     
@@ -171,7 +149,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_subscription']
     exit;
 }
 
-// Onglet actif
 $activeTab = $_GET['tab'] ?? 'abonnement';
 ?>
 <!DOCTYPE html>
@@ -182,295 +159,28 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
     <title>Abonnement & Facturation - UpcycleConnect Pro</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        /* Onglets */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 12px;
-        }
-        .tab-btn {
-            padding: 10px 24px;
-            border-radius: 30px;
-            background: #f0f0f0;
-            color: #333;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .tab-btn.active {
-            background: #4caf50;
-            color: white;
-        }
-        .tab-btn:hover:not(.active) {
-            background: #e0e0e0;
-        }
-        
-        /* Cartes statistiques */
-        .stats-billing {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-        .stat-value {
-            font-size: 32px;
-            font-weight: 700;
-            color: #2e7d32;
-        }
-        .stat-label {
-            color: #666;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-        .stat-icon {
-            font-size: 28px;
-            margin-bottom: 8px;
-        }
-        
-        /* Section abonnement */
-        .subscription-card {
-            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 24px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .subscription-badge {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
-        }
-        
-        /* Offres */
-        .pricing-grid {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-bottom: 32px;
-            flex-wrap: wrap;
-        }
-        .pricing-card {
-            background: white;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: transform 0.2s;
-            flex: 1;
-            min-width: 280px;
-            max-width: 380px;
-        }
-        .pricing-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.12);
-        }
-        .pricing-card.popular {
-            border: 2px solid #ffd700;
-            transform: scale(1.02);
-            position: relative;
-        }
-        .popular-badge {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffd700;
-            color: #2e7d32;
-            padding: 6px 20px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        .pricing-card-header {
-            padding: 32px 24px;
-            text-align: center;
-            color: white;
-        }
-        .pricing-card-header.free { background: linear-gradient(135deg, #6c757d, #495057); }
-        .pricing-card-header.premium-monthly { background: linear-gradient(135deg, #2e7d32, #4caf50); }
-        .pricing-card-header.premium-yearly { background: linear-gradient(135deg, #1b5e20, #388e3c); }
-        .pricing-price {
-            font-size: 48px;
-            font-weight: 700;
-        }
-        .pricing-features {
-            padding: 24px;
-        }
-        .pricing-features ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .pricing-features li {
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .pricing-features li::before {
-            content: "✓";
-            color: #4caf50;
-            font-weight: bold;
-        }
-        .pricing-features li.disabled::before {
-            content: "✗";
-            color: #dc2626;
-        }
-        .btn-subscribe {
-            width: 100%;
-            padding: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            background: #4caf50;
-            color: white;
-        }
-        .btn-subscribe:hover {
-            background: #2e7d32;
-        }
-        .btn-subscribe-free {
-            background: #e0e0e0;
-            color: #666;
-            cursor: not-allowed;
-        }
-        .btn-cancel {
-            background: #dc2626;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-        }
-        
-        /* Tableau historique */
-        .filter-bar {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .table-payments {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table-payments th, .table-payments td {
-            padding: 14px 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .table-payments th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        .status-paid {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: inline-block;
-        }
-        .status-pending {
-            background: #fff3e0;
-            color: #ef6c00;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: inline-block;
-        }
-        .status-failed {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            display: inline-block;
-        }
-        .progress-bar-container {
-            background: #e0e0e0;
-            border-radius: 10px;
-            height: 8px;
-            margin: 16px 0;
-        }
-        .progress-bar {
-            background: #4caf50;
-            border-radius: 10px;
-            height: 8px;
-            width: <?= $pourcentageAnnonces ?>%;
-        }
-        .chart-container {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-        @media (max-width: 768px) {
-            .stats-billing {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .pricing-grid {
-                flex-direction: column;
-                align-items: center;
-            }
-            .pricing-card {
-                max-width: 100%;
-            }
-            .pricing-card.popular {
-                transform: scale(1);
-            }
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
 <main class="pro-shell page-shell">
 
-    <!-- Message flash -->
     <?php if ($flash !== ''): ?>
         <div class="<?= $flashType === 'error' ? 'error-box' : 'success-box' ?>">
             <?= e($flash) ?>
         </div>
     <?php endif; ?>
 
-    <!-- Onglets -->
     <div class="tabs">
         <a href="?tab=abonnement" class="tab-btn <?= $activeTab === 'abonnement' ? 'active' : '' ?>">💰 Mon abonnement</a>
         <a href="?tab=historique" class="tab-btn <?= $activeTab === 'historique' ? 'active' : '' ?>">📋 Historique des paiements</a>
     </div>
 
-    <!-- ============================================ -->
-    <!-- ONGLET 1 : ABONNEMENT -->
-    <!-- ============================================ -->
     <?php if ($activeTab === 'abonnement'): ?>
         
         <?php if ($isPremium): ?>
-            <!-- Abonnement actuel -->
             <div class="subscription-card">
                 <div>
                     <h3 style="margin: 0 0 8px 0;">⭐ Votre abonnement Premium</h3>
@@ -483,7 +193,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                 <div class="subscription-badge">✅ Actif</div>
             </div>
 
-            <!-- Statistiques d'utilisation -->
             <div class="pro-card" style="margin-bottom: 24px;">
                 <h3 style="margin: 0 0 16px 0;">📊 Votre utilisation</h3>
                 <div>
@@ -492,7 +201,7 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                         <span><strong><?= $statsAnnonces['total'] ?></strong> / <?= $annonceLimit ?></span>
                     </div>
                     <div class="progress-bar-container">
-                        <div class="progress-bar"></div>
+                        <div class="progress-bar" style="width: <?= $pourcentageAnnonces ?>%;"></div>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 20px;">
                         <div style="text-align: center;">
@@ -513,7 +222,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                 </form>
             </div>
 
-            <!-- Avantages Premium -->
             <div class="feature-highlight" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border-radius: 16px; padding: 24px; text-align: center;">
                 <div style="font-size: 48px; margin-bottom: 16px;">🏆</div>
                 <h3 style="margin: 0 0 16px 0;">Vous profitez de tous les avantages Premium</h3>
@@ -521,7 +229,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
             </div>
 
         <?php else: ?>
-            <!-- Cartes statistiques gratuites -->
             <div class="stats-billing">
                 <div class="stat-card">
                     <div class="stat-icon">📦</div>
@@ -545,9 +252,7 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                 </div>
             </div>
 
-            <!-- Offres d'abonnement -->
             <div class="pricing-grid">
-                <!-- Offre Gratuite -->
                 <div class="pricing-card">
                     <div class="pricing-card-header free">
                         <h2>📋 Gratuit</h2>
@@ -567,7 +272,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                     </div>
                 </div>
 
-                <!-- Offre Premium Mensuel -->
                 <div class="pricing-card popular">
                     <div class="popular-badge">⭐ RECOMMANDÉ</div>
                     <div class="pricing-card-header premium-monthly">
@@ -591,7 +295,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                     </div>
                 </div>
 
-                <!-- Offre Premium Annuel -->
                 <div class="pricing-card">
                     <div class="pricing-card-header premium-yearly">
                         <h2>⭐ Premium Annuel</h2>
@@ -613,7 +316,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                 </div>
             </div>
 
-            <!-- Comparaison -->
             <div class="pro-card" style="margin-top: 0;">
                 <h3 style="margin: 0 0 16px 0;">📋 Comparaison détaillée</h3>
                 <div class="table-responsive">
@@ -629,7 +331,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
                 </div>
             </div>
 
-            <!-- FAQ -->
             <div class="pro-card" style="margin-top: 0;">
                 <h3 style="margin: 0 0 16px 0;">❓ Questions fréquentes</h3>
                 <div style="display: grid; gap: 16px;">
@@ -642,12 +343,8 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
 
     <?php endif; ?>
 
-    <!-- ============================================ -->
-    <!-- ONGLET 2 : HISTORIQUE DES PAIEMENTS -->
-    <!-- ============================================ -->
     <?php if ($activeTab === 'historique'): ?>
 
-        <!-- Statistiques -->
         <div class="stats-billing">
             <div class="stat-card">
                 <div class="stat-icon">💰</div>
@@ -671,7 +368,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
             </div>
         </div>
 
-        <!-- Graphique des dépenses mensuelles -->
         <?php if (!empty($monthlyStats)): ?>
         <div class="chart-container">
             <h3 style="margin: 0 0 16px 0;">📊 Dépenses mensuelles</h3>
@@ -679,7 +375,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
         </div>
         <?php endif; ?>
 
-        <!-- Filtres -->
         <div class="filter-bar">
             <form method="GET" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
                 <input type="hidden" name="tab" value="historique">
@@ -700,7 +395,6 @@ $activeTab = $_GET['tab'] ?? 'abonnement';
             </form>
         </div>
 
-        <!-- Tableau des paiements -->
         <div class="pro-card" style="padding: 0; overflow: hidden;">
             <?php if (empty($filteredPaiements)): ?>
                 <div style="text-align: center; padding: 60px 20px;">

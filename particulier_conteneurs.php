@@ -4,7 +4,6 @@ require_once 'includes/functions/qr.php';
 require_once 'includes/functions/local_db.php';
 require_once 'includes/notifications.php';
 
-// États prédéfinis pour les objets
 $etatsDisponibles = [
     'comme_neuf' => '🟢 Comme neuf',
     'tres_bon' => '🟢 Très bon état',
@@ -18,14 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_demande'])) {
     $description = trim((string)($_POST['description'] ?? ''));
     $etat = trim((string)($_POST['etat'] ?? ''));
     
-    // Limitation description 300 caractères
     if (mb_strlen($description) > 300) {
         $_SESSION['flash_toast'] = ['type' => 'error', 'message' => 'La description ne peut pas dépasser 300 caractères.'];
         header('Location: particulier_conteneurs.php');
         exit;
     }
     
-    // Validation de l'état
     if (!array_key_exists($etat, $etatsDisponibles)) {
         $_SESSION['flash_toast'] = ['type' => 'error', 'message' => 'Veuillez sélectionner un état valide.'];
         header('Location: particulier_conteneurs.php');
@@ -96,31 +93,8 @@ function getEtatDisplay(string $etat, array $etats): string
     <title>Conteneurs particulier</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .char-counter {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-            text-align: right;
-        }
-        .char-counter.warning {
-            color: #f44336;
-        }
-        .etat-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .etat-comme_neuf { background: #4caf50; color: white; }
-        .etat-tres_bon { background: #8bc34a; color: white; }
-        .etat-bon { background: #ffc107; color: #333; }
-        .etat-correct { background: #ff9800; color: white; }
-        .etat-a_renover { background: #f44336; color: white; }
-        .etat-pieces { background: #9e9e9e; color: white; }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>
@@ -272,7 +246,6 @@ function updateCharCount(textarea) {
         }
     }
 }
-// Initialiser le compteur
 const textarea = document.querySelector('textarea[name="description"]');
 if (textarea) {
     updateCharCount(textarea);

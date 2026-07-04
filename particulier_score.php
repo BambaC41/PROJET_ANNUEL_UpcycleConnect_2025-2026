@@ -4,10 +4,8 @@ require_once 'includes/functions/local_db.php';
 
 $userId = (int)$_SESSION['user_id'];
 
-// Récupérer le score via API
 $score = api_get_my_score()['data'] ?? [];
 
-// Si l'API ne renvoie pas de score, calcul local
 if (empty($score) || !isset($score['score_global'])) {
     $score = db_safe_exec(function(PDO $pdo) use ($userId) {
         $data = [
@@ -17,22 +15,18 @@ if (empty($score) || !isset($score['score_global'])) {
             'inscriptions' => 0,
         ];
 
-        // Annonces validées
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM annonce WHERE id_user = ? AND statut = "validee"');
         $stmt->execute([$userId]);
         $data['annonces_validees'] = (int)$stmt->fetchColumn();
 
-        // Dépôts réalisés
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM demande_depot WHERE id_user = ? AND statut = "deposee"');
         $stmt->execute([$userId]);
         $data['depots_realises'] = (int)$stmt->fetchColumn();
 
-        // Inscriptions
         $stmt = $pdo->prepare('SELECT COUNT(*) FROM inscription WHERE id_user = ? AND statut = "confirmee"');
         $stmt->execute([$userId]);
         $data['inscriptions'] = (int)$stmt->fetchColumn();
 
-        // Calcul du score
         $data['total_score'] = ($data['annonces_validees'] * 10) + ($data['depots_realises'] * 15) + ($data['inscriptions'] * 20);
         $data['score_global'] = $data['total_score'];
 
@@ -42,7 +36,6 @@ if (empty($score) || !isset($score['score_global'])) {
 
 $totalScore = (int)($score['score_global'] ?? $score['total_score'] ?? 0);
 
-// Badge
 if ($totalScore >= 200) {
     $badge = 'Ambassadeur';
     $badgeColor = '#ffc107';
@@ -62,6 +55,7 @@ if ($totalScore >= 200) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">

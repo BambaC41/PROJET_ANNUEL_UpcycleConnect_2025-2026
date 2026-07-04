@@ -123,34 +123,8 @@ if ($editId > 0) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
-        .status-info { background: #e3f2fd; color: #1976d2; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .success-box { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .nav-links {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .nav-link {
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            background: #f0f0f0;
-            color: #333;
-        }
-        .nav-link.active {
-            background: #4caf50;
-            color: white;
-        }
-        .nav-link:hover {
-            background: #e0e0e0;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -167,9 +141,9 @@ if ($editId > 0) {
         <h1>📦 Gestion des conteneurs</h1>
         
         <!-- Formulaire de création -->
-        <div style="margin-bottom: 30px;">
+        <div class="form-section">
             <h3>➕ Nouveau conteneur</h3>
-            <form method="POST" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <form method="POST" class="form-grid">
                 <input type="hidden" name="create_conteneur" value="1">
                 <input class="input" name="code" placeholder="Code conteneur" required>
                 <input class="input" name="adresse" placeholder="Adresse" required>
@@ -212,8 +186,8 @@ if ($editId > 0) {
                                 <input type="hidden" name="delete_conteneur_id" value="<?= e($c['id_conteneur'] ?? 0) ?>">
                                 <button class="btn-danger" type="submit">🗑️ Supprimer</button>
                             </form>
-                         </span>
-                     </tr>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
@@ -221,9 +195,9 @@ if ($editId > 0) {
         
         <!-- Formulaire d'edition (si un conteneur est en cours d'edition) -->
         <?php if ($editRow !== null): ?>
-            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+            <div class="edit-section">
                 <h3>✏️ Modifier conteneur #<?= e((string)$editId) ?></h3>
-                <form method="POST" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                <form method="POST" class="form-grid">
                     <input type="hidden" name="update_conteneur_id" value="<?= e((string)$editId) ?>">
                     <input class="input" name="edit_code" value="<?= e((string)($editRow['code'] ?? '')) ?>" required>
                     <input class="input" name="edit_adresse" value="<?= e((string)($editRow['adresse'] ?? '')) ?>" required>

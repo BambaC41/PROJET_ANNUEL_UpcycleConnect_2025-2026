@@ -56,171 +56,8 @@ $logs = forum_get_moderation_logs(20);
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            margin: 2px;
-        }
-        .badge-pinned { background: #fff3e0; color: #ef6c00; }
-        .badge-open { background: #e8f5e9; color: #2e7d32; }
-        .badge-closed { background: #f1f5f9; color: #475569; }
-        .badge-reported { background: #fee2e2; color: #dc2626; }
-        .table td { vertical-align: middle; }
-        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 20px; cursor: pointer; }
-        .log-table { font-size: 13px; }
-        .warning-box {
-            background: #fef3c7;
-            border-left: 4px solid #ff9800;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        .stats-cards {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 12px;
-            padding: 16px 24px;
-            flex: 1;
-            text-align: center;
-            border: 1px solid #e5e7eb;
-        }
-        .stat-number { font-size: 28px; font-weight: 700; color: #2e7d32; }
-        .stat-label { font-size: 13px; color: #666; }
-        
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal.show {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 550px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #2e7d32;
-            color: white;
-            border-radius: 16px 16px 0 0;
-        }
-        .modal-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: white;
-        }
-        .modal-body {
-            padding: 20px;
-        }
-        .detail-row {
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #555;
-            width: 100px;
-            display: inline-block;
-        }
-        .detail-value {
-            color: #333;
-        }
-        .btn-view-log {
-            background: #2196f3;
-            color: white;
-            border: none;
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 11px;
-            cursor: pointer;
-        }
-        .btn-view-log:hover {
-            background: #1976d2;
-        }
-        
-        /* Section logs cachée par défaut */
-        .logs-section {
-            display: none;
-            margin-top: 30px;
-        }
-        .logs-section.show {
-            display: block;
-        }
-        .btn-toggle-logs {
-            background: #ff9800;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 20px;
-            display: inline-block;
-        }
-        .btn-toggle-logs:hover {
-            background: #f57c00;
-        }
-        .btn-toggle-logs.active {
-            background: #f44336;
-        }
-        .footer-center {
-            text-align: center;
-            margin-top: 30px;
-        }
-        .topic-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .topic-table th, .topic-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .topic-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        /* Style pour l'action traduite */
-        .action-traduite {
-            font-weight: 500;
-            color: #1565c0;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -267,7 +104,8 @@ $logs = forum_get_moderation_logs(20);
                 </thead>
                 <tbody>
                     <?php if (empty($allTopics)): ?>
-                        <tr><td colspan="7" style="text-align:center;">Aucun sujet trouvé.<?php endif; ?>
+                        <tr><td colspan="7" style="text-align:center;">Aucun sujet trouvé.</td></tr>
+                    <?php endif; ?>
                     <?php foreach ($allTopics as $t): ?>
                         <tr>
                             <td><?= (int)($t['id'] ?? 0) ?></td>
@@ -283,7 +121,7 @@ $logs = forum_get_moderation_logs(20);
                                 <?php foreach (forum_topic_badges($t) as $b): ?>
                                     <span class="status-badge <?= e($b['class']) ?>"><?= e($b['label']) ?></span>
                                 <?php endforeach; ?>
-                             </td>
+                            </td>
                             <td class="row-actions">
                                 <form method="POST" style="display:inline;">
                                     <input type="hidden" name="mod_target" value="topic">
@@ -438,7 +276,6 @@ function closeLogModal() {
     document.getElementById('logModal').classList.remove('show');
 }
 
-// Fermer la modale en cliquant en dehors
 window.onclick = function(event) {
     const modal = document.getElementById('logModal');
     if (event.target === modal) {

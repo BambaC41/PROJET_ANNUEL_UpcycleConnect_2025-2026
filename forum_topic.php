@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/includes/functions/view_context.php';
 require_once __DIR__ . '/includes/functions/forum_local.php';
-require_once __DIR__ . '/includes/functions/forum_api.php';  // ← MODIFIÉ
+require_once __DIR__ . '/includes/functions/forum_api.php';
 require_once __DIR__ . '/includes/functions/bootstrap_notify.php';
 require_once __DIR__ . '/includes/notifications.php';
 require_once __DIR__ . '/includes/ui_helpers.php';
@@ -94,42 +94,8 @@ $navFile = match ($roleId) {
     <title><?= $notFound ? 'Sujet introuvable' : e($topic['title'] ?? 'Forum') ?> — UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/ui-components.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .char-counter { font-size: 11px; color: #666; margin-top: 4px; text-align: right; }
-        .char-counter.warning { color: #f44336; }
-        .forum-post {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid #e9ecef;
-            transition: box-shadow 0.2s;
-        }
-        .forum-post:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .forum-post-meta {
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .forum-post-meta strong { color: #2e7d32; }
-        .forum-post-content { font-size: 15px; line-height: 1.5; color: #333; }
-        .is-hidden { opacity: 0.6; background: #f8f9fa; }
-        .badge-reported { background: #f44336; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 8px; }
-        .actions-compact { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-        .reply-section {
-            background: #f8f9fa;
-            border-radius: 16px;
-            padding: 24px;
-            margin-top: 24px;
-        }
-    </style>
 </head>
 <body>
 <?php if ($navFile) { include __DIR__ . '/' . $navFile; } ?>

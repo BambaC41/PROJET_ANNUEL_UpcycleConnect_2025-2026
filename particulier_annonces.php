@@ -5,9 +5,6 @@ $flash = $_SESSION['flash_message'] ?? '';
 $flashType = $_SESSION['flash_type'] ?? 'success';
 unset($_SESSION['flash_message'], $_SESSION['flash_type']);
 
-// ============================================
-// TRAITEMENT CREATION ANNONCE
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_annonce'])) {
     $photo = '';
     if (isset($_FILES['photo_file']) && ($_FILES['photo_file']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
@@ -21,7 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_annonce'])) {
     $prixPost = (float)($_POST['prix'] ?? 0);
     $description = trim((string)($_POST['description'] ?? ''));
     
-    // Limitation description 200 caractères
     if (mb_strlen($description) > 200) {
         $_SESSION['flash_message'] = 'La description ne peut pas dépasser 200 caractères.';
         $_SESSION['flash_type'] = 'error';
@@ -53,9 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_annonce'])) {
     exit;
 }
 
-// ============================================
-// RECUPERATION DES DONNEES
-// ============================================
 $query = mb_strtolower(trim((string)($_GET['q'] ?? '')));
 $mode = trim((string)($_GET['mode'] ?? 'all'));
 $annonces = api_get_my_annonces()['data'] ?? [];
@@ -78,240 +71,13 @@ $filtered = array_values(array_filter($annonces, function($a) use ($query, $mode
     <title>Annonces particulier - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .pro-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            width: 100%;
-        }
-        .btn-primary {
-            background: #4caf50;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 13px;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #ddd;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .error-box {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .success-box {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        .table th, .table td {
-            border: 1px solid #ddd;
-            padding: 10px 12px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .table th {
-            background: #f5f5f5;
-            font-weight: 600;
-        }
-        .pro-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .annonce-clickable {
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .annonce-clickable:hover {
-            transform: scale(1.02);
-        }
-        .annonce-row {
-            cursor: pointer;
-        }
-        .annonce-row:hover {
-            background-color: #f5f5f5;
-        }
-        .char-counter {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-            text-align: right;
-        }
-        .char-counter.warning {
-            color: #f44336;
-        }
-        
-        /* MODAL */
-        .modal-annonce {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .modal-annonce.active {
-            display: flex;
-        }
-        .modal-annonce-content {
-            background: white;
-            border-radius: 20px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            cursor: default;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .modal-annonce-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 20;
-            background: rgba(0,0,0,0.5);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-image-container {
-            width: 100%;
-            background: #1a1a2e;
-            border-radius: 20px 20px 0 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            max-height: 300px;
-        }
-        .modal-annonce-img {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
-            object-fit: contain;
-            display: block;
-        }
-        .modal-body {
-            padding: 24px;
-        }
-        .modal-body h2 {
-            margin: 0 0 20px 0;
-            font-size: 24px;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 12px;
-        }
-        .modal-info-row {
-            display: flex;
-            margin-bottom: 14px;
-        }
-        .modal-info-label {
-            width: 100px;
-            font-weight: 600;
-            color: #555;
-        }
-        .modal-info-value {
-            flex: 1;
-            color: #333;
-        }
-        .modal-description-box {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 12px;
-            margin-top: 8px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .modal-actions {
-            margin-top: 24px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-            display: flex;
-            gap: 12px;
-        }
-        .btn-modal {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-        }
-        .btn-modal-primary { background: #2196f3; color: white; }
-        .btn-modal-danger { background: #f44336; color: white; }
-        .btn-modal-secondary { background: #9e9e9e; color: white; }
-        .row-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .badge-paid {
-            background: #4caf50;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-        }
-        @media (max-width: 768px) {
-            .table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>
 
 <main class="pro-shell page-shell">
-    <!-- SECTION CREATION ANNONCE -->
     <section class="pro-card">
         <h1>📦 Mes annonces</h1>
         
@@ -350,7 +116,6 @@ $filtered = array_values(array_filter($annonces, function($a) use ($query, $mode
         </form>
     </section>
 
-    <!-- SECTION MES ANNONCES -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">Mes annonces</h2>
         
@@ -418,7 +183,6 @@ $filtered = array_values(array_filter($annonces, function($a) use ($query, $mode
         </table>
     </section>
 
-    <!-- SECTION ANNONCES PUBLIQUES -->
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🌍 Annonces publiques validées</h2>
         <div class="pro-grid">
@@ -446,7 +210,6 @@ $filtered = array_values(array_filter($annonces, function($a) use ($query, $mode
     </section>
 </main>
 
-<!-- MODAL MES ANNONCES -->
 <div id="annonceModal" class="modal-annonce" onclick="closeAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closeAnnonceModal()">&times;</span>
@@ -468,7 +231,6 @@ $filtered = array_values(array_filter($annonces, function($a) use ($query, $mode
     </div>
 </div>
 
-<!-- MODAL ANNONCES PUBLIQUES -->
 <div id="publicAnnonceModal" class="modal-annonce" onclick="closePublicAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closePublicAnnonceModal()">&times;</span>
@@ -591,7 +353,6 @@ if (modeSel) {
     togglePrix(); 
 }
 
-// Initialiser le compteur
 const textarea = document.querySelector('textarea[name="description"]');
 if (textarea) {
     updateCharCount(textarea);

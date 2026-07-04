@@ -8,7 +8,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $photo = trim((string)($_POST['photo_profil'] ?? ''));
     $bio = trim((string)($_POST['bio'] ?? ''));
     
-    // Limitation bio 300 caractères
     if (mb_strlen($bio) > 300) {
         $_SESSION['flash_message'] = 'La bio ne peut pas dépasser 300 caractères.';
         $_SESSION['flash_type'] = 'error';
@@ -49,26 +48,8 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
     <title>Profil particulier</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .char-counter {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-            text-align: right;
-        }
-        .char-counter.warning {
-            color: #f44336;
-        }
-        .profile-photo {
-            width: 84px;
-            height: 84px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #16a34a;
-            margin-bottom: 16px;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>
@@ -132,7 +113,6 @@ function updateCharCount(textarea) {
         }
     }
 }
-// Initialiser le compteur
 const bioTextarea = document.querySelector('textarea[name="bio"]');
 if (bioTextarea) {
     updateCharCount(bioTextarea);

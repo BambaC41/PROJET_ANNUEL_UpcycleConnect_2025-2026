@@ -28,39 +28,8 @@ $totalScore = (int)($score['score_global'] ?? 0);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .pro-kpis {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .pro-kpi {
-            background: white;
-            border-radius: 12px;
-            padding: 16px 20px;
-            text-align: center;
-            border: 1px solid #e5e7eb;
-        }
-        .pro-kpi h3 {
-            font-size: 13px;
-            color: #666;
-            margin: 0 0 8px 0;
-            font-weight: 500;
-        }
-        .pro-kpi p {
-            font-size: 28px;
-            font-weight: 700;
-            color: #2e7d32;
-            margin: 0;
-        }
-        .pro-kpi .kpi-icon {
-            font-size: 24px;
-            display: block;
-            margin-bottom: 4px;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>

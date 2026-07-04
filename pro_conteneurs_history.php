@@ -4,7 +4,6 @@ require_once 'includes/functions/local_db.php';
 
 $proId = (int)$_SESSION['user_id'];
 
-// Récupérer l'historique des récupérations effectuées par ce professionnel
 $history = db_safe_exec(function (PDO $pdo) use ($proId) {
     $sql = '
         SELECT r.id_retrait, r.collected_at, r.notes,
@@ -33,25 +32,8 @@ $totalRecuperations = count($history);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .stats-card {
-            background: linear-gradient(135deg, #2e7d32, #4caf50);
-            color: white;
-            padding: 20px;
-            border-radius: 16px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .stats-card h2 {
-            margin: 0;
-            font-size: 36px;
-        }
-        .stats-card p {
-            margin: 5px 0 0;
-            opacity: 0.9;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
@@ -71,7 +53,8 @@ $totalRecuperations = count($history);
                 </thead>
                 <tbody>
                 <?php if (empty($history)): ?>
-                    <tr><td colspan="4" style="text-align:center;">Aucune recuperation effectuee pour le moment.<?php endif; ?>
+                    <tr><td colspan="4" style="text-align:center;">Aucune recuperation effectuee pour le moment.</td></tr>
+                <?php endif; ?>
                 
                 <?php foreach ($history as $h): ?>
                     <tr>

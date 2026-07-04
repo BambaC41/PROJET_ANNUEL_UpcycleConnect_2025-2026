@@ -40,6 +40,7 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
@@ -57,7 +58,7 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
             </div>
         <?php endif; ?>
         
-        <form method="POST" enctype="multipart/form-data" class="form-grid" style="grid-template-columns:repeat(2,1fr);">
+        <form method="POST" enctype="multipart/form-data" class="form-grid">
             <input type="hidden" name="update_profile" value="1">
             <input class="input" name="pseudo" value="<?= e($me['pseudo'] ?? '') ?>" placeholder="Pseudo">
             <input class="input" name="prenom" value="<?= e($me['prenom'] ?? '') ?>" placeholder="Prénom">

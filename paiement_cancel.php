@@ -22,7 +22,7 @@ $role = (int)($_SESSION['role_id'] ?? 0);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paiement annule</title>
     <link rel="stylesheet" href="styles/style.css">
-    <!-- OneSignal Push Notifications -->
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body>

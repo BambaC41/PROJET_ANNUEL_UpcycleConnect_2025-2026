@@ -50,7 +50,7 @@ foreach ($events as $ev) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/admin.css">
     <link rel="stylesheet" href="styles/calendar.css">
-    <!-- OneSignal Push Notifications -->
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="admin-page">

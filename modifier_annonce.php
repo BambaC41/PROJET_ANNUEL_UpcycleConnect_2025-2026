@@ -7,11 +7,9 @@ if ($id_annonce <= 0) {
     exit;
 }
 
-// Récupérer l'annonce
 $response = api_get_annonce($id_annonce);
 $annonce = $response['data'] ?? null;
 
-// Vérifier que l'annonce existe et appartient à l'utilisateur
 if (!$annonce || ($annonce['id_user'] ?? 0) != ($_SESSION['user_id'] ?? 0)) {
     $_SESSION['flash_message'] = 'Vous ne pouvez pas modifier cette annonce.';
     $_SESSION['flash_type'] = 'error';
@@ -73,29 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Modifier annonce - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <style>
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .current-photo {
-            margin-top: 10px;
-        }
-        .current-photo img {
-            max-width: 200px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include 'includes/particulier_nav.php'; ?>

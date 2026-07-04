@@ -11,7 +11,7 @@ $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <!-- OneSignal Push Notifications -->
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">

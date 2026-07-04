@@ -38,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_event'])) {
     if ($capacite <= 0) $formErrors[] = "La capacité doit être supérieure à 0.";
     if (strtotime($dateFin) <= strtotime($dateDebut)) $formErrors[] = "La date de fin doit être postérieure à la date de début.";
     
-    // Gestion upload d'image
     if (isset($_FILES['event_image']) && $_FILES['event_image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/uploads/events/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
@@ -109,44 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_event'])) {
     <title>Créer un événement - Espace Salarié</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <style>
-        * { box-sizing: border-box; }
-        body { background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        
-        .create-page { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        .back-link { display: inline-flex; align-items: center; gap: 6px; color: #666; text-decoration: none; margin-bottom: 24px; font-size: 14px; }
-        .back-link:hover { color: #2e7d32; }
-        .create-card { background: white; border-radius: 24px; padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .create-card h1 { margin: 0 0 8px 0; font-size: 28px; color: #1a1a2e; }
-        .create-card .subtitle { color: #666; font-size: 14px; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
-        
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; color: #333; }
-        .form-group label .required { color: #dc2626; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #4caf50; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1); }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .error-box { background: #fee2e2; border: 1px solid #fecaca; color: #dc2626; padding: 14px 18px; border-radius: 12px; margin-bottom: 24px; }
-        .info-box { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; padding: 14px 18px; border-radius: 12px; margin: 24px 0; font-size: 13px; }
-        .btn-submit { background: #4caf50; color: white; width: 100%; padding: 14px; border: none; border-radius: 40px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .btn-submit:hover { background: #2e7d32; }
-        .btn-secondary { background: #f0f0f0; color: #333; width: 100%; padding: 14px; border: none; border-radius: 40px; font-size: 14px; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 12px; }
-        .btn-secondary:hover { background: #e0e0e0; }
-        .image-preview { max-width: 100%; max-height: 150px; margin-top: 10px; border-radius: 12px; }
-        
-        @media (max-width: 640px) {
-            .create-page { padding: 20px 16px; }
-            .create-card { padding: 24px; }
-            .form-row { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include __DIR__ . '/includes/employee_nav.php'; ?>

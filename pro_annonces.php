@@ -141,288 +141,8 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
     <title>Annonces professionnel - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .pro-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            width: 100%;
-        }
-        .btn-primary {
-            background: #4caf50;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 13px;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #ddd;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .error-box {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .success-box {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        .table th, .table td {
-            border: 1px solid #ddd;
-            padding: 10px 12px;
-            text-align: left;
-            vertical-align: top;
-        }
-        .table th {
-            background: #f5f5f5;
-            font-weight: 600;
-        }
-        .pro-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .annonce-clickable {
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .annonce-clickable:hover {
-            transform: scale(1.02);
-        }
-        .annonce-row {
-            cursor: pointer;
-        }
-        .annonce-row:hover {
-            background-color: #f5f5f5;
-        }
-        .char-counter {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-            text-align: right;
-        }
-        .char-counter.warning {
-            color: #f44336;
-        }
-        
-        .marketplace-badge {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: bold;
-            color: white;
-        }
-        .badge-available { background: #4caf50; }
-        .badge-reserved { background: #ff9800; }
-        .badge-sold { background: #999; }
-        .badge-purchased { background: #2e7d32; }
-        .annonce-card {
-            position: relative;
-            overflow: hidden;
-            border-radius: 12px;
-            transition: transform 0.2s;
-        }
-        .annonce-card:hover {
-            transform: translateY(-3px);
-        }
-        .annonce-img {
-            width: 100%;
-            height: 160px;
-            object-fit: cover;
-        }
-        .annonce-content {
-            padding: 12px;
-        }
-        .grayscale {
-            filter: grayscale(40%);
-            opacity: 0.85;
-        }
-        
-        /* MODAL */
-        .modal-annonce {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .modal-annonce.active {
-            display: flex;
-        }
-        .modal-annonce-content {
-            background: white;
-            border-radius: 20px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            cursor: default;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .modal-annonce-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 20;
-            background: rgba(0,0,0,0.5);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-image-container {
-            width: 100%;
-            background: #1a1a2e;
-            border-radius: 20px 20px 0 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            max-height: 300px;
-        }
-        .modal-annonce-img {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
-            object-fit: contain;
-            display: block;
-        }
-        .modal-body {
-            padding: 24px;
-        }
-        .modal-body h2 {
-            margin: 0 0 20px 0;
-            font-size: 24px;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 12px;
-        }
-        .modal-info-row {
-            display: flex;
-            margin-bottom: 14px;
-        }
-        .modal-info-label {
-            width: 100px;
-            font-weight: 600;
-            color: #555;
-        }
-        .modal-info-value {
-            flex: 1;
-            color: #333;
-        }
-        .modal-description-box {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 12px;
-            margin-top: 8px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .modal-actions {
-            margin-top: 24px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-            display: flex;
-            gap: 12px;
-        }
-        .btn-modal {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-        }
-        .btn-modal-primary { background: #2196f3; color: white; }
-        .btn-modal-danger { background: #f44336; color: white; }
-        .btn-modal-secondary { background: #9e9e9e; color: white; }
-        .row-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        .badge-paid {
-            background: #4caf50;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-        }
-        @media (max-width: 768px) {
-            .table {
-                display: block;
-                overflow-x: auto;
-                white-space: nowrap;
-            }
-        }
-        .btn-create {
-            background: #4caf50;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .btn-create:hover {
-            background: #2e7d32;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
@@ -532,11 +252,13 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($filteredMyAnnonces)): ?>
-                    <tr><td colspan="6" style="text-align: center;">Aucune annonce créée pour le moment.<?php endif; ?>
+                    <tr><td colspan="6" style="text-align: center;">Aucune annonce créée pour le moment.</td></tr>
+                <?php endif; ?>
                 </tbody>
-             </div>
+            </table>
         </div>
     </section>
+    
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🛍️ Mes achats</h2>
         
@@ -589,6 +311,7 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
             </div>
         <?php endif; ?>
     </section>
+    
     <section class="pro-card">
         <h2 style="font-size:18px;margin-top:0;">🌍 Marketplace - Annonces disponibles</h2>
         
@@ -674,6 +397,7 @@ $filteredPublic = array_values(array_filter($publicAnnonces, function($a) use ($
         <?php endif; ?>
     </section>
 </main>
+
 <div id="annonceModal" class="modal-annonce" onclick="closeAnnonceModal()">
     <div class="modal-annonce-content" onclick="event.stopPropagation()">
         <span class="modal-annonce-close" onclick="closeAnnonceModal()">&times;</span>

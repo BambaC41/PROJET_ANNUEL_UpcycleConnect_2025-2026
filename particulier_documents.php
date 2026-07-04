@@ -5,7 +5,6 @@ require_once 'includes/functions/local_db.php';
 
 $docs = document_list_for_user((int)($_SESSION['user_id'] ?? 0));
 
-// Récupérer les factures impayées
 $unpaidInvoices = db_safe_exec(function(PDO $pdo) {
     $stmt = $pdo->prepare("SELECT * FROM facture WHERE id_user = ? AND statut = 'impayee'");
     $stmt->execute([(int)$_SESSION['user_id']]);
@@ -20,6 +19,7 @@ $unpaidInvoices = db_safe_exec(function(PDO $pdo) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">

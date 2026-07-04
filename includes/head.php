@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/admin.css">
     <link rel="stylesheet" href="styles/ui-components.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <script src="scripts/modal.js" defer></script>
     <?php include 'includes/onesignal_head.php'; ?>
 </head>

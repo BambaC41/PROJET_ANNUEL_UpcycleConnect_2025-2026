@@ -108,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['use
                     } elseif (!empty($res['raw'])) {
                         $errorMsg = strip_tags($res['raw']);
                     }
-                    // Personnalisation du message
                     if (strpos($errorMsg, 'Password must contain') !== false || strpos($errorMsg, '12 chars') !== false) {
                         $_SESSION['flash_toast'] = ['type' => 'error', 'message' => '❌ Le mot de passe doit contenir au moins 12 caractères, une minuscule, une majuscule, un chiffre et un caractère spécial.'];
                     } elseif (strpos($errorMsg, 'Invalid role_id') !== false) {
@@ -149,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_pro_id'])) {
     exit;
 }
 
-// Récupération des utilisateurs avec extraction correcte des données
+// Récupération des utilisateurs
 $usersResponse = api_get_users($_SESSION['token']);
 $users = is_array($usersResponse['data'] ?? null) ? $usersResponse['data'] : [];
 
@@ -179,225 +178,8 @@ $users = array_values(array_filter($users, function($u) use ($q, $roleFilter, $a
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .card-section {
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 28px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-        }
-        .section-header {
-            font-size: 20px;
-            font-weight: 600;
-            color: #1a1a2e;
-            margin: 0 0 20px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        .table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 2px solid #e5e7eb;
-        }
-        .table td {
-            padding: 10px 16px;
-            border-bottom: 1px solid #f0f0f0;
-            vertical-align: middle;
-        }
-        .table tbody tr {
-            transition: background 0.15s;
-        }
-        .table tbody tr:hover {
-            background: #f8f9fa;
-        }
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            background: #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 600;
-            color: #555;
-        }
-        .badge-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        .badge-ok { background: #e8f5e9; color: #2e7d32; }
-        .badge-warn { background: #fff3e0; color: #ef6c00; }
-        .badge-danger { background: #fee2e2; color: #dc2626; }
-        .badge-muted { background: #f5f5f5; color: #757575; }
-        .badge-role { background: #e3f2fd; color: #1565c0; }
-        .badge-pro { background: #fff3e0; color: #ef6c00; }
-        .badge-admin { background: #fce4ec; color: #c62828; }
-        .btn-sm {
-            padding: 4px 10px;
-            font-size: 11px;
-            border-radius: 20px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-        .btn-sm:hover { opacity: 0.85; transform: translateY(-1px); }
-        .btn-success { background: #4caf50; color: white; }
-        .btn-danger { background: #f44336; color: white; }
-        .btn-warning { background: #ff9800; color: white; }
-        .btn-primary { background: #2196f3; color: white; }
-        .btn-outline { background: transparent; border: 1px solid #ddd; color: #555; }
-        .btn-outline:hover { background: #f0f0f0; }
-        .actions-cell {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            align-items: center;
-        }
-        .actions-cell form { margin: 0; }
-        .filter-bar {
-            background: white;
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        .filter-bar input, .filter-bar select {
-            padding: 8px 14px;
-            border-radius: 30px;
-            border: 1px solid #ddd;
-            font-size: 13px;
-            background: white;
-        }
-        .filter-bar input:focus, .filter-bar select:focus {
-            border-color: #4caf50;
-            outline: none;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #999;
-        }
-        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
-        .modal-user {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .modal-user.active { display: flex; }
-        .modal-user-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            cursor: default;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        .modal-close {
-            position: absolute;
-            top: 16px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 10;
-            background: rgba(0,0,0,0.4);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-close:hover { background: rgba(0,0,0,0.7); }
-        .modal-header-image {
-            width: 100%;
-            height: 140px;
-            background: linear-gradient(135deg, #1565c0, #2196f3);
-            border-radius: 24px 24px 0 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
-        .modal-header-image .icon-large {
-            font-size: 64px;
-            color: white;
-        }
-        .modal-body { padding: 24px; }
-        .modal-body h2 { margin: 0 0 20px 0; font-size: 22px; border-bottom: 2px solid #eee; padding-bottom: 12px; }
-        .modal-form-group { margin-bottom: 16px; }
-        .modal-form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #333; }
-        .modal-form-group input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .modal-form-group input:focus { border-color: #4caf50; outline: none; }
-        .btn-modal {
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-        .btn-modal:hover { opacity: 0.85; transform: translateY(-2px); }
-        .btn-modal-primary { background: #2196f3; color: white; }
-        .btn-modal-secondary { background: #9e9e9e; color: white; }
-        .modal-actions {
-            margin-top: 24px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-        @media (max-width: 768px) {
-            .actions-cell { flex-direction: column; align-items: stretch; }
-            .filter-bar { flex-direction: column; align-items: stretch; }
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -506,9 +288,9 @@ $users = array_values(array_filter($users, function($u) use ($q, $roleFilter, $a
                         <td><?= e($uid) ?></td>
                         <td><?= e($u['email'] ?? '—') ?></td>
                         <td><?= e($u['pseudo'] ?? '—') ?></td>
-                        <td><span class="badge-status <?= $roleClass ?>"><?= e($roleName) ?></span></td>
-                        <td><?= !empty($u['is_approved']) ? '<span class="badge-status badge-ok">✅ Oui</span>' : '<span class="badge-status badge-warn">⏳ Non</span>' ?></td>
-                        <td><?= !empty($u['is_banned']) ? '<span class="badge-status badge-danger">🚫 Oui</span>' : '<span class="badge-status badge-ok">✅ Non</span>' ?></td>
+                        <td><span class="status-badge <?= $roleClass ?>"><?= e($roleName) ?></span></td>
+                        <td><?= !empty($u['is_approved']) ? '<span class="status-badge status-ok">✅ Oui</span>' : '<span class="status-badge status-warn">⏳ Non</span>' ?></td>
+                        <td><?= !empty($u['is_banned']) ? '<span class="status-badge status-danger">🚫 Oui</span>' : '<span class="status-badge status-ok">✅ Non</span>' ?></td>
                         <td><?= formatDateFr($u['created_at'] ?? '') ?></td>
                         <td>
                             <div class="actions-cell">

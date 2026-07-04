@@ -8,9 +8,6 @@ require_once __DIR__ . '/includes/ui_helpers.php';
 
 $userId = (int)$_SESSION['user_id'];
 
-// ============================================
-// 1. CRÉATION D'UN CONSEIL
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_conseil'])) {
     $titre = trim((string)($_POST['titre'] ?? ''));
     $contenu = trim((string)($_POST['contenu'] ?? ''));
@@ -23,7 +20,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_conseil'])) {
     if (empty($categorie)) $errors[] = "La catégorie est requise.";
     if (mb_strlen($contenu) > 5000) $errors[] = "Le contenu ne peut pas dépasser 5000 caractères.";
     
-    // Upload d'image
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/uploads/conseils/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
@@ -99,9 +95,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_conseil'])) {
     }
 }
 
-// ============================================
-// 2. MODIFICATION D'UN CONSEIL
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_conseil'])) {
     $id = (int)$_POST['conseil_id'];
     $titre = trim((string)($_POST['titre'] ?? ''));
@@ -109,7 +102,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_conseil'])) {
     $categorie = trim((string)($_POST['categorie'] ?? ''));
     $imageUrl = trim((string)($_POST['image_url'] ?? ''));
     
-    // Vérifier que le conseil est encore un brouillon
     $isStillDraft = (bool)db_safe_exec(function (PDO $pdo) use ($id, $userId) {
         $st = $pdo->prepare('SELECT COUNT(*) FROM conseil WHERE id_conseil = ? AND id_auteur = ? AND is_active = 0');
         $st->execute([$id, $userId]);
@@ -120,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_conseil'])) {
         toast_redirect('salarie_conseils.php', 'error', '❌ Ce conseil a déjà été publié, vous ne pouvez plus le modifier.');
     }
     
-    // Upload d'image
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $uploadDir = __DIR__ . '/uploads/conseils/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
@@ -147,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_conseil'])) {
         }
     }
     
-    // Suppression d'image
     if (isset($_POST['delete_image']) && $_POST['delete_image'] == '1') {
         $oldImage = '';
         db_safe_exec(function (PDO $pdo) use ($id, &$oldImage) {
@@ -186,9 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_conseil'])) {
     toast_redirect('salarie_conseils.php', 'error', '❌ Mise à jour impossible.');
 }
 
-// ============================================
-// 3. SUPPRESSION D'UN CONSEIL
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_conseil'])) {
     $id = (int)$_POST['conseil_id'];
     
@@ -232,9 +219,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_conseil'])) {
     toast_redirect('salarie_conseils.php', 'error', '❌ Suppression impossible.');
 }
 
-// ============================================
-// 4. RÉCUPÉRATION DES DONNÉES
-// ============================================
 $apiMine = [];
 $resMine = api_get_my_conseils();
 if (($resMine['status'] ?? 0) === 200) {
@@ -297,263 +281,8 @@ function conseilImage($c) {
     <title>Mes conseils - Espace Salarié</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
-    <style>
-        * { box-sizing: border-box; }
-        body { background: #f5f7fb; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        
-        .conseils-page { max-width: 1300px; margin: 0 auto; padding: 20px; }
-        
-        .page-header {
-            background: linear-gradient(135deg, #2e7d32, #4caf50);
-            border-radius: 16px;
-            padding: 20px 24px;
-            margin-bottom: 24px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-        }
-        .page-header h1 { margin: 0 0 4px 0; font-size: 24px; }
-        .page-header p { margin: 0; font-size: 13px; opacity: 0.9; }
-        
-        .stats-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 14px;
-            padding: 16px 20px;
-            flex: 1;
-            min-width: 120px;
-            text-align: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        .stat-number { font-size: 28px; font-weight: 700; color: #2e7d32; }
-        .stat-label { font-size: 12px; color: #666; margin-top: 4px; }
-        
-        .filter-bar {
-            background: white;
-            border-radius: 14px;
-            padding: 12px 16px;
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        .filter-bar input, .filter-bar select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 30px;
-            font-size: 13px;
-        }
-        
-        .btn-create {
-            background: #4caf50;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.2s;
-            display: inline-block;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-create:hover { background: #2e7d32; }
-        
-        /* Style identique aux annonces */
-        .conseils-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .conseil-card {
-            background: white;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-        }
-        .conseil-card:hover { transform: translateY(-5px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
-        
-        .conseil-image {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
-            display: block;
-        }
-        
-        .conseil-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 11px;
-            font-weight: 600;
-            color: white;
-            z-index: 2;
-        }
-        .badge-published { background: #4caf50; }
-        .badge-draft { background: #ff9800; }
-        
-        .conseil-content { padding: 16px; }
-        .conseil-category {
-            display: inline-block;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #4caf50;
-            background: #e8f5e9;
-            padding: 4px 10px;
-            border-radius: 20px;
-            margin-bottom: 12px;
-        }
-        .conseil-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin: 0 0 12px 0;
-            color: #1a1a2e;
-        }
-        .conseil-preview {
-            font-size: 14px;
-            color: #666;
-            line-height: 1.5;
-            margin-bottom: 16px;
-        }
-        .read-more {
-            color: #4caf50;
-            font-size: 13px;
-            font-weight: 500;
-            display: inline-block;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 20px;
-            color: #999;
-        }
-        
-        /* MODAL identique aux annonces */
-        .modal-conseil {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .modal-conseil.active { display: flex; }
-        .modal-conseil-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 650px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            cursor: default;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
-        }
-        .modal-conseil-close {
-            position: absolute;
-            top: 12px;
-            right: 16px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 20;
-            background: rgba(0,0,0,0.5);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-conseil-image-container {
-            width: 100%;
-            background: #1a1a2e;
-            border-radius: 24px 24px 0 0;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 200px;
-            max-height: 280px;
-        }
-        .modal-conseil-img {
-            width: 100%;
-            height: auto;
-            max-height: 280px;
-            object-fit: contain;
-            display: block;
-        }
-        .modal-conseil-body { padding: 24px; }
-        .modal-conseil-body h2 { margin: 0 0 20px 0; font-size: 24px; border-bottom: 2px solid #e0e0e0; padding-bottom: 12px; }
-        .modal-info-row { display: flex; margin-bottom: 14px; }
-        .modal-info-label { width: 100px; font-weight: 600; color: #555; }
-        .modal-info-value { flex: 1; color: #333; }
-        .modal-actions { margin-top: 24px; border-top: 1px solid #eee; padding-top: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
-        .btn-modal {
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-        .btn-modal-primary { background: #ff9800; color: white; }
-        .btn-modal-primary:hover { background: #f57c00; }
-        .btn-modal-danger { background: #dc2626; color: white; }
-        .btn-modal-danger:hover { background: #b91c1c; }
-        .btn-modal-secondary { background: #9e9e9e; color: white; }
-        .btn-modal-secondary:hover { background: #757575; }
-        
-        /* Formulaire */
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #333; }
-        .form-group input, .form-group select, .form-group textarea {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #ddd;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-        .error-message {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 768px) {
-            .conseils-page { padding: 12px; }
-            .conseils-grid { grid-template-columns: 1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
+    <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
 <?php include __DIR__ . '/includes/employee_nav.php'; ?>
@@ -626,7 +355,6 @@ function conseilImage($c) {
     <?php endif; ?>
 </main>
 
-<!-- MODAL CRÉATION -->
 <div id="createModal" class="modal-conseil" onclick="closeCreateModal()">
     <div class="modal-conseil-content" onclick="event.stopPropagation()">
         <span class="modal-conseil-close" onclick="closeCreateModal()">&times;</span>
@@ -679,7 +407,6 @@ function conseilImage($c) {
     </div>
 </div>
 
-<!-- MODAL ZOOM DÉTAIL -->
 <div id="conseilModal" class="modal-conseil" onclick="closeConseilModal()">
     <div class="modal-conseil-content" onclick="event.stopPropagation()">
         <span class="modal-conseil-close" onclick="closeConseilModal()">&times;</span>
@@ -780,14 +507,12 @@ function openConseilModal(conseil) {
         img.style.display = 'none';
     }
     
-    // Pré-remplir le formulaire d'édition
     document.getElementById('edit_conseil_id').value = conseil.id;
     document.getElementById('edit_titre').value = conseil.titre;
     document.getElementById('edit_categorie').value = conseil.categorie;
     document.getElementById('edit_image_url').value = (conseil.image_url && !conseil.image_url.includes('unsplash')) ? conseil.image_url : '';
     document.getElementById('edit_contenu').value = conseil.contenu;
     
-    // Générer les boutons selon le statut
     const actionsDiv = document.getElementById('modalActions');
     actionsDiv.innerHTML = '';
     

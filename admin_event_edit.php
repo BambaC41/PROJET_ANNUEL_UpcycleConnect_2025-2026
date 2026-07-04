@@ -56,6 +56,7 @@ $title = $prestationsMap[(int)($data['id_prestation'] ?? 0)] ?? 'Prestation';
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">

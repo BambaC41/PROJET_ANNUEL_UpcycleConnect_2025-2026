@@ -9,6 +9,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <title>UpcycleConnect Admin</title>
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/header.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
 </head>
 <body>
 <header class="admin-header">

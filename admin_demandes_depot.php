@@ -186,39 +186,8 @@ function displayEAN13Barcode($code) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .status-ok { background: #e8f5e9; color: #2e7d32; }
-        .status-warn { background: #fff3e0; color: #ef6c00; }
-        .status-danger { background: #fee2e2; color: #dc2626; }
-        .status-muted { background: #f5f5f5; color: #757575; }
-        .status-info { background: #e3f2fd; color: #1976d2; }
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .success-box { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .table td { vertical-align: middle; }
-        .nav-links {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .nav-link {
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            background: #f0f0f0;
-            color: #333;
-        }
-        .nav-link.active {
-            background: #4caf50;
-            color: white;
-        }
-        .nav-link:hover {
-            background: #e0e0e0;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -299,7 +268,6 @@ function displayEAN13Barcode($code) {
                             <?php else: ?>
                                 <span class="muted">—</span>
                             <?php endif; ?>
-                         </span>
                         </td>
                         <td class="row-actions">
                             <?php if ($st !== 'validee' && $st !== 'rejetee' && $st !== 'retiree'): ?>
@@ -315,11 +283,12 @@ function displayEAN13Barcode($code) {
                             <?php if ($docId > 0): ?>
                                 <a class="btn-outline" href="document_download.php?id=<?= $docId ?>">📄 PDF</a>
                             <?php endif; ?>
-                         </span>
-                     </tr>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 <?php if (empty($demandesFiltered)): ?>
-                    <tr><td colspan="8" style="text-align:center;">Aucune demande de depot trouvee.<?php endif; ?>
+                    <tr><td colspan="8" style="text-align:center;">Aucune demande de depot trouvee.</td></tr>
+                <?php endif; ?>
                 </tbody>
             </table>
         </div>

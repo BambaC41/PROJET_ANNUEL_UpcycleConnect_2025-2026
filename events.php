@@ -75,6 +75,7 @@ foreach ($prestations as $p) {
 <!DOCTYPE html>
 <html lang="fr">
 <?php include 'includes/head.php'; ?>
+<link rel="stylesheet" href="styles/admin_global.css">
 <body>
 <main class="admin-layout">
     <?php include 'includes/header.php'; ?>

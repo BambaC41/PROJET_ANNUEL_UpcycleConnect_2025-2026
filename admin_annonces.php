@@ -68,119 +68,8 @@ $totalAnnonces = (int)db_safe_exec(function (PDO $pdo) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .pro-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .pro-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
-        .btn-success {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .btn-success:hover {
-            background: #2e7d32;
-        }
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 6px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-        .btn-voir-toutes {
-            background: #2196f3;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 14px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-        }
-        .btn-voir-toutes:hover {
-            background: #1976d2;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
-        }
-        .btn-voir-toutes .badge {
-            background: rgba(255,255,255,0.3);
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #999;
-        }
-        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
-        .header-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            margin-bottom: 20px;
-        }
-        .header-actions h1 {
-            margin: 0;
-        }
-        .text-muted { color: #999; }
-        .mt-20 { margin-top: 20px; }
-        .text-center { text-align: center; }
-        .row-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #eee;
-        }
-        .auteur-info {
-            font-size: 12px;
-            color: #555;
-            margin: 4px 0 8px 0;
-        }
-        .auteur-info .email {
-            color: #999;
-            font-size: 11px;
-        }
-        @media (max-width: 768px) {
-            .header-actions {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .btn-voir-toutes {
-                justify-content: center;
-            }
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -196,7 +85,7 @@ $totalAnnonces = (int)db_safe_exec(function (PDO $pdo) {
         </div>
         
         <?php if (empty($pendingAnnonces)): ?>
-            <div style="background:#d4edda;border:1px solid #c3e6cb;color:#155724;padding:12px 16px;border-radius:8px;margin-bottom:20px;text-align:center;">
+            <div class="success-box" style="text-align:center;">
                 ✅ Aucune annonce en attente de validation.
             </div>
             <div class="empty-state">
@@ -227,28 +116,28 @@ $totalAnnonces = (int)db_safe_exec(function (PDO $pdo) {
                     $mode = (string)($a['mode'] ?? 'don');
                     $prix = (float)($a['prix'] ?? 0);
                 ?>
-                    <div class="pro-card" style="margin:0;">
+                    <div class="pro-card-item" style="margin:0;">
                         <?php if (!empty($photo)): ?>
-                            <img src="<?= e($photo) ?>" alt="<?= e($a['titre'] ?? 'Annonce') ?>" style="width:100%;height:160px;object-fit:cover;border-radius:10px;margin-bottom:12px;">
+                            <img src="<?= e($photo) ?>" alt="<?= e($a['titre'] ?? 'Annonce') ?>" class="annonce-image">
                         <?php else: ?>
-                            <div style="width:100%;height:160px;background:#f0f0f0;border-radius:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;color:#999;">
+                            <div class="annonce-placeholder">
                                 📷 Pas d'image
                             </div>
                         <?php endif; ?>
                         
-                        <h3 style="margin:0 0 8px 0;font-size:18px;"><?= e($a['titre'] ?? 'Sans titre') ?></h3>
+                        <h3 class="annonce-title"><?= e($a['titre'] ?? 'Sans titre') ?></h3>
                         <p class="auteur-info">
                             👤 <?= $auteur ?>
                         </p>
-                        <p style="margin:0 0 8px 0;color:#666;font-size:13px;">
+                        <p class="annonce-description">
                             <?= e(mb_strimwidth((string)($a['description'] ?? ''), 0, 100, '...')) ?>
                         </p>
-                        <p style="margin:0;">
+                        <p class="annonce-meta">
                             <strong><?= $mode === 'don' ? '🎁 Don' : '💰 Vente' ?></strong> - 
                             <?= $mode === 'vente' ? e(formatPriceEur($prix)) : 'Gratuit' ?>
                             <br>
-                            <span style="font-size:12px;color:#ef6c00;">⏳ En attente</span>
-                            <span style="font-size:12px;color:#999;margin-left:8px;">📅 <?= e(formatDateFr($a['created_at'] ?? '')) ?></span>
+                            <span class="status-badge status-warn">⏳ En attente</span>
+                            <span class="annonce-date">📅 <?= e(formatDateFr($a['created_at'] ?? '')) ?></span>
                         </p>
                         
                         <div class="row-actions">

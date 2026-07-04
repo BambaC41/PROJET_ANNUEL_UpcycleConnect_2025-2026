@@ -49,7 +49,7 @@ if (forum_is_user_banned_check($userId)) {
     ?>
     <!DOCTYPE html>
     <html lang="fr">
-    <head><meta charset="UTF-8"><title>Accès restreint - Forum</title><link rel="stylesheet" href="styles/style.css"></head>
+    <head><meta charset="UTF-8"><title>Accès restreint - Forum</title><link rel="stylesheet" href="styles/style.css"><link rel="stylesheet" href="styles/admin_global.css"></head>
     <body class="pro-page">
         <main style="max-width: 600px; margin: 80px auto; padding: 20px;">
             <div class="error-box" style="text-align: center; padding: 30px;">
@@ -121,115 +121,7 @@ $showCreate = $roleId >= 1 && $roleId <= 4;
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/ui-components.css">
     <?php if ($roleId === 1): ?><link rel="stylesheet" href="styles/admin.css"><?php endif; ?>
-    <style>
-        .forum-header {
-            background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
-            border-radius: 20px;
-            padding: 32px;
-            margin-bottom: 32px;
-            color: white;
-        }
-        .forum-header h1 { margin: 0; font-size: 28px; }
-        .forum-header p { margin: 8px 0 0 0; opacity: 0.9; }
-        
-        .forum-categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            margin: 24px 0 32px 0;
-        }
-        .forum-category-card {
-            background: white;
-            border-radius: 16px;
-            padding: 20px;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: block;
-            border: 1px solid #e5e7eb;
-        }
-        .forum-category-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-            border-color: #4caf50;
-        }
-        .forum-category-icon { font-size: 32px; margin-bottom: 12px; }
-        .forum-category-name { font-size: 18px; font-weight: 700; color: #2e7d32; margin: 0 0 8px 0; }
-        .forum-category-desc { color: #6c757d; font-size: 13px; margin: 0; line-height: 1.5; }
-        
-        .forum-topics-list { background: white; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
-        .forum-topics-header {
-            display: flex;
-            background: #f8f9fa;
-            padding: 12px 16px;
-            font-size: 12px;
-            font-weight: 600;
-            color: #6c757d;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .forum-topic-item {
-            display: flex;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid #e5e7eb;
-            transition: background 0.2s;
-        }
-        .forum-topic-item:hover { background: #fafbfc; }
-        .forum-topic-main { flex: 1; min-width: 0; }
-        .forum-topic-title {
-            font-weight: 600;
-            color: #1a1a2e;
-            text-decoration: none;
-            font-size: 16px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-        .forum-topic-title:hover { color: #4caf50; }
-        .forum-topic-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            font-size: 12px;
-            color: #6c757d;
-        }
-        .forum-topic-stats { text-align: right; min-width: 100px; }
-        .forum-topic-replies { font-weight: 600; color: #2e7d32; }
-        .forum-topic-views { color: #6c757d; font-size: 12px; }
-        .badge-topic {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        .badge-pinned { background: #fff3e0; color: #ef6c00; }
-        .badge-open { background: #e8f5e9; color: #2e7d32; }
-        
-        .create-topic-card {
-            background: #f8f9fa;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-        .create-topic-summary {
-            cursor: pointer;
-            font-weight: 600;
-            color: #2e7d32;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .char-counter { font-size: 11px; color: #666; margin-top: 4px; text-align: right; }
-        .empty-state { text-align: center; padding: 48px 20px; background: #f8f9fa; border-radius: 16px; color: #6c757d; }
-        
-        @media (max-width: 768px) {
-            .forum-topics-header { display: none; }
-            .forum-topic-item { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .forum-topic-stats { text-align: left; }
-            .forum-categories-grid { grid-template-columns: 1fr; }
-            .forum-header { padding: 20px; }
-        }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="<?= e($bodyClass) ?>">

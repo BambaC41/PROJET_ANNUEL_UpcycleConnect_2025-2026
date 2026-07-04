@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/admin_bootstrap.php';
-require_once 'includes/functions/forum_api.php';  // CORRIGÉ
+require_once 'includes/functions/forum_api.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create_category'])) {
@@ -59,6 +59,7 @@ foreach ($categories as $c) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
@@ -108,11 +109,11 @@ foreach ($categories as $c) {
                                 <input type="hidden" name="delete_category_id" value="<?= (int)($c['id'] ?? 0) ?>">
                                 <button class="btn-danger" type="submit">🗑️ Supprimer</button>
                             </form>
-                         </div>
-                     </tr>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 </tbody>
-             </div>
+            </table>
         </div>
     </section>
 </main>

@@ -38,11 +38,8 @@ if ($sessionId) {
                 $annonceId = $matches[0];
             }
             
-            // ============================================
-            // ACHAT D'ANNONCE + COMMISSION
-            // ============================================
+            // Achat d'annonce + commission
             if (!empty($annonceId) && !str_contains($ptype, 'Commission')) {
-                // Récupérer les infos de l'annonce
                 $annonce = db_safe_exec(function(PDO $pdo) use ($annonceId) {
                     $stmt = $pdo->prepare("
                         SELECT a.id_annonce, a.id_user as vendeur_id, a.prix, o.titre 
@@ -59,13 +56,11 @@ if ($sessionId) {
                     $prix = (float)($annonce['prix'] ?? 0);
                     $commission = round($prix * 0.05, 2);
                     
-                    // Marquer l'annonce comme vendue
                     db_safe_exec(function(PDO $pdo) use ($annonceId, $userId) {
                         $stmt = $pdo->prepare("UPDATE annonce SET id_acheteur = ?, date_achat = NOW(), statut = 'vendu' WHERE id_annonce = ?");
                         return $stmt->execute([$userId, $annonceId]);
                     }, false);
                     
-                    // Enregistrer la commission
                     if ($commission > 0) {
                         db_safe_exec(function(PDO $pdo) use ($annonceId, $vendeurId, $userId, $commission) {
                             $stmt = $pdo->prepare("
@@ -77,7 +72,6 @@ if ($sessionId) {
                         error_log("💰 Commission de $commission € enregistrée pour l'annonce $annonceId");
                     }
                     
-                    // Enregistrer le paiement
                     db_safe_exec(function(PDO $pdo) use ($userId, $amount, $sessionId, $metadata) {
                         $stmt = $pdo->prepare("INSERT INTO paiement (user_id, montant, statut, provider, payment_ref, paid_at, metadata) VALUES (?, ?, 'paid', 'stripe', ?, NOW(), ?)");
                         return $stmt->execute([$userId, $amount, $sessionId, json_encode($metadata)]);
@@ -87,9 +81,7 @@ if ($sessionId) {
                 }
             }
             
-            // ============================================
-            // PAIEMENT DE COMMISSION
-            // ============================================
+            // Paiement de commission
             if (!empty($annonceId) && str_contains($ptype, 'Commission')) {
                 db_safe_exec(function(PDO $pdo) use ($annonceId, $amount, $userId, $sessionId, $metadata) {
                     $pdo->prepare("UPDATE commissions SET statut = 'paid', paid_at = NOW() WHERE annonce_id = ?")->execute([$annonceId]);
@@ -102,9 +94,7 @@ if ($sessionId) {
                 error_log("💰 Commission payée pour l'annonce $annonceId");
             }
             
-            // ============================================
-            // ABONNEMENT PREMIUM
-            // ============================================
+            // Abonnement Premium
             if (str_contains($ptype, 'Abonnement') || ($metadata['type'] ?? '') === 'abonnement') {
                 $formule = $metadata['formule'] ?? 'monthly';
                 $formuleDb = $formule === 'monthly' ? 'premium_mensuel' : 'premium_annuel';
@@ -144,20 +134,7 @@ $role = (int)($_SESSION['role_id'] ?? 0);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paiement confirmé - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
-    <style>
-        .success-card { max-width: 600px; margin: 80px auto; background: white; border-radius: 24px; box-shadow: 0 20px 35px -10px rgba(0,0,0,0.1); overflow: hidden; text-align: center; }
-        .success-header { background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%); padding: 32px; color: white; }
-        .success-header h1 { margin: 0; font-size: 28px; }
-        .success-icon { font-size: 64px; margin-bottom: 16px; }
-        .success-body { padding: 32px; }
-        .payment-details { background: #f5f5f5; border-radius: 16px; padding: 20px; margin: 20px 0; text-align: left; }
-        .amount { font-size: 32px; font-weight: bold; color: #2e7d32; }
-        .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 24px; }
-        .btn-primary { background: #4caf50; color: white; padding: 12px 24px; border-radius: 30px; text-decoration: none; }
-        .btn-primary:hover { background: #2e7d32; }
-        .btn-outline { border: 2px solid #4caf50; color: #4caf50; padding: 12px 24px; border-radius: 30px; text-decoration: none; }
-        .btn-outline:hover { background: #4caf50; color: white; }
-    </style>
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body style="background: #f0f2f5; min-height: 100vh;">

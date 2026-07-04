@@ -45,127 +45,16 @@ $role = (int)($_SESSION['role_id'] ?? 0);
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/employee.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .notif-row {
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .notif-row:hover {
-            background: #f0f7ff;
-        }
-        .notif-unread {
-            background: #fff8f0;
-            border-left: 3px solid #ff9800;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-        }
-        .modal.show {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow: auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            animation: modalFadeIn 0.2s ease;
-        }
-        @keyframes modalFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .modal-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #2e7d32;
-            color: white;
-            border-radius: 16px 16px 0 0;
-        }
-        .modal-header h3 {
-            margin: 0;
-            font-size: 18px;
-        }
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 28px;
-            cursor: pointer;
-            color: white;
-        }
-        .modal-body {
-            padding: 20px;
-        }
-        .modal-body .notif-type {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            margin-bottom: 12px;
-        }
-        .modal-body .notif-type-forum { background: #e3f2fd; color: #1565c0; }
-        .modal-body .notif-type-warning { background: #fff3e0; color: #ef6c00; }
-        .modal-body .notif-type-paiement { background: #e8f5e9; color: #2e7d32; }
-        .modal-body .notif-type-system { background: #f3e5f5; color: #7b1fa2; }
-        .modal-body .notif-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 12px 0;
-            color: #333;
-        }
-        .modal-body .notif-content {
-            font-size: 14px;
-            line-height: 1.6;
-            color: #555;
-            margin: 16px 0;
-            white-space: pre-wrap;
-        }
-        .modal-body .notif-date {
-            font-size: 11px;
-            color: #999;
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .btn-close-modal {
-            background: #2e7d32;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 12px;
-        }
-        .btn-close-modal:hover {
-            background: #1b5e20;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php
-if ($role === 3) {
+// Choix du header/navigation en fonction du rôle
+if ($role === 1) {
+    // Admin : on utilise le header admin (qui contient le sidebar)
+    include __DIR__ . '/includes/header.php';
+} elseif ($role === 3) {
     include __DIR__ . '/includes/pro_nav.php';
 } elseif ($role === 4) {
     include __DIR__ . '/includes/employee_nav.php';
@@ -231,7 +120,6 @@ if ($role === 3) {
 
 <?php include __DIR__ . '/includes/flash_toast.php'; ?>
 
-<!-- Modal Popup pour afficher le détail d'une notification -->
 <div id="notifModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -245,11 +133,9 @@ if ($role === 3) {
 </div>
 
 <script>
-// Stocker les notifications dans une variable JavaScript
 const notificationsData = <?php 
     $notifArray = [];
     foreach ($notifications as $n) {
-        // Déterminer la classe CSS pour le type
         $typeClass = 'notif-type-system';
         $type = strtolower($n['type'] ?? '');
         if (strpos($type, 'forum') !== false || strpos($type, 'moderation') !== false) {
@@ -260,7 +146,6 @@ const notificationsData = <?php
             $typeClass = 'notif-type-paiement';
         }
         
-        // Traduire le type pour l'affichage
         $typeLabel = $n['type'] ?? 'Système';
         if (strpos($type, 'forum_warning') !== false) $typeLabel = '⚠️ Avertissement forum';
         elseif (strpos($type, 'forum_moderation') !== false) $typeLabel = '🛡️ Modération forum';
@@ -304,7 +189,6 @@ function closeNotificationModal() {
     document.getElementById('notifModal').classList.remove('show');
 }
 
-// Fermer la modale en cliquant en dehors
 window.onclick = function(event) {
     const modal = document.getElementById('notifModal');
     if (event.target === modal) {

@@ -72,115 +72,9 @@ $countStat = static fn(string $s) => count(array_filter($myProjects, static fn($
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/ui-components.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <script src="scripts/modal.js" defer></script>
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .project-card {
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .project-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-        .modal-project-content {
-            background: white;
-            border-radius: 24px;
-            max-width: 650px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 0;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-        .modal-project-header {
-            background: linear-gradient(135deg, #2e7d32, #4caf50);
-            padding: 24px;
-            border-radius: 24px 24px 0 0;
-            color: white;
-        }
-        .modal-project-header h2 {
-            margin: 0;
-            font-size: 24px;
-        }
-        .modal-project-header .subtitle {
-            opacity: 0.8;
-            margin-top: 8px;
-            font-size: 14px;
-        }
-        .modal-project-body {
-            padding: 24px;
-        }
-        .modal-project-body .detail-row {
-            display: flex;
-            margin-bottom: 12px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        .modal-project-body .detail-label {
-            width: 120px;
-            font-weight: 600;
-            color: #555;
-            flex-shrink: 0;
-        }
-        .modal-project-body .detail-value {
-            flex: 1;
-            color: #333;
-        }
-        .modal-project-body .description-box {
-            background: #f8f9fa;
-            padding: 16px;
-            border-radius: 12px;
-            line-height: 1.6;
-            margin-top: 4px;
-        }
-        .modal-close-btn {
-            position: absolute;
-            top: 16px;
-            right: 20px;
-            cursor: pointer;
-            font-size: 28px;
-            color: white;
-            z-index: 10;
-            background: rgba(0,0,0,0.3);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        .modal-close-btn:hover {
-            background: rgba(0,0,0,0.6);
-        }
-        .progression-bar {
-            background: #e2e8f0;
-            border-radius: 6px;
-            height: 10px;
-            margin: 8px 0;
-            overflow: hidden;
-        }
-        .progression-bar .fill {
-            background: #4caf50;
-            height: 100%;
-            border-radius: 6px;
-            transition: width 0.3s;
-        }
-        .badge-statut {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .badge-brouillon { background: #f5f5f5; color: #757575; }
-        .badge-en_cours { background: #fff3e0; color: #ef6c00; }
-        .badge-publie { background: #e8f5e9; color: #2e7d32; }
-        .badge-termine { background: #e3f2fd; color: #1565c0; }
-        .badge-archive { background: #fce4ec; color: #c62828; }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
@@ -241,7 +135,6 @@ $countStat = static fn(string $s) => count(array_filter($myProjects, static fn($
     </section>
 </main>
 
-<!-- Modal création -->
 <div id="modal-new-project" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
 <h2>Nouveau projet</h2>
 <form method="POST"><input type="hidden" name="create_project" value="1">
@@ -253,7 +146,6 @@ $countStat = static fn(string $s) => count(array_filter($myProjects, static fn($
 <button class="btn-primary" type="submit">Enregistrer</button>
 </form></div></div>
 
-<!-- Modals modification personnelles -->
 <?php foreach ($myProjects as $p): ?>
 <div id="modal-proj-<?= (int)$p['id_projet'] ?>" class="modal" aria-hidden="true"><div class="modal-backdrop"></div><div class="modal-content">
 <h2>Modifier projet</h2>
@@ -267,7 +159,6 @@ $countStat = static fn(string $s) => count(array_filter($myProjects, static fn($
 </form></div></div>
 <?php endforeach; ?>
 
-<!-- Modal visualisation projet public -->
 <div id="modal-public-project" class="modal" aria-hidden="true">
     <div class="modal-backdrop"></div>
     <div class="modal-project-content">

@@ -207,77 +207,8 @@ function adminConseilImage($c) {
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
     <link rel="stylesheet" href="styles/admin.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .conseil-preview-img {
-            width: 50px;
-            height: 50px;
-            object-fit: cover;
-            border-radius: 8px;
-            background: #f0f2f5;
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .status-ok { background: #e8f5e9; color: #2e7d32; }
-        .status-warn { background: #fff3e0; color: #ef6c00; }
-        .detail-image {
-            max-width: 300px;
-            max-height: 200px;
-            border-radius: 12px;
-            margin-top: 10px;
-            background: #f0f2f5;
-        }
-        .table td {
-            vertical-align: middle;
-        }
-        .row-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .btn-success {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .btn-success:hover {
-            background: #2e7d32;
-        }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid #ddd;
-            padding: 6px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .btn-outline:hover {
-            background: #f0f0f0;
-        }
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/header.php'; ?>
@@ -308,7 +239,7 @@ function adminConseilImage($c) {
         </form>
 
         <?php if ($detail): ?>
-            <div class="pro-card" style="margin-bottom:20px;background:#f8fafc;">
+            <div class="detail-card">
                 <h2>📄 Détail du conseil #<?= (int)($detail['id_conseil'] ?? 0) ?></h2>
                 <p><strong>Titre :</strong> <?= e($detail['titre'] ?? '') ?></p>
                 <p><strong>Catégorie :</strong> <?= e($detail['categorie'] ?? '') ?></p>
@@ -324,7 +255,7 @@ function adminConseilImage($c) {
                     <p><strong>Image :</strong></p>
                     <img src="<?= e($imgDetail) ?>" alt="Image du conseil" class="detail-image">
                 <?php endif; ?>
-                <div style="margin-top:12px;padding:12px;background:white;border-radius:8px;">
+                <div class="detail-content">
                     <strong>Contenu :</strong><br>
                     <?= nl2br(e($detail['contenu'] ?? '')) ?>
                 </div>
@@ -348,7 +279,8 @@ function adminConseilImage($c) {
                 </thead>
                 <tbody>
                 <?php if (empty($conseils)): ?>
-                    <tr><td colspan="8" style="text-align:center; padding:40px;">📭 Aucun conseil trouvé.<?php endif; ?>
+                    <tr><td colspan="8" class="empty-table">📭 Aucun conseil trouvé.</td></tr>
+                <?php endif; ?>
                 <?php foreach ($conseils as $c): ?>
                     <?php $isActive = !empty($c['is_active']); ?>
                     <?php $imgPath = adminConseilImage($c); ?>
@@ -390,11 +322,11 @@ function adminConseilImage($c) {
                                 <input type="hidden" name="delete_conseil_id" value="<?= (int)($c['id_conseil'] ?? 0) ?>">
                                 <button class="btn-danger" type="submit">🗑️ Supprimer</button>
                             </form>
-                         </span>
-                     </tr>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 </tbody>
-             </div>
+            </table>
         </div>
 
         <?php if ($totalPages > 1): ?>

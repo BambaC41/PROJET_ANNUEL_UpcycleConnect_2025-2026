@@ -10,9 +10,6 @@ require_once 'includes/functions/prestations.php';
 $msg_success = "";
 $msg_error = "";
 
-// --- ACTIONS (Create, Update, Delete) ---
-
-// 1. Suppression
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $res = api_delete_prestation($_SESSION['token'], $_GET['id']);
     if ($res['status'] === 200 || $res['status'] === 204) {
@@ -23,7 +20,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// 3. Modification
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update') {
     $id = $_POST['id'];
     $payload = [
@@ -44,12 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-// --- RECUPERATION DONNEES ---
 $prestations = api_get_prestations($_SESSION['token']);
 $search = $_GET['search'] ?? '';
 $categoryFilter = $_GET['categorie'] ?? '';
 
-// Récupération des catégories via l'API
 $categories = [];
 $fetchedCategories = api_get_categories($_SESSION['token']);
 foreach ($fetchedCategories as $c) {
@@ -64,7 +58,6 @@ foreach ($fetchedCategories as $c) {
 }
 ksort($categories);
 
-// Filtrage
 $filteredList = array_filter($prestations, function($p) use ($search, $categoryFilter) {
     $matchesSearch = true;
     if (!empty($search)) {
@@ -86,6 +79,7 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
 <!DOCTYPE html>
 <html lang="fr">
 <?php include 'includes/head.php'; ?>
+<link rel="stylesheet" href="styles/admin_global.css">
 <body>
 <main class="admin-layout">
     <?php include 'includes/header.php'; ?>
@@ -96,7 +90,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
             <h1>Gestion des Prestations</h1>
         </div>
 
-        <!-- Feedback Messages -->
         <?php if ($msg_error): ?>
             <p class="error" style="text-align: center;"><?= htmlspecialchars($msg_error) ?></p>
         <?php endif; ?>
@@ -105,7 +98,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
             <?php if($_GET['msg'] == 'deleted'): ?><p class="pill pill-green" style="display:block; text-align:center;">Prestation supprimée.</p><?php endif; ?>
         <?php endif; ?>
 
-        <!-- Search -->
         <div class="card-lite" style="margin-bottom: 20px;">
             <form method="GET" style="display: flex; gap: 15px; align-items: flex-end;">
                 <div class="form-group" style="flex: 1;">
@@ -130,7 +122,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
             </form>
         </div>
 
-        <!-- Table -->
         <section class="admin-section">
             <table class="admin-table">
                 <thead>
@@ -202,7 +193,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
     </section>
 </main>
 
-<!-- MODAL EDIT -->
 <div id="editModal" class="modal-overlay">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -254,7 +244,6 @@ $filteredList = array_filter($prestations, function($p) use ($search, $categoryF
     </div>
 </div>
 
-<!-- MODAL VUE DÉTAILLÉE PRESTATION -->
 <div id="viewModal" class="modal-overlay">
     <div class="modal-card" style="max-width: 600px;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">

@@ -50,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['collect_demande_id'])
 
 $status = trim((string)($_GET['status'] ?? 'available'));
 
-// Requête avec GROUP BY pour éviter les doublons
 $demandes = db_safe_exec(function (PDO $pdo) {
     $sql = '
         SELECT DISTINCT 
@@ -69,15 +68,11 @@ $demandes = db_safe_exec(function (PDO $pdo) {
     return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }, []);
 
-// Filtrer selon le choix
 if ($status === 'available') {
-    // Uniquement les objets disponibles (validee uniquement)
     $filtered = array_values(array_filter($demandes, fn($d) => ($d['statut'] ?? '') === 'validee'));
 } elseif ($status === 'history') {
-    // Historique des recuperations (retiree seulement)
     $filtered = array_values(array_filter($demandes, fn($d) => ($d['statut'] ?? '') === 'retiree'));
 } else {
-    // Tous les statuts
     $filtered = $demandes;
 }
 
@@ -145,39 +140,8 @@ function displayEAN13Preview($code) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles/style.css">
     <link rel="stylesheet" href="styles/pro.css">
+    <link rel="stylesheet" href="styles/admin_global.css">
     <?php include 'includes/onesignal_head.php'; ?>
-    <style>
-        .status-ok { background: #e8f5e9; color: #2e7d32; }
-        .status-warn { background: #fff3e0; color: #ef6c00; }
-        .status-danger { background: #fee2e2; color: #dc2626; }
-        .status-muted { background: #f5f5f5; color: #757575; }
-        .status-info { background: #e3f2fd; color: #1976d2; }
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
-        .error-box { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .success-box { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
-        .table td { vertical-align: middle; }
-        .view-toggle {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-        .view-btn {
-            padding: 8px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            background: #f0f0f0;
-            color: #333;
-            transition: all 0.2s;
-        }
-        .view-btn:hover {
-            background: #e0e0e0;
-        }
-        .view-btn.active {
-            background: #4caf50;
-            color: white;
-        }
-    </style>
 </head>
 <body class="pro-page">
 <?php include 'includes/pro_nav.php'; ?>
@@ -192,12 +156,11 @@ function displayEAN13Preview($code) {
             <?php unset($_SESSION['flash_toast']); ?>
         <?php endif; ?>
         
-        <!-- Sélecteur d'affichage -->
         <div class="view-toggle">
-            <a href="?status=available" class="view-btn <?= $status === 'available' ? 'active' : '' ?>">📦 Objets disponibles</a>
-            <a href="?status=history" class="view-btn <?= $status === 'history' ? 'active' : '' ?>">📜 Historique</a>
-            <a href="pro_conteneurs_history.php" class="view-btn">📊 Historique complet</a>
-            <a href="?status=all" class="view-btn <?= $status === 'all' ? 'active' : '' ?>">📋 Tous les statuts</a>
+            <a href="?status=available" class="view-btn-link <?= $status === 'available' ? 'active' : '' ?>">📦 Objets disponibles</a>
+            <a href="?status=history" class="view-btn-link <?= $status === 'history' ? 'active' : '' ?>">📜 Historique</a>
+            <a href="pro_conteneurs_history.php" class="view-btn-link">📊 Historique complet</a>
+            <a href="?status=all" class="view-btn-link <?= $status === 'all' ? 'active' : '' ?>">📋 Tous les statuts</a>
         </div>
         
         <div class="table-wrap">
