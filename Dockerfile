@@ -1,9 +1,4 @@
-FROM php:8.2-apache
-
-# Remplacer complètement les sources par Debian Bookworm (stable)
-RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /etc/apt/sources.list \
-    && echo "deb http://deb.debian.org/debian bookworm-updates main contrib non-free" >> /etc/apt/sources.list \
-    && echo "deb http://deb.debian.org/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list
+FROM php:8.2-apache-bookworm
 
 # Installer les dépendances système
 RUN apt-get update && apt-get install -y \
