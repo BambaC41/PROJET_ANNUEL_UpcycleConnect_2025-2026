@@ -1,17 +1,18 @@
 FROM php:8.2-apache
 
-# Installer les extensions PHP nécessaires (dont zip)
-RUN docker-php-ext-install pdo pdo_mysql mysqli zip
-
-# Activer mod_rewrite
-RUN a2enmod rewrite
-
-# Installer les outils système (unzip, git, curl)
+# Installer les dépendances système (libzip, unzip, git, curl)
 RUN apt-get update && apt-get install -y \
+    libzip-dev \
     unzip \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Installer les extensions PHP (dont zip)
+RUN docker-php-ext-install pdo pdo_mysql mysqli zip
+
+# Activer mod_rewrite
+RUN a2enmod rewrite
 
 # Installer Composer globalement
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
