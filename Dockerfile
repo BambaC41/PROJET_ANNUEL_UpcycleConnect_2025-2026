@@ -1,10 +1,5 @@
 FROM php:8.2-apache
 
-# Remplacer les sources Debian Trixie par Bookworm (stable)
-RUN sed -i 's/deb.debian.org\/debian trixie/deb.debian.org\/debian bookworm/g' /etc/apt/sources.list \
-    && sed -i 's/deb.debian.org\/debian-security trixie-security/deb.debian.org\/debian-security bookworm-security/g' /etc/apt/sources.list \
-    && sed -i 's/deb.debian.org\/debian trixie-updates/deb.debian.org\/debian bookworm-updates/g' /etc/apt/sources.list
-
 # Installer les dépendances système
 RUN apt-get update && apt-get install -y \
     libzip-dev \

@@ -21,7 +21,7 @@ services:
     container_name: upcycle-web
     restart: always
     ports:
-      - "8888:80"   # <- ICI : le site est accessible sur le port 8888
+      - "8888:80"
     volumes:
       - ./:/var/www/html
       - ./uploads:/var/www/html/uploads
@@ -33,6 +33,9 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - API_BASE_URL=http://api:8080
       - JWT_SECRET=${JWT_SECRET}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - BREVO_FROM_ADDRESS=${BREVO_FROM_ADDRESS}
+      - BREVO_FROM_NAME=${BREVO_FROM_NAME}
     depends_on:
       - db
       - api
@@ -46,7 +49,7 @@ services:
     container_name: upcycle-api
     restart: always
     ports:
-      - "8080:8080"   # <- API sur le port 8080 (comme prévu)
+      - "8080:8080"
     environment:
       - DB_HOST=db
       - DB_NAME=${DB_NAME}
