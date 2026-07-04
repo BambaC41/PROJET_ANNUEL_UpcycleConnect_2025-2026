@@ -1,5 +1,5 @@
 <?php
-require 'vendor/autoload.php'; // si PHPMailer est installé via Composer
+require 'vendor/autoload.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -15,7 +15,7 @@ try {
     $mail->Port       = 587;
 
     $mail->setFrom('b0ec95001@smtp-brevo.com', 'UpcycleConnect');
-    $mail->addAddress('ton_email_perso@gmail.com'); // remplace par ton email
+    $mail->addAddress('bambac41@gmail.com'); // remplace par ton email
     $mail->Subject = 'Test Brevo SMTP';
     $mail->Body    = 'Ceci est un test d\'envoi depuis UpcycleConnect via Brevo.';
 
