@@ -48,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $user && !$error) {
     <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <!-- Header minimal (sans menu admin) -->
     <header style="background:#1a1a2e; color:#fff; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
         <div style="font-weight:700; font-size:1.2rem;">
             <a href="index.php" style="color:#16a34a; text-decoration:none;">UpcycleConnect</a>

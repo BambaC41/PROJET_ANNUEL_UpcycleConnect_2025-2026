@@ -401,7 +401,6 @@ INSERT INTO forum_categories (id_category, name, slug, description, sort_order, 
 (4, 'Conteneurs', 'conteneurs', 'Depots, collecte et logistique des conteneurs', 4, 1),
 (5, 'Formations', 'formations', 'Ateliers et sessions de formation', 5, 1);
 
--- Correction : category_id ne peut pas être NOT NULL avec ON DELETE SET NULL
 CREATE TABLE forum_topics (
     id_topic INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
@@ -595,6 +594,10 @@ CREATE TABLE IF NOT EXISTS unread_messages (
     FOREIGN KEY (conversation_id) REFERENCES conversation(id_conversation) ON DELETE CASCADE,
     UNIQUE KEY uk_unread_user_conversation (user_id, conversation_id)
 ) ENGINE=InnoDB;
+
+-- ============================================
+-- TABLE PASSWORD_RESET (ajoutée pour le système de réinitialisation)
+-- ============================================
 CREATE TABLE IF NOT EXISTS password_reset (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -606,6 +609,7 @@ CREATE TABLE IF NOT EXISTS password_reset (
     INDEX idx_token (token),
     INDEX idx_user (user_id)
 ) ENGINE=InnoDB;
+
 UPDATE forum_topics SET posts_count = 5 WHERE id_topic = 1;
 UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 2;
 UPDATE forum_topics SET posts_count = 8 WHERE id_topic = 3;

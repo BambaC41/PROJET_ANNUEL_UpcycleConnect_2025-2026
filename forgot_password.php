@@ -13,7 +13,7 @@ $submittedEmail = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
-    $submittedEmail = $email;
+    $submittedEmail = htmlspecialchars($email);
 
     if (empty($email)) {
         $error = 'Veuillez saisir votre adresse email.';
@@ -21,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Adresse email invalide.';
     } else {
         $user = find_user_by_email($email);
+        $mailSent = false;
 
         if ($user) {
             $token = create_password_reset_token($user['id_user']);
@@ -40,14 +41,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $mailer = getMailService();
             $result = $mailer->send($email, $subject, $html);
+            $mailSent = $result['success'];
 
-            if (!$result['success']) {
+            if (!$mailSent) {
                 error_log('Erreur envoi email réinitialisation : ' . $result['message']);
             }
         }
 
-        // Message personnalisé avec l'email saisi
-        $success = '✅ Un email de réinitialisation a été envoyé à l\'adresse <strong>' . htmlspecialchars($email) . '</strong> (si elle est associée à un compte).';
+        if ($mailSent) {
+            $success = 'Un email de réinitialisation a été envoyé à <strong>' . htmlspecialchars($email) . '</strong> (si cette adresse est associée à un compte).';
+        } else {
+            $success = 'Un email de réinitialisation a été envoyé si cette adresse est associée à un compte.';
+        }
     }
 }
 ?>
@@ -58,127 +63,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mot de passe oublié - UpcycleConnect</title>
     <link rel="stylesheet" href="styles/style.css">
-    <style>
-        /* Header public minimal (comme sur login.php) */
-        .navbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 30px;
-            background: #fff;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .navbar .logo a {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #16a34a;
-            text-decoration: none;
-        }
-        .navbar .auth-buttons a {
-            margin-left: 15px;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-        .btn-outline {
-            color: #333;
-            border: 1px solid #ccc;
-            background: transparent;
-        }
-        .btn-outline:hover {
-            background: #f5f5f5;
-        }
-        .btn-primary {
-            background: #16a34a;
-            color: #fff;
-            border: none;
-        }
-        .btn-primary:hover {
-            background: #15803d;
-        }
-        .container {
-            max-width: 500px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        .btn-submit {
-            width: 100%;
-            padding: 12px;
-            background: #16a34a;
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .btn-submit:hover {
-            background: #15803d;
-        }
-        .alert-danger {
-            color: #b91c1c;
-            background: #fee2e2;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        .alert-success {
-            color: #065f46;
-            background: #d1fae5;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-        .back-link {
-            margin-top: 15px;
-            display: inline-block;
-        }
-    </style>
 </head>
 <body>
-    <header class="navbar">
-        <div class="logo"><a href="index.php">UpcycleConnect</a></div>
-        <nav class="auth-buttons">
-            <a class="btn-outline" href="index.php">Accueil</a>
-            <a class="btn-outline" href="login.php">Connexion</a>
-            <a class="btn-primary" href="register.php">Créer un compte</a>
+    <header style="background:#1a1a2e; color:#fff; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+        <div style="font-weight:700; font-size:1.2rem;">
+            <a href="index.php" style="color:#16a34a; text-decoration:none;">UpcycleConnect</a>
+        </div>
+        <nav style="display:flex; gap:15px;">
+            <a href="index.php" style="color:#fff; text-decoration:none;">Accueil</a>
+            <a href="login.php" style="color:#fff; text-decoration:none;">Connexion</a>
+            <a href="register.php" style="color:#fff; text-decoration:none;">Inscription</a>
         </nav>
     </header>
 
-    <main class="container">
+    <main style="max-width:500px;margin:40px auto;padding:0 20px;">
         <h1>Mot de passe oublié</h1>
         <p>Entrez votre adresse email, nous vous enverrons un lien pour réinitialiser votre mot de passe.</p>
 
         <?php if ($error): ?>
-            <div class="alert-danger"><?= htmlspecialchars($error) ?></div>
+            <div style="color:#b91c1c;background:#fee2e2;padding:10px;border-radius:8px;margin-bottom:15px;"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         <?php if ($success): ?>
-            <div class="alert-success"><?= $success ?></div>
+            <div style="color:#065f46;background:#d1fae5;padding:10px;border-radius:8px;margin-bottom:15px;"><?= $success ?></div>
         <?php endif; ?>
 
         <form method="post">
-            <div class="form-group">
-                <label for="email">Adresse email</label>
-                <input type="email" id="email" name="email" value="<?= htmlspecialchars($submittedEmail) ?>" required autofocus>
+            <div style="margin-bottom:15px;">
+                <label for="email" style="display:block;font-weight:600;margin-bottom:5px;">Adresse email</label>
+                <input type="email" id="email" name="email" style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;" required autofocus value="<?= htmlspecialchars($submittedEmail) ?>">
             </div>
-            <button type="submit" class="btn-submit">Envoyer le lien</button>
+            <button type="submit" style="width:100%;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">Envoyer le lien</button>
         </form>
-        <p class="back-link"><a href="login.php">Retour à la connexion</a></p>
+        <p style="margin-top:15px;"><a href="login.php">Retour à la connexion</a></p>
     </main>
 </body>
 </html>
