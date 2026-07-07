@@ -1,79 +1,63 @@
 <?php
-require_once __DIR__ . '/api_core.php';
+// ===== FONCTIONS POUR MOT DE PASSE OUBLIÉ =====
+// Ces fonctions utilisent directement la base de données (PDO)
+// et ne sont pas déclarées ailleurs.
 
-function api_get_users($token) {
-    $response = callAPI('GET', '/users', $token);
-    
-    if ($response['status'] === 200) {
-        return $response['data'];
-    }
-    return [];
+function find_user_by_email(string $email): ?array
+{
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("SELECT * FROM utilisateur WHERE email = ?");
+    $stmt->execute([$email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $user ?: null;
 }
 
-function api_get_user_by_id($id, $token) {
-    return callAPI('GET', '/users/' . $id, $token);
+function find_user_by_id(int $id): ?array
+{
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("SELECT * FROM utilisateur WHERE id_user = ?");
+    $stmt->execute([$id]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $user ?: null;
 }
 
-function api_update_user($token, $id, $payload) {
-    return callAPI("PUT", "/users/$id", $token, $payload);
+function create_password_reset_token(int $userId, int $expiryHours = 1): string
+{
+    $pdo = get_db_connection();
+    // Supprimer les anciens tokens
+    $stmt = $pdo->prepare("DELETE FROM password_reset WHERE user_id = ?");
+    $stmt->execute([$userId]);
+
+    $token = bin2hex(random_bytes(32));
+    $expiresAt = date('Y-m-d H:i:s', strtotime("+{$expiryHours} hours"));
+
+    $stmt = $pdo->prepare("INSERT INTO password_reset (user_id, token, expires_at) VALUES (?, ?, ?)");
+    $stmt->execute([$userId, $token, $expiresAt]);
+
+    return $token;
 }
 
-function api_update_user_role($token, $id, $role) {
-    $userResponse = api_get_user_by_id($id, $token);
-    if (($userResponse['status'] ?? 0) !== 200 || !is_array($userResponse['data'] ?? null)) {
-        return $userResponse;
-    }
-
-    $current = $userResponse['data'];
-    $payload = [
-        'email' => $current['email'] ?? '',
-        'pseudo' => $current['pseudo'] ?? '',
-        'prenom' => $current['prenom'] ?? '',
-        'nom' => $current['nom'] ?? '',
-        'telephone' => $current['telephone'] ?? '',
-        'adresse_rue' => $current['adresse_rue'] ?? '',
-        'adresse_ville' => $current['adresse_ville'] ?? '',
-        'adresse_code_postal' => $current['adresse_code_postal'] ?? '',
-        'adresse_pays' => $current['adresse_pays'] ?? '',
-        'photo_profil' => $current['photo_profil'] ?? '',
-        'bio' => $current['bio'] ?? '',
-        'statut' => $current['statut'] ?? 'actif',
-        'id_role' => (int)$role,
-        'is_approved' => $current['is_approved'] ?? true
-    ];
-
-    return api_update_user($token, $id, $payload);
+function validate_reset_token(string $token): ?array
+{
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("SELECT * FROM password_reset WHERE token = ? AND used = 0 AND expires_at > NOW()");
+    $stmt->execute([$token]);
+    $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $reset ?: null;
 }
 
-function api_ban_user($token, $id, $reason, $until) {
-    return callAPI("PUT", "/users/$id/ban", $token, [
-        "ban_reason" => $reason,
-        "ban_until" => $until
-    ]);
+function mark_reset_token_as_used(string $token): void
+{
+    $pdo = get_db_connection();
+    $stmt = $pdo->prepare("UPDATE password_reset SET used = 1 WHERE token = ?");
+    $stmt->execute([$token]);
 }
 
-function api_unban_user($token, $id) {
-    return callAPI("PUT", "/users/$id/unban", $token);
-}
-
-function api_toggle_ban_user($token, $id, $isCurrentlyBanned = false) {
-    if ($isCurrentlyBanned) {
-        return api_unban_user($token, $id);
-    }
-
-    $banUntil = date('Y-m-d H:i:s', strtotime('+7 days'));
-    return api_ban_user($token, $id, 'Bannissement administratif', $banUntil);
-}
-
-function api_delete_user($token, $id) {
-    return callAPI("DELETE", "/users/$id", $token);
-}
-
-function api_get_pending_pros($token) {
-    return callAPI("GET", "/pros/pending", $token);
-}
-
-function api_approve_pro($token, $id) {
-    return callAPI("PUT", "/users/$id/approve", $token);
+function update_user_password(int $userId, string $newPassword): void
+{
+    $pdo = get_db_connection();
+    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+    $stmt = $pdo->prepare("UPDATE utilisateur SET password_hash = ? WHERE id_user = ?");
+    $stmt->execute([$hash, $userId]);
 }
 ?>
