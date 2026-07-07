@@ -130,6 +130,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <label for="password">Mot de passe</label>
             <input type="password" name="password" id="password" placeholder="••••••••••••" required>
 
+            <!-- Lien mot de passe oublié -->
+            <div style="text-align:right; margin-top:-5px; margin-bottom:10px;">
+                <a href="forgot_password.php" style="font-size:0.9rem; color:#16a34a; text-decoration:none;">Mot de passe oublié ?</a>
+            </div>
+
             <button type="submit" class="btn-primary" style="margin-top: 10px;">Se connecter</button>
         </form>
         <?php endif; ?>
@@ -143,6 +148,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
     </section>
 </main>
-<?php  ?>
+<?php include 'includes/footer.php'; ?>
 </body>
 </html>
