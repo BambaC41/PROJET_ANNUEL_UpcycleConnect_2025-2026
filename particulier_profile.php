@@ -89,8 +89,7 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
         <input class="input" name="adresse_ville" value="<?= e($me['adresse_ville'] ?? '') ?>" placeholder="Ville" maxlength="100">
         <input class="input" name="adresse_code_postal" value="<?= e($me['adresse_code_postal'] ?? '') ?>" placeholder="Code postal" maxlength="20">
         <input class="input" name="adresse_pays" value="<?= e($me['adresse_pays'] ?? '') ?>" placeholder="Pays" maxlength="100">
-        <input class="input" name="photo_profil" value="<?= e($me['photo_profil'] ?? '') ?>" placeholder="URL photo" maxlength="255">
-        <input class="input" type="file" name="photo_profil_file" accept="image/*">
+        <input class="input" type="file" name="photo_profil_file" accept="image/*" style="grid-column:span 2;">
         
         <label style="grid-column:1/-1;">Bio (max 300 caractères)</label>
         <textarea class="input" name="bio" placeholder="Bio" style="grid-column:1/-1;min-height:96px;" maxlength="300" oninput="updateCharCount(this)"><?= e($me['bio'] ?? '') ?></textarea>
@@ -120,6 +119,5 @@ if (bioTextarea) {
 }
 </script>
 <?php include 'includes/flash_toast.php'; ?>
-<?php  ?>
 </body>
 </html>

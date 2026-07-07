@@ -68,8 +68,7 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
             <input class="input" name="adresse_ville" value="<?= e($me['adresse_ville'] ?? '') ?>" placeholder="Ville">
             <input class="input" name="adresse_code_postal" value="<?= e($me['adresse_code_postal'] ?? '') ?>" placeholder="Code postal">
             <input class="input" name="adresse_pays" value="<?= e($me['adresse_pays'] ?? '') ?>" placeholder="Pays">
-            <input class="input" name="photo_profil" value="<?= e($me['photo_profil'] ?? '') ?>" placeholder="URL photo">
-            <input class="input" type="file" name="photo_profil_file" accept="image/*">
+            <input class="input" type="file" name="photo_profil_file" accept="image/*" style="grid-column:span 2;">
             <textarea class="input" name="bio" rows="4" placeholder="Bio" style="grid-column:span 2;"><?= e($me['bio'] ?? '') ?></textarea>
             <div class="row-actions" style="grid-column:span 2;">
                 <button class="btn-primary" type="submit">💾 Enregistrer</button>
@@ -78,6 +77,5 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
     </section>
 </main>
 <?php include 'includes/flash_toast.php'; ?>
-<?php  ?>
 </body>
 </html>

@@ -65,7 +65,7 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
             <tr><th>Bio</th><td><?= e($me['bio'] ?? '') ?></td></tr>
         </tbody></table>
         <h2 style="margin-top:16px;">Modifier mon profil</h2>
-        <form method="POST" enctype="multipart/form-data" class="row-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+        <form method="POST" enctype="multipart/form-data" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
             <input type="hidden" name="update_profile" value="1">
             <input class="input" name="pseudo" value="<?= e($me['pseudo'] ?? '') ?>" placeholder="Pseudo">
             <input class="input" name="prenom" value="<?= e($me['prenom'] ?? '') ?>" placeholder="Prénom">
@@ -75,13 +75,11 @@ $me = callAPI('GET', '/me', $_SESSION['token'])['data'] ?? [];
             <input class="input" name="adresse_ville" value="<?= e($me['adresse_ville'] ?? '') ?>" placeholder="Ville">
             <input class="input" name="adresse_code_postal" value="<?= e($me['adresse_code_postal'] ?? '') ?>" placeholder="Code postal">
             <input class="input" name="adresse_pays" value="<?= e($me['adresse_pays'] ?? '') ?>" placeholder="Pays">
-            <input class="input" name="photo_profil" value="<?= e($me['photo_profil'] ?? '') ?>" placeholder="URL photo">
-            <input class="input" type="file" name="photo_profil_file" accept="image/*">
+            <input class="input" type="file" name="photo_profil_file" accept="image/*" style="grid-column:span 2;">
             <textarea class="input" name="bio" placeholder="Bio" style="grid-column:1/-1;min-height:96px;"><?= e($me['bio'] ?? '') ?></textarea>
             <button class="btn-primary" type="submit" style="grid-column:1/-1;">💾 Enregistrer</button>
         </form>
     </section>
 </main>
-<?php  ?>
 </body>
 </html>
