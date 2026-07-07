@@ -63,6 +63,8 @@ services:
       - db
     networks:
       - upcycle-net
+    volumes:
+      - ./uploads:/app/uploads   
 
 networks:
   upcycle-net:
