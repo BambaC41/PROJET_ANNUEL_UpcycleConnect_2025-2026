@@ -595,7 +595,17 @@ CREATE TABLE IF NOT EXISTS unread_messages (
     FOREIGN KEY (conversation_id) REFERENCES conversation(id_conversation) ON DELETE CASCADE,
     UNIQUE KEY uk_unread_user_conversation (user_id, conversation_id)
 ) ENGINE=InnoDB;
-
+CREATE TABLE IF NOT EXISTS password_reset (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    expires_at DATETIME NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES utilisateur(id_user) ON DELETE CASCADE,
+    INDEX idx_token (token),
+    INDEX idx_user (user_id)
+) ENGINE=InnoDB;
 UPDATE forum_topics SET posts_count = 5 WHERE id_topic = 1;
 UPDATE forum_topics SET posts_count = 3 WHERE id_topic = 2;
 UPDATE forum_topics SET posts_count = 8 WHERE id_topic = 3;
