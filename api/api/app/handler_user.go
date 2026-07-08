@@ -372,15 +372,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// 🔥 SUPPRESSION DU BLOC QUI BLOQUAIT LES PROS NON APPROUVÉS
-	// if user.RoleID == RolePro && !user.IsApproved {
-	//     w.Header().Set("Content-Type", "application/json")
-	//     w.WriteHeader(http.StatusForbidden)
-	//     json.NewEncoder(w).Encode(map[string]string{
-	//         "error": "pro account pending admin approval",
-	//     })
-	//     return
-	// }
+
 
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := &Claims{
