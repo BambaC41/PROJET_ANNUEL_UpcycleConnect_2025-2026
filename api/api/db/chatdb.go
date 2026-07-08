@@ -39,7 +39,7 @@ func GetOrCreateConversation(user1ID, user2ID int) (int, error) {
 }
 
 func CreateMessage(convID, senderID int, content, filePath, fileName string) (int, error) {
-	// Vérifier que la conversation existe et que l'utilisateur en fait partie
+
 	var count int
 	err := DB.QueryRow(`
 		SELECT COUNT(*) FROM conversation 
