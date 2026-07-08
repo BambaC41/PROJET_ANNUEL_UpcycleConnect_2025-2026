@@ -157,11 +157,10 @@
     color: #2e7d32;
 }
 
-/* Supprimer les styles AlterNext s'ils existent */
 .alternex-logo, .alternex-header {
     display: none !important;
 }
-/* Forum styles pour pro-page */
+
 .forum-hub-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -246,7 +245,7 @@
         gap: 8px;
     }
 }
-/* Modal styles */
+
 .modal-event {
     display: none;
     position: fixed;
