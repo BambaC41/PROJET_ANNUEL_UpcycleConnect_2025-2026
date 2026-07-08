@@ -2,7 +2,7 @@
   --emp-accent:#2196f3;
 }
 
-/* ========== PAGE & SHELL ========== */
+
 .employee-page {
   background: #f5f7fa;
 }
@@ -13,7 +13,6 @@
   padding: 20px;
 }
 
-/* ========== KPIs ========== */
 .emp-kpis{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
@@ -42,7 +41,6 @@
 .emp-kpi .k{ font-size:12px; color:#666; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
 .emp-kpi .v{ font-size:28px; font-weight:800; margin-top:8px; color:#2196f3; }
 
-/* ========== GRID & CARDS ========== */
 .emp-grid{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -67,7 +65,7 @@
 .emp-card p{ margin:0 0 16px; color:#666; font-size:13px; line-height:1.5; }
 .emp-card a { text-decoration: none; }
 
-/* ========== TABLES ========== */
+
 .employee-table {
   width: 100%;
   border-collapse: collapse;
@@ -98,7 +96,7 @@
   background: #f8f9fa;
 }
 
-/* ========== FORMULAIRES ========== */
+
 .employee-form {
   display: grid;
   gap: 12px;
@@ -146,7 +144,6 @@
   box-shadow: 0 0 0 3px rgba(33,150,243,0.1);
 }
 
-/* ========== BADGES ========== */
 .badge-status {
   display: inline-block;
   padding: 4px 10px;
@@ -181,7 +178,6 @@
   color: #0c5460;
 }
 
-/* ========== BOUTONS ========== */
 .btn-employee {
   display: inline-block;
   padding: 8px 16px;
@@ -223,7 +219,6 @@
   background: #d32f2f;
 }
 
-/* ========== PLANNING ========== */
 .employee-calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -260,7 +255,6 @@
   text-overflow: ellipsis;
 }
 
-/* ========== LISTES ========== */
 .employee-items {
   display: grid;
   gap: 12px;
@@ -300,7 +294,6 @@
   margin-left: 12px;
 }
 
-/* ========== EMPTY STATE ========== */
 .employee-empty {
   text-align: center;
   padding: 40px 20px;
@@ -317,7 +310,6 @@
   margin: 0;
 }
 
-/* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
   .employee-form-row {
     grid-template-columns: 1fr;
