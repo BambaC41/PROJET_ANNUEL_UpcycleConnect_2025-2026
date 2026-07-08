@@ -6,14 +6,11 @@ if (!isset($_SESSION['token'])) {
 }
 
 require_once 'includes/functions/events.php';
-require_once 'includes/functions/prestations.php'; // Pour récupérer la liste des prestations
+require_once 'includes/functions/prestations.php';
 
 $msg_success = "";
 $msg_error = "";
 
-// --- ACTIONS (Create, Update, Delete) ---
-
-// 1. Suppression
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $res = api_delete_event($_SESSION['token'], $_GET['id']);
     if ($res['status'] === 200 || $res['status'] === 204) {
@@ -24,9 +21,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
     }
 }
 
-// 2. Création et Modification
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // On formate la date renvoyée par le formulaire HTML (YYYY-MM-DDTHH:MM) vers le format API (YYYY-MM-DD HH:MM:SS)
     $date_debut = date('Y-m-d H:i:s', strtotime($_POST['date_debut']));
     $date_fin = date('Y-m-d H:i:s', strtotime($_POST['date_fin']));
 
@@ -60,11 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// --- RECUPERATION DONNEES ---
 $events = api_get_events($_SESSION['token']);
 $prestations = api_get_prestations($_SESSION['token']);
 
-// On mappe les prestations pour retrouver facilement le titre à partir de l'ID_prestation
 $prestationsMap = [];
 foreach ($prestations as $p) {
     if (isset($p['id'])) {
@@ -87,7 +80,6 @@ foreach ($prestations as $p) {
             <button type="button" class="btn-primary" onclick="openCreateModal()">Ajouter un événement</button>
         </div>
 
-        <!-- Feedback Messages -->
         <?php if ($msg_error): ?><p class="error" style="text-align: center;"><?= htmlspecialchars($msg_error) ?></p><?php endif; ?>
         <?php if (isset($_GET['msg'])): ?>
             <?php if($_GET['msg'] == 'created'): ?><p class="pill pill-green" style="display:block; text-align:center;">Événement créé avec succès.</p><?php endif; ?>
@@ -95,7 +87,6 @@ foreach ($prestations as $p) {
             <?php if($_GET['msg'] == 'deleted'): ?><p class="pill pill-green" style="display:block; text-align:center;">Événement supprimé.</p><?php endif; ?>
         <?php endif; ?>
 
-        <!-- Table -->
         <section class="admin-section">
             <table class="admin-table">
                 <thead>
@@ -151,7 +142,6 @@ foreach ($prestations as $p) {
     </section>
 </main>
 
-<!-- MODAL CREATE / EDIT -->
 <div id="eventModal" class="modal-overlay">
     <div class="modal-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
