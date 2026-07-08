@@ -50,9 +50,7 @@ $role = (int)($_SESSION['role_id'] ?? 0);
 </head>
 <body class="pro-page">
 <?php
-// Choix du header/navigation en fonction du rôle
 if ($role === 1) {
-    // Admin : on utilise le header admin (qui contient le sidebar)
     include __DIR__ . '/includes/header.php';
 } elseif ($role === 3) {
     include __DIR__ . '/includes/pro_nav.php';
@@ -127,7 +125,6 @@ if ($role === 1) {
             <button class="modal-close" onclick="closeNotificationModal()">&times;</button>
         </div>
         <div class="modal-body" id="notifModalBody">
-            <!-- Contenu dynamique -->
         </div>
     </div>
 </div>
