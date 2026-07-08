@@ -7,7 +7,7 @@ if ($id_annonce <= 0) {
     exit;
 }
 
-// Récupérer l'annonce pour vérifier les droits
+
 $response = api_get_annonce($id_annonce);
 $annonce = $response['data'] ?? null;
 
@@ -18,7 +18,7 @@ if (!$annonce || ($annonce['id_user'] ?? 0) != ($_SESSION['user_id'] ?? 0)) {
     exit;
 }
 
-// Vérifier qu'elle n'est pas validée
+
 if (($annonce['statut'] ?? '') === 'validee') {
     $_SESSION['flash_message'] = '❌ Une annonce validée ne peut pas être supprimée.';
     $_SESSION['flash_type'] = 'error';
