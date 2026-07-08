@@ -12,9 +12,6 @@ $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 25;
 $viewId = (int)($_GET['view'] ?? 0);
 
-// ============================================
-// TRAITEMENT DES ACTIONS
-// ============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['toggle_conseil_id'])) {
         $id = (int)$_POST['toggle_conseil_id'];
@@ -78,9 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// ============================================
-// RÉCUPÉRATION DES CONSEILS
-// ============================================
 $conseils = (array)db_safe_exec(function (PDO $pdo) use ($q, $status, $author, $dateFrom, $dateTo, $page, $perPage) {
     $sql = "SELECT c.*, COALESCE(u.pseudo, CONCAT('User #', c.id_auteur)) AS auteur_pseudo, u.email 
             FROM conseil c
