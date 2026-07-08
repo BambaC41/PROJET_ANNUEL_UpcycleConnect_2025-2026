@@ -2383,7 +2383,7 @@ func UpdateUser(id int, req model.UpdateUserRequest, passwordHash string) error 
 		return errors.New("user not found")
 	}
 
-	// Construire la requête dynamiquement
+	
 	setParts := []string{}
 	args := []any{}
 
