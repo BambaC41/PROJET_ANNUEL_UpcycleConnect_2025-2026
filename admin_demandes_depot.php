@@ -6,7 +6,6 @@ require_once 'includes/functions/conteneur.php';
 require_once 'includes/functions/qr.php';
 require_once 'includes/notifications.php';
 
-// VALIDATION D'UNE DEMANDE AVEC GENERATION DE CODE BARRE EAN-13
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['validate_demande_id'])) {
     $demandeId = (int)$_POST['validate_demande_id'];
     
@@ -194,7 +193,6 @@ function displayEAN13Barcode($code) {
 <main class="pro-shell page-shell">
     <?php include 'includes/flash_toast.php'; ?>
     
-    <!-- Navigation entre les deux pages -->
     <div class="nav-links">
         <a href="admin_conteneurs.php" class="nav-link">📦 Conteneurs</a>
         <a href="admin_demandes_depot.php" class="nav-link active">📋 Demandes de depot</a>
