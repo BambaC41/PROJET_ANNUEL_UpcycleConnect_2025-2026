@@ -1,21 +1,18 @@
 <?php
 require_once __DIR__ . '/functions/local_db.php';
-require_once __DIR__ . '/functions/onesignal.php'; // Ajout OneSignal
+require_once __DIR__ . '/functions/onesignal.php';
 
 function notif_create(int $userId, string $type, string $title, string $content): bool
 {
-    // 1. Enregistrer la notification en base
     $result = (bool)db_safe_exec(function (PDO $pdo) use ($userId, $type, $title, $content) {
         $sql = 'INSERT INTO notification (id_user, type, titre, contenu, is_read, created_at) VALUES (?, ?, ?, ?, 0, NOW())';
         $stmt = $pdo->prepare($sql);
         return $stmt->execute([$userId, $type, $title, $content]);
     }, false);
     
-    // 2. Envoyer une notification push OneSignal selon le type d'événement
     if ($result) {
         $role = getUserRoleById($userId);
         
-        // Règles d'envoi (personnalisable)
         $shouldSend = false;
         
         switch ($type) {
@@ -23,23 +20,19 @@ function notif_create(int $userId, string $type, string $title, string $content)
             case 'depot_valide':
             case 'code_acces':
             case 'paiement_recu':
-                // Pour les pros uniquement (exigence du sujet)
                 $shouldSend = ($role === 3);
                 break;
                 
             case 'evenement_a_valider':
             case 'signalement_forum':
-                // Pour les admins (rôle 1) et salariés modérateurs (rôle 4)
                 $shouldSend = ($role === 1 || $role === 4);
                 break;
                 
             case 'nouvel_abonne':
-                // Pour les admins uniquement
                 $shouldSend = ($role === 1);
                 break;
                 
             default:
-                // Par défaut : pros et admins
                 $shouldSend = ($role === 3 || $role === 1);
                 break;
         }
@@ -51,7 +44,6 @@ function notif_create(int $userId, string $type, string $title, string $content)
     
     return $result;
 }
-
 
 function notif_unread_count(int $userId): int
 {
@@ -90,7 +82,6 @@ function notif_mark_all_read(int $userId): bool
     }, false);
 }
 
-/** Notify all users having one of the given role ids (e.g. admin=1). */
 function notif_notify_roles(array $roleIds, string $type, string $title, string $content): void
 {
     $roleIds = array_values(array_filter(array_map('intval', $roleIds), static fn($v) => $v > 0));
@@ -106,7 +97,6 @@ function notif_notify_roles(array $roleIds, string $type, string $title, string 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $ins->execute([(int)$row['id_user'], $type, $title, $content]);
             
-            // Ajout OneSignal pour les rôles concernés (pro et admin)
             if ($row['id_role'] === 3 || $row['id_role'] === 1) {
                 envoyerNotificationOneSignal($row['id_user'], $title, $content, ['type' => $type]);
             }
@@ -114,10 +104,6 @@ function notif_notify_roles(array $roleIds, string $type, string $title, string 
     }, null);
 }
 
-/**
- * Récupère le rôle d'un utilisateur par son ID
- * À adapter selon ta base de données
- */
 function getUserRoleById(int $userId): ?int
 {
     return (int)db_safe_exec(function (PDO $pdo) use ($userId) {
