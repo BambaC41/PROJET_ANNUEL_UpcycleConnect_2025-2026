@@ -1,8 +1,4 @@
-/* ============================================================
-   ADMIN GLOBAL - Styles de base partagés
-   ============================================================ */
 
-/* --- Conteneurs et sections --- */
 .admin-section,
 .admin-shell {
     max-width: 1400px;
@@ -19,7 +15,7 @@
     border: 1px solid #e5e7eb;
 }
 
-/* --- Cartes de statistiques --- */
+
 .stats-cards,
 .stats-grid,
 .stats-bar,
@@ -86,7 +82,6 @@
     color: #2e7d32;
 }
 
-/* --- Grilles d'actions / cartes --- */
 .actions-grid,
 .offers-grid,
 .events-grid,
@@ -158,7 +153,6 @@
     font-weight: 600;
 }
 
-/* --- En-têtes et bannières --- */
 .welcome-banner {
     background: linear-gradient(135deg, #2e7d32 0%, #4caf50 100%);
     border-radius: 20px;
@@ -203,7 +197,6 @@
     margin: 0;
 }
 
-/* --- Notification dropdown --- */
 .notif-dropdown {
     position: relative;
     display: inline-block;
@@ -312,7 +305,7 @@
     font-size: 13px;
 }
 
-/* --- Filtres --- */
+
 .filter-bar {
     display: flex;
     gap: 12px;
@@ -341,7 +334,7 @@
     background: #e0e0e0;
 }
 
-/* --- Tableaux --- */
+
 .table-responsive {
     overflow-x: auto;
 }
@@ -375,7 +368,6 @@
     font-weight: 600;
 }
 
-/* --- Badges de statut --- */
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -413,7 +405,7 @@
 .badge-hidden { background: #f44336; color: white; }
 .badge-visible { background: #4caf50; color: white; }
 
-/* --- Boutons --- */
+
 .btn-sm {
     padding: 6px 14px;
     font-size: 12px;
@@ -575,7 +567,7 @@
 .btn-modal-secondary { background: #9e9e9e; color: white; }
 .btn-modal-secondary:hover { background: #757575; }
 
-/* --- Champs de formulaire --- */
+
 .input {
     padding: 8px 12px;
     border: 1px solid #ddd;
@@ -594,7 +586,6 @@
     width: 250px;
 }
 
-/* --- Lignes d'actions --- */
 .row-actions {
     display: flex;
     gap: 8px;
@@ -602,7 +593,7 @@
     align-items: center;
 }
 
-/* --- États vides --- */
+
 .empty-state {
     text-align: center;
     padding: 60px;
@@ -613,7 +604,7 @@
 .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
 .empty-state h3 { margin: 0 0 8px 0; }
 
-/* --- Modals --- */
+
 .modal,
 .modal-event-zoom,
 .modal-transaction {
@@ -727,7 +718,7 @@
     word-break: break-word;
 }
 
-/* --- Événements (cards spécifiques) --- */
+
 .event-card-image {
     width: 100%;
     height: 160px;
@@ -775,7 +766,6 @@
     border-top: 1px solid #eee;
 }
 
-/* --- Modal événement spécifique --- */
 .modal-event-close {
     position: absolute;
     top: 12px;
@@ -842,7 +832,7 @@
     margin-bottom: 10px;
 }
 
-/* --- Audits --- */
+
 .audit-table {
     width: 100%;
     border-collapse: collapse;
@@ -877,7 +867,6 @@
     color: #1565c0;
 }
 
-/* --- Conseils --- */
 .conseil-preview-img {
     width: 50px;
     height: 50px;
@@ -893,7 +882,6 @@
     background: #f0f2f5;
 }
 
-/* --- Catalogue --- */
 .pro-kpis {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -937,7 +925,7 @@
     margin: 12px 0;
 }
 
-/* --- Rapports forum --- */
+
 .report-card {
     background: white;
     border-radius: 12px;
@@ -999,7 +987,6 @@
     border-top: 1px solid #e5e7eb;
 }
 
-/* --- Messages forum (modération centralisée) --- */
 .message-card {
     background: white;
     border-radius: 12px;
@@ -1079,7 +1066,6 @@
     margin-left: 8px;
 }
 
-/* --- Auteur info (annonces) --- */
 .auteur-info {
     font-size: 12px;
     color: #555;
@@ -1090,7 +1076,6 @@
     font-size: 11px;
 }
 
-/* --- Navigation entre pages (conteneurs/demandes) --- */
 .nav-links {
     display: flex;
     gap: 15px;
@@ -1113,7 +1098,6 @@
     background: #e0e0e0;
 }
 
-/* --- Journal de modération (affichage/masquage) --- */
 .logs-section {
     display: none;
     margin-top: 30px;
@@ -1129,7 +1113,6 @@
     margin-top: 30px;
 }
 
-/* --- Boîtes d'alerte --- */
 .warning-box {
     background: #fef3c7;
     border-left: 4px solid #ff9800;
@@ -1153,8 +1136,6 @@
     border-radius: 8px;
     margin-bottom: 20px;
 }
-
-/* --- Autocomplete suggestions (recherche forum) --- */
 .search-container {
     position: relative;
     flex: 1;
@@ -1196,7 +1177,6 @@
     background: white;
 }
 
-/* --- Divers --- */
 .text-muted,
 .muted {
     color: #999;
@@ -1213,7 +1193,6 @@
     padding: 24px 20px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .stats-cards,
     .stats-grid,
@@ -1255,9 +1234,6 @@
     }
 }
 
-/* ============================================================
-   SPÉCIFIQUE ANNONCES (particulier, pro)
-   ============================================================ */
 .annonce-image {
     width: 100%;
     height: 160px;
@@ -1298,9 +1274,6 @@
     font-size: 11px;
 }
 
-/* ============================================================
-   SPÉCIFIQUE AUDIT
-   ============================================================ */
 .audit-table {
     width: 100%;
     border-collapse: collapse;
@@ -1326,9 +1299,7 @@
     width: 250px;
 }
 
-/* ============================================================
-   SPÉCIFIQUE FORMULAIRES
-   ============================================================ */
+
 .form-section,
 .edit-section {
     margin-bottom: 30px;
@@ -1343,9 +1314,6 @@
     grid-column: 1 / -1;
 }
 
-/* ============================================================
-   SPÉCIFIQUE CONSEIL (détail)
-   ============================================================ */
 .detail-card {
     background: #f8fafc;
     border-radius: 12px;
@@ -1364,9 +1332,7 @@
     padding: 40px;
 }
 
-/* ============================================================
-   ADMIN_USERS / ANNONCE_DETAIL / CONSEIL_DETAIL / FORUM
-   ============================================================ */
+
 .card-section {
     background: white;
     border-radius: 20px;
@@ -1730,9 +1696,6 @@
     margin-top: 24px;
 }
 
-/* ============================================================
-   PARTICULIERS / PRO / SALARIÉS (compteurs, badges, modales)
-   ============================================================ */
 .char-counter {
     font-size: 11px;
     color: #666;
@@ -2248,9 +2211,6 @@
     }
 }
 
-/* ============================================================
-   SALARIÉS / PRO / CRÉATION
-   ============================================================ */
 .stats-row-mini {
     display: flex;
     gap: 12px;
@@ -3578,9 +3538,6 @@
     }
 }
 
-/* ============================================================
-   ADMIN_ANNONCES_ALL
-   ============================================================ */
 .stats-mini {
     display: flex;
     gap: 16px;
@@ -3797,9 +3754,6 @@
     }
 }
 
-/* ============================================================
-   PRO_NON_APPROUVE_CHAT
-   ============================================================ */
 .pending-header {
     background: #1a1a2e;
     color: white;
@@ -3864,9 +3818,7 @@
 .status-en_attente { background: #fff3e0; color: #ef6c00; }
 .status-rejetee { background: #fee2e2; color: #dc2626; }
 .chart-container { background: white; border-radius: 16px; padding: 20px; margin-bottom: 24px; }
-/* ============================================================
-   PAGINATION (admin_annonces_all)
-   ============================================================ */
+
 .pagination {
     display: flex;
     gap: 8px;
@@ -3899,9 +3851,6 @@
     text-align: center;
 }
 
-/* ============================================================
-   USER_WARNINGS
-   ============================================================ */
 .warning-card {
     background: #fef3c7;
     border-left: 4px solid #ff9800;
