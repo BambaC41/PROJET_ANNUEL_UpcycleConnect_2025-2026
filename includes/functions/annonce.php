@@ -2,10 +2,6 @@
 
 require_once __DIR__ . '/api_core.php';
 
-// ============================================
-// FONCTIONS API ANNONCES
-// ============================================
-
 function api_get_annonces() {
     return api_get('/annonces');
 }
@@ -38,7 +34,5 @@ function api_moderate_annonce($id, $statut) {
     return api_put('/annonces/' . (int)$id . '/validate', ['statut' => $statut], true);
 }
 
-// formatPriceEur() et formatDateFr() sont déjà dans particulier_bootstrap.php
-// Ne pas les redéclarer ici
 
 ?>
