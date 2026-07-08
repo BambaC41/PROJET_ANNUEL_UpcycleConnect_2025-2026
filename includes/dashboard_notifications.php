@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-/** @var int $dash_uid */
+
 if (!isset($dash_uid) || $dash_uid <= 0) {
     return;
 }
