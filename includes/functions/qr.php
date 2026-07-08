@@ -2,9 +2,7 @@
 
 require_once __DIR__ . '/../third_party/qrcode_arase.php';
 
-/**
- * Returns raw SVG markup for a scannable QR (local generator, MIT).
- */
+
 function qr_svg_string(string $value): string
 {
     $value = trim($value);
