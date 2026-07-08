@@ -197,7 +197,6 @@ footer {
   font-size: 14px;
 }
 
-/* tes boutons étaient des <button>, là on utilise aussi des <a> */
 .btn-primary,
 .btn-secondary,
 .btn-outline {
@@ -210,7 +209,6 @@ footer {
   font-size: 14px;
 }
 
-/* améliore le rendu des <a> dans le header */
 .auth-buttons {
   display: flex;
   gap: 10px;
@@ -235,7 +233,6 @@ footer {
   }
 }
 
-/* user box quand connecté */
 .user-box {
   display: flex;
   align-items: center;
@@ -311,7 +308,7 @@ footer {
   display: grid;
   gap: 16px;
   grid-template-columns: 1fr 1fr;
-  align-items: start; /* IMPORTANT */
+  align-items: start;
 }
 
 .error {
@@ -326,9 +323,8 @@ footer {
   gap: 6px;
 }
 
-/* ===== Animations boutons (global) ===== */
 
-/* Cible : tous les boutons + tous les liens qui ressemblent à des boutons */
+
 button,
 a.btn-primary,
 a.btn-secondary,
@@ -342,7 +338,7 @@ a.btn-outline,
   will-change: transform;
 }
 
-/* Hover : léger lift */
+
 button:hover,
 a.btn-primary:hover,
 a.btn-secondary:hover,
@@ -353,7 +349,7 @@ a.btn-outline:hover,
   filter: brightness(1.02);
 }
 
-/* Active : press */
+
 button:active,
 a.btn-primary:active,
 a.btn-secondary:active,
@@ -363,7 +359,7 @@ a.btn-outline:active,
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
-/* Focus : halo accessible */
+
 button:focus-visible,
 a.btn-primary:focus-visible,
 a.btn-secondary:focus-visible,
@@ -375,7 +371,7 @@ a.btn-outline:focus-visible,
     0 10px 22px rgba(0, 0, 0, 0.1);
 }
 
-/* Respect accessibilité : si l’utilisateur préfère moins d’animations */
+
 @media (prefers-reduced-motion: reduce) {
   button,
   a.btn-primary,
@@ -394,7 +390,6 @@ a.btn-outline:focus-visible,
   }
 }
 
-/* ===== Animations liens du menu (header nav) ===== */
 
 .navbar nav a {
   position: relative;
@@ -406,26 +401,24 @@ a.btn-outline:focus-visible,
     box-shadow 160ms ease;
 }
 
-/* Hover : léger lift + fond doux */
+
 .navbar nav a:hover {
   transform: translateY(-2px);
   background-color: rgba(22, 163, 74, 0.08);
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.06);
 }
 
-/* Active : press */
 .navbar nav a:active {
   transform: translateY(0px) scale(0.98);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Focus clavier */
 .navbar nav a:focus-visible {
   outline: none;
   box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2);
 }
 
-/* ===== Dashboard (Pro) ===== */
+
 
 .dash {
   display: grid;
@@ -436,7 +429,7 @@ a.btn-outline:focus-visible,
 
 .dash-sidebar {
   position: sticky;
-  top: 110px; /* sous le header fixed */
+  top: 110px;
   height: fit-content;
   background: white;
   border-radius: 14px;
@@ -668,7 +661,6 @@ a.btn-outline:focus-visible,
   padding: 10px 2px;
 }
 
-/* Responsive */
 @media (max-width: 1100px) {
   .dash {
     grid-template-columns: 1fr;
@@ -692,7 +684,6 @@ a.btn-outline:focus-visible,
   }
 }
 
-/* ===== Mini calendrier (salariés) ===== */
 .calendar {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -724,7 +715,6 @@ a.btn-outline:focus-visible,
   background: rgba(17, 24, 39, 0.06);
 }
 
-/* ===== ADMIN LAYOUT ===== */
 
 .admin-layout {
   display: grid;
@@ -810,7 +800,7 @@ a.btn-outline:focus-visible,
   }
 }
 
-/* ===== Form block & textarea ===== */
+
 .form-block {
   display: flex;
   flex-direction: column;
@@ -822,7 +812,7 @@ a.btn-outline:focus-visible,
   min-height: 110px;
 }
 
-/* ===== Tutoriel overlay (bloque l'utilisateur) ===== */
+
 .tour-overlay {
   position: fixed;
   inset: 0;
@@ -867,8 +857,6 @@ a.btn-outline:focus-visible,
   opacity: 0.85;
   max-width: 620px;
 }
-
-/* ===== MENU DÉROULANT (DROPDOWN) ===== */
 .dropdown {
   position: relative;
   display: inline-block;
@@ -931,7 +919,7 @@ a.btn-outline:focus-visible,
   display: block;
 }
 
-/* ===== MODAL (POPUP) ===== */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -965,7 +953,7 @@ a.btn-outline:focus-visible,
   transform: translateY(0);
 }
 
-/* --- Page layout helpers (soutenance / espaces role) --- */
+
 .page-shell,
 .page-container {
   max-width: 1400px;
