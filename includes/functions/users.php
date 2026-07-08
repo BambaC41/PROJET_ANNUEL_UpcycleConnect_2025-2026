@@ -1,7 +1,5 @@
 <?php
-// ===== FONCTIONS POUR MOT DE PASSE OUBLIÉ =====
-// Ces fonctions utilisent directement la base de données (PDO)
-// et ne sont pas déclarées ailleurs.
+
 
 function find_user_by_email(string $email): ?array
 {
@@ -24,7 +22,7 @@ function find_user_by_id(int $id): ?array
 function create_password_reset_token(int $userId, int $expiryHours = 1): string
 {
     $pdo = get_db_connection();
-    // Supprimer les anciens tokens
+    
     $stmt = $pdo->prepare("DELETE FROM password_reset WHERE user_id = ?");
     $stmt->execute([$userId]);
 
