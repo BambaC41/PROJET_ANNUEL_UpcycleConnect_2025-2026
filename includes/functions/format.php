@@ -1,5 +1,4 @@
 <?php
-// includes/functions/format.php
 
 if (!function_exists('formatPriceEur')) {
     function formatPriceEur(float $price): string
