@@ -1,4 +1,4 @@
-/* Header styles - Version propre sans AlterNext */
+
 
 header {
     background: white;
@@ -20,7 +20,6 @@ header {
     gap: 16px;
 }
 
-/* Logo */
 .logo a {
     display: flex;
     align-items: center;
@@ -50,7 +49,6 @@ header {
     color: #2e7d32;
 }
 
-/* Navigation */
 .main-nav ul {
     display: flex;
     list-style: none;
@@ -76,7 +74,7 @@ header {
     color: #2e7d32;
 }
 
-/* Header actions */
+
 .header-actions {
     display: flex;
     align-items: center;
@@ -98,7 +96,7 @@ header {
     font-size: 14px;
 }
 
-/* Boutons */
+
 .logout-btn {
     background: #fee2e2;
     color: #dc2626;
@@ -147,7 +145,7 @@ header {
     transform: translateY(-1px);
 }
 
-/* Responsive */
+
 @media (max-width: 1024px) {
     .header-container {
         flex-direction: column;
