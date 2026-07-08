@@ -64,7 +64,6 @@ function toast_redirect(string $url, string $type, string $message): void
     exit;
 }
 
-// Fonction pour récupérer la connexion PDO
 if (!function_exists('getDbConnection')) {
     function getDbConnection(): PDO {
         $host = 'localhost';
