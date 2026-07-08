@@ -10,9 +10,6 @@ function api_get_conseil($id) {
     return api_get('/conseils/' . (int)$id);
 }
 
-/**
- * @param array<string,scalar> $query
- */
 function api_get_conseils_admin(array $query = []) {
     $endpoint = '/admin/conseils';
     if ($query !== []) {
@@ -37,10 +34,7 @@ function api_delete_conseil($id) {
     return api_delete('/conseils/' . (int)$id, true);
 }
 
-/**
- * @param array<string,mixed> $response
- * @return list<array<string,mixed>>
- */
+
 function conseils_admin_items_from_response(array $response): array
 {
     $data = $response['data'] ?? null;
@@ -53,9 +47,7 @@ function conseils_admin_items_from_response(array $response): array
     return $data;
 }
 
-/**
- * @param array<string,mixed> $response
- */
+
 function conseils_admin_total_from_response(array $response): int
 {
     $data = $response['data'] ?? null;
@@ -65,10 +57,7 @@ function conseils_admin_total_from_response(array $response): int
     return count(conseils_admin_items_from_response($response));
 }
 
-/**
- * @param list<array<string,mixed>> $apiItems
- * @return list<array<string,mixed>>
- */
+
 function salarie_conseils_merge_local(array $apiItems, int $userId): array
 {
     require_once __DIR__ . '/local_db.php';
