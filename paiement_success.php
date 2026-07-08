@@ -38,7 +38,6 @@ if ($sessionId) {
                 $annonceId = $matches[0];
             }
             
-            // Achat d'annonce + commission
             if (!empty($annonceId) && !str_contains($ptype, 'Commission')) {
                 $annonce = db_safe_exec(function(PDO $pdo) use ($annonceId) {
                     $stmt = $pdo->prepare("
@@ -81,7 +80,6 @@ if ($sessionId) {
                 }
             }
             
-            // Paiement de commission
             if (!empty($annonceId) && str_contains($ptype, 'Commission')) {
                 db_safe_exec(function(PDO $pdo) use ($annonceId, $amount, $userId, $sessionId, $metadata) {
                     $pdo->prepare("UPDATE commissions SET statut = 'paid', paid_at = NOW() WHERE annonce_id = ?")->execute([$annonceId]);
@@ -94,7 +92,6 @@ if ($sessionId) {
                 error_log("💰 Commission payée pour l'annonce $annonceId");
             }
             
-            // Abonnement Premium
             if (str_contains($ptype, 'Abonnement') || ($metadata['type'] ?? '') === 'abonnement') {
                 $formule = $metadata['formule'] ?? 'monthly';
                 $formuleDb = $formule === 'monthly' ? 'premium_mensuel' : 'premium_annuel';
