@@ -27,17 +27,6 @@ function api_delete_event($token, $id) {
     return callAPI('DELETE', '/events/' . $id, $token);
 }
 
-/**
- * Ajoute les sessions créées en local (id_createur) absentes de la réponse API.
- *
- * @param list<array<string,mixed>> $apiEvents
- * @return list<array<string,mixed>>
- */
-/**
- * Événements du salarié connecté (API /me/events + sessions locales orphelines).
- *
- * @return list<array<string,mixed>>
- */
 function salarie_events_for_user(string $token, int $userId): array
 {
     return salarie_events_merge_local(api_get_my_events($token), $userId);
