@@ -1,6 +1,6 @@
 <?php
 
-// Charger les variables d'environnement depuis .env (api_core.php)
+
 require_once __DIR__ . '/api_core.php';
 
 function db_env(string $key, string $default = ''): string
@@ -77,7 +77,7 @@ function session_ensure_user_id(): int
     return 0;
 }
 
-// ✅ CORRECTION : cette fonction utilise maintenant les variables d'environnement
+
 function get_db_connection() {
     static $pdo = null;
     if ($pdo === null) {
