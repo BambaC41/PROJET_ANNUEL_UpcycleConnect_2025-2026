@@ -74,7 +74,6 @@ if ($full && $storageRoot && str_starts_with($full, $storageRoot) && is_file($fu
     $pdfBinary = pdf_simple_build((string)($doc['titre'] ?? 'Document'), $lines);
 }
 
-// Persist recovered / migrated PDF once when stored path was missing or not PDF
 if ($relative === '' || !str_ends_with(strtolower($relative), '.pdf')) {
     $storage = ensure_documents_storage();
     $filename = 'recovered_' . $id . '_' . time() . '.pdf';
