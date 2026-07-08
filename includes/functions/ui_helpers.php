@@ -1,5 +1,4 @@
 <?php
-// includes/ui_helpers.php - Fonctions utilitaires pour l'interface
 
 if (!function_exists('formatPriceEur')) {
     function formatPriceEur(float $price): string {
