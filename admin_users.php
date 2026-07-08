@@ -148,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['approve_pro_id'])) {
     exit;
 }
 
-// Récupération des utilisateurs
 $usersResponse = api_get_users($_SESSION['token']);
 $users = is_array($usersResponse['data'] ?? null) ? $usersResponse['data'] : [];
 
@@ -337,7 +336,6 @@ $users = array_values(array_filter($users, function($u) use ($q, $roleFilter, $a
     </div>
 </main>
 
-<!-- Modal pour changer le mot de passe -->
 <div id="passwordModal" class="modal-user" onclick="closePasswordModal()">
     <div class="modal-user-content" onclick="event.stopPropagation()">
         <span class="modal-close" onclick="closePasswordModal()">&times;</span>
