@@ -326,7 +326,7 @@ $cancelledEvents = count(array_filter($events, fn($e) => ($e['statut'] ?? '') ==
             <div class="modal-info-row"><div class="modal-info-label">👥 Capacité :</div><div class="modal-info-value" id="zoomCapacite"></div></div>
             <div class="modal-info-row"><div class="modal-info-label">📌 Statut :</div><div class="modal-info-value" id="zoomStatut"></div></div>
             <div class="modal-actions" id="modalActions">
-                <!-- Généré dynamiquement -->
+
             </div>
         </div>
         <div id="editMode" style="display:none; padding:24px; border-top:1px solid #eee;">
