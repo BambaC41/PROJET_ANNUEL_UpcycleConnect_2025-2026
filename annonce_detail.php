@@ -10,10 +10,8 @@ if ($id <= 0) {
     exit;
 }
 
-// Charger annonce depuis API ou BD locale
 $annonce = api_get_annonce($id)['data'] ?? null;
 
-// Fallback: chercher en base locale
 if (!$annonce) {
     $annonce = db_safe_exec(function(PDO $pdo) use ($id) {
         $stmt = $pdo->prepare('
@@ -37,7 +35,6 @@ if (!$annonce) {
     exit;
 }
 
-// Vérifier si disponible ou statut
 $isAvailable = ($annonce['statut'] ?? '') === 'validee' && empty($annonce['id_reserve_par']) && empty($annonce['id_acheteur']);
 $statusBadge = '';
 if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur'])) {
@@ -102,7 +99,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
             }
         }
     </style>
-    <!-- OneSignal Push Notifications -->
     <?php include 'includes/onesignal_head.php'; ?>
 </head>
 <body class="pro-page">
@@ -112,7 +108,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
         <a class="btn-outline" href="particulier_annonces.php" style="margin-bottom:16px;">← Retour</a>
         
         <div class="detail-container">
-            <!-- Image -->
             <div>
                 <?php if (!empty($annonce['photo_url'])): ?>
                     <img src="<?= e(vc_media_url($annonce['photo_url'])) ?>" 
@@ -125,7 +120,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
                 <?php endif; ?>
             </div>
 
-            <!-- Infos -->
             <div class="detail-info">
                 <div>
                     <h1 style="margin:0 0 8px 0;"><?= e($annonce['titre'] ?? '') ?></h1>
@@ -134,7 +128,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
                     </span>
                 </div>
 
-                <!-- Prix/Mode -->
                 <div style="border-top:1px solid #ddd; padding-top:14px;">
                     <strong><?= e(($annonce['mode'] ?? '') === 'vente' ? 'Prix' : 'Type') ?></strong>
                     <p style="margin:4px 0;">
@@ -149,13 +142,11 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
                     </p>
                 </div>
 
-                <!-- Description -->
                 <div>
                     <strong>Description</strong>
                     <p><?= e($annonce['description'] ?? '') ?></p>
                 </div>
 
-                <!-- Détails objet si disponible -->
                 <?php if (!empty($annonce['objet_titre'])): ?>
                     <div style="border-top:1px solid #ddd; padding-top:14px;">
                         <strong>Détails de l'objet</strong>
@@ -173,7 +164,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
                     </div>
                 <?php endif; ?>
 
-                <!-- Vendeur -->
                 <div class="seller-card">
                     <strong>Proposé par</strong>
                     <p style="margin:8px 0; font-size:14px;">
@@ -184,7 +174,6 @@ if (($annonce['statut'] ?? '') === 'validee' && !empty($annonce['id_acheteur']))
                     <?php endif; ?>
                 </div>
 
-                <!-- Dates -->
                 <div style="border-top:1px solid #ddd; padding-top:14px;">
                     <small style="color:#999;">
                         Publié le <?= e(formatDateFr($annonce['created_at'] ?? '')) ?>
