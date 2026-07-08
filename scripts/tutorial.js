@@ -1,6 +1,3 @@
-// scripts/tutorial.js
-// Tutoriel guidé pour le dashboard particulier
-
 const tourSteps = [
     {
         target: '.pro-kpis',
@@ -52,16 +49,13 @@ function startTour() {
     const element = document.querySelector(step.target);
     
     if (!element) {
-        // Passer l'étape si l'élément n'existe pas
         currentStep++;
         startTour();
         return;
     }
     
-    // Supprimer les overlays précédents
     removeHighlight();
     
-    // Créer l'overlay de fond
     const overlay = document.createElement('div');
     overlay.id = 'tour-overlay';
     overlay.style.cssText = `
@@ -74,7 +68,6 @@ function startTour() {
         z-index: 9998;
     `;
     
-    // Surligner l'élément
     const rect = element.getBoundingClientRect();
     const highlight = document.createElement('div');
     highlight.id = 'tour-highlight';
@@ -91,11 +84,9 @@ function startTour() {
         pointer-events: none;
     `;
     
-    // Créer la bulle d'information
     const bubble = document.createElement('div');
     bubble.id = 'tour-bubble';
     
-    // Calculer la position de la bulle
     let bubbleTop, bubbleLeft;
     switch(step.position) {
         case 'top':
@@ -116,7 +107,6 @@ function startTour() {
             bubbleLeft = rect.right + 20;
     }
     
-    // Ajuster pour ne pas sortir de l'écran
     if (bubbleLeft < 20) bubbleLeft = 20;
     if (bubbleLeft + 320 > window.innerWidth) bubbleLeft = window.innerWidth - 340;
     if (bubbleTop < 20) bubbleTop = 20;
@@ -135,7 +125,6 @@ function startTour() {
         font-family: sans-serif;
     `;
     
-    // Flèche de la bulle
     const arrow = document.createElement('div');
     let arrowStyle = '';
     switch(step.position) {
@@ -181,7 +170,6 @@ function startTour() {
     document.body.appendChild(highlight);
     document.body.appendChild(bubble);
     
-    // Événements
     document.getElementById('tour-next').addEventListener('click', () => {
         currentStep++;
         removeHighlight();
@@ -215,7 +203,6 @@ function removeHighlight() {
 
 async function endTour() {
     removeHighlight();
-    // Marquer le tutoriel comme terminé
     try {
         const res = await fetch('tutorial_complete.php', { 
             method: 'POST', 
