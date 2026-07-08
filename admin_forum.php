@@ -25,7 +25,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Fonction pour traduire les actions
 function traduireAction($action) {
     $map = [
         'HIDE_POST' => 'Masquage de message',
@@ -73,7 +72,6 @@ $logs = forum_get_moderation_logs(20);
             <a href="admin_forum_moderation.php">🛡️ Modération centralisée</a>
         </p>
         
-        <!-- Stats -->
         <div class="stats-cards">
             <div class="stat-card"><div class="stat-number"><?= count($allTopics) ?></div><div class="stat-label">Sujets</div></div>
             <div class="stat-card"><div class="stat-number"><?= count($pendingReports) ?></div><div class="stat-label">Signalements</div></div>
@@ -87,7 +85,6 @@ $logs = forum_get_moderation_logs(20);
             </div>
         <?php endif; ?>
         
-        <!-- Tableau des sujets (TOUJOURS VISIBLE) -->
         <h2>📋 Sujets du forum</h2>
         <div class="table-responsive">
             <table class="topic-table">
@@ -142,14 +139,12 @@ $logs = forum_get_moderation_logs(20);
             </table>
         </div>
         
-        <!-- Bouton EN BAS pour afficher/masquer le journal -->
         <div class="footer-center">
             <button onclick="toggleLogs()" class="btn-toggle-logs" id="toggleLogsBtn">
                 📜 Afficher le journal de modération
             </button>
         </div>
         
-        <!-- Journal de modération (CACHÉ PAR DÉFAUT) -->
         <div id="logsSection" class="logs-section">
             <h2>📜 Journal de modération</h2>
             <?php if (empty($logs)): ?>
@@ -186,7 +181,6 @@ $logs = forum_get_moderation_logs(20);
     </section>
 </main>
 
-<!-- Modal Popup pour les détails -->
 <div id="logModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -194,13 +188,11 @@ $logs = forum_get_moderation_logs(20);
             <button class="modal-close" onclick="closeLogModal()">&times;</button>
         </div>
         <div class="modal-body" id="logModalBody">
-            <!-- Contenu dynamique -->
         </div>
     </div>
 </div>
 
 <script>
-// Stocker les logs dans une variable JavaScript
 const logsData = <?php 
     $logsArray = [];
     foreach ($logs as $l) {
