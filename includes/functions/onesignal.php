@@ -1,7 +1,4 @@
 <?php
-/**
- * OneSignal - Envoi de notifications push
- */
 
 function envoyerNotificationOneSignal($userId, $titre, $message, $extraData = []) {
     // TES CLIÉS ONE SIGNAL (à garder secrètes)
