@@ -6,7 +6,6 @@ if (!isset($_SESSION['token'])) {
     exit;
 }
 
-// 🔥 Récupérer les paramètres depuis l'URL
 $inscriptionId = isset($_GET['inscription_id']) ? $_GET['inscription_id'] : '';
 $amount = isset($_GET['amount']) ? intval($_GET['amount']) : 2999;
 $itemName = isset($_GET['item']) ? $_GET['item'] : 'Paiement UpcycleConnect';
@@ -20,7 +19,6 @@ error_log("💰 Stripe: Type = " . $type);
 error_log("💰 Stripe: Formule = " . $formule);
 error_log("💰 Stripe: Inscription ID = " . $inscriptionId);
 
-// Stocker en session pour récupération après paiement
 if (!empty($inscriptionId)) {
     $_SESSION['pending_inscription_id'] = $inscriptionId;
 }
