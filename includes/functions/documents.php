@@ -17,9 +17,7 @@ function document_generate_ref(string $prefix = 'DOC'): string
     return $prefix . '-' . date('YmdHis') . '-' . random_int(1000, 9999);
 }
 
-/**
- * @param list<string>|null $pdfLines Optional explicit lines for the PDF body (after title).
- */
+
 function document_create_html(
     int $userId,
     string $type,
