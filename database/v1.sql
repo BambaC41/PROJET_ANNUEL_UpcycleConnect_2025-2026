@@ -595,9 +595,6 @@ CREATE TABLE IF NOT EXISTS unread_messages (
     UNIQUE KEY uk_unread_user_conversation (user_id, conversation_id)
 ) ENGINE=InnoDB;
 
--- ============================================
--- TABLE PASSWORD_RESET (ajoutée pour le système de réinitialisation)
--- ============================================
 CREATE TABLE IF NOT EXISTS password_reset (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
