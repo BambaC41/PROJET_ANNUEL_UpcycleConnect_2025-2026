@@ -1,229 +1,132 @@
-# UpcycleConnect - Mission 1 (Web + API + MySQL)
+# UpcycleConnect
 
-Plateforme web d'upcycling avec:
-- front en PHP natif (espaces `particulier`, `pro`, `salarie`, `admin`)
-- API REST en Go
-- base MySQL
-- authentification JWT et gestion des roles
+Plateforme web d’upcycling connectant particuliers, professionnels, salariés et administrateurs.
+
+## Présentation du projet
+
+UpcycleConnect est une application web complète dédiée à l’upcycling et à l’économie circulaire. Elle permet aux utilisateurs de :
+- Publier des annonces (dons ou ventes) d’objets à récupérer ou à transformer,
+- Déposer des objets dans des conteneurs dédiés,
+- S’inscrire à des ateliers, formations et événements,
+- Suivre son impact environnemental via un score d’upcycling,
+- Échanger sur un forum communautaire,
+- Gérer ses documents (attestations, factures) et ses paiements.
+
+L’application est pensée pour quatre types d’acteurs :
+- **Particuliers** : dépôt d’annonces, réservation d’objets, inscriptions aux événements,
+- **Professionnels** : gestion d’annonces, récupération en conteneurs, suivi de projets,
+- **Salariés (animateurs/formateurs)** : création et animation d’événements, rédaction de conseils, modération,
+- **Administrateurs** : supervision de l’ensemble des données, validation des contenus, gestion des utilisateurs.
 
 ## Stack technique
 
-- PHP 8.1+ (XAMPP/Apache)
-- Go 1.22+
-- MySQL 8+
-- JWT (`Authorization: Bearer ...`)
+- **Frontend** : PHP natif (HTML/CSS/JS) avec architecture MVC légère et espaces dédiés par rôle.
+- **Backend API** : Go (Golang) avec gestion JWT, routes RESTful, et logique métier.
+- **Base de données** : MySQL, avec un schéma complet couvrant utilisateurs, annonces, objets, événements, paiements, forum, audit, etc.
+- **Authentification** : JWT (JSON Web Token) avec gestion des rôles.
+- **Paiements** : Intégration Stripe pour les paiements (dons, ventes, commissions, inscriptions).
+- **Notifications** : Système de notifications internes (base de données) et emails transactionnels via Brevo (SMTP/API).
+- **Hébergement** : Serveur VPS OVH, conteneurisation Docker, Cloudflare Tunnel pour HTTPS.
 
-## Roles applicatifs
+## Architecture
 
-- `ADMIN` (1): back-office administratif
-- `USER/PARTICULIER` (2)
-- `PRO` (3)
-- `SALARIE` (4): animateur/formateur (espace `salarie.php`)
+L’application est organisée en trois couches principales :
 
-## Installation locale (mode recommande pour soutenance)
+1. **Front PHP** : pages dynamiques pour chaque rôle (`particulier.php`, `pro.php`, `salarie.php`, `admin.php`) avec des sous-pages dédiées (annonces, conteneurs, conseils, événements, documents, etc.).
+2. **API Go** : service REST qui expose les endpoints pour la gestion des utilisateurs, annonces, conteneurs, événements, paiements, scores, etc.
+3. **Base de données MySQL** : stockage de toutes les données métier, avec des tables pour les utilisateurs, annonces, objets, demandes de dépôt, événements, inscriptions, paiements, notifications, forum, audit, etc.
 
-1. Cloner le projet dans `C:/xampp/htdocs/upcycle`
+Les échanges entre le front et l’API se font via des appels HTTP avec token JWT pour l’authentification.
 
-2. Créer un fichier `.env` à la racine (copier depuis `.env.example` et adapter):
+## Rôles et espaces
 
-```env
-API_BASE_URL=http://localhost:8080
-JWT_SECRET=upcycle_dev_only_change_me_2026
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=upcycleconnect
-DB_USER=root
-DB_PASSWORD=
-```
+| Rôle | ID | Espace principal | Fonctions clés |
+|------|----|------------------|----------------|
+| **Administrateur** | 1 | `admin.php` | Validation des annonces, gestion des utilisateurs, supervision des dépôts, finance, audit, modération du forum. |
+| **Particulier** | 2 | `particulier.php` | Publication d’annonces, demandes de dépôt en conteneur, inscription aux événements, consultation de conseils, suivi de son score. |
+| **Professionnel** | 3 | `pro.php` | Gestion des annonces, récupération d’objets via conteneurs, projets d’upcycling, abonnements premium, marketplace. |
+| **Salarié (animateur/formateur)** | 4 | `salarie.php` | Création d’événements, rédaction de conseils et tutoriels, modération du forum. |
 
-3. Importer la base MySQL (script complet de demo):
-- Voir la section **Import MySQL avec le client mysql** ci-dessous.
+## Fonctionnalités principales
 
-4. Lancer l'API Go:
+### Gestion des annonces
+- Création d’annonces (don ou vente) avec photo, description, prix.
+- Validation par l’administrateur.
+- Commission de 5 % sur les ventes, paiement en ligne.
+- Réservation de dons par les professionnels.
 
-```bash
-cd api/api
-go mod tidy
-go run .
-```
+### Conteneurs et dépôts
+- Demande de dépôt d’objets dans des conteneurs physiques.
+- Génération de codes d’accès et de codes-barres.
+- Suivi des statuts (en attente, validé, retiré).
 
-5. Lancer le site PHP:
-- Démarrer Apache (XAMPP)
-- Ouvrir [http://localhost/upcycle](http://localhost/upcycle)
+### Événements et formations
+- Catalogue d’ateliers, formations et conférences.
+- Inscription en ligne, paiement Stripe.
+- Génération d’attestations d’inscription et de factures.
 
-### Configuration MySQL locale
+### Forum communautaire
+- Catégories et sujets.
+- Publication de messages.
+- Modération (masquage, signalement, bannissement).
+- Notifications en cas de nouvelle réponse.
 
-#### XAMPP sans mot de passe (défaut)
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=upcycleconnect
-DB_USER=root
-DB_PASSWORD=
-```
+### Conseils et tutoriels
+- Rédaction d’articles par les salariés.
+- Validation par l’administrateur.
+- Affichage public avec catégories.
 
-#### XAMPP avec mot de passe personnalisé
-Si vous avez défini un mot de passe root dans XAMPP MySQL:
-```env
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=upcycleconnect
-DB_USER=root
-DB_PASSWORD=votre_mot_de_passe_ici
-```
+### Gestion des utilisateurs et sécurité
+- Inscription et connexion sécurisée avec JWT.
+- Récupération de mot de passe via email.
+- Bannissement, suspension, gestion des rôles.
+- Journal d’audit des actions administratives.
 
-Pour vérifier/définir le mot de passe root MySQL dans XAMPP:
-```bash
-# Connexion sans mot de passe
-mysql -u root
+### Paiements et facturation
+- Intégration Stripe pour les achats, commissions et inscriptions.
+- Génération de documents (factures, attestations) au format HTML.
+- Suivi des transactions et du chiffre d’affaires.
 
-# Dans MySQL, définir un mot de passe (une seule fois):
-ALTER USER 'root'@'localhost' IDENTIFIED BY 'votre_mot_de_passe';
-FLUSH PRIVILEGES;
-```
+### Notifications
+- Notifications internes (base de données) pour les actions importantes (validation, paiement, événement…).
+- Envoi d’emails transactionnels via Brevo (SMTP).
 
-## Import MySQL avec le client mysql
+## Comptes de démonstration
 
-Objectif: reconstruire une base de demo propre (MySQL 8.0.45 compatible), verifier le schema, puis lancer un smoke test CLI.
+| Rôle | Email | Mot de passe |
+|------|-------|--------------|
+| Administrateur | `admin@upcycleconnect.fr` | `Upcycle2026!` |
+| Particulier | `user1@test.com` | `Upcycle2026!` |
+| Professionnel | `pro1@test.com` | `Upcycle2026!` |
+| Salarié | `emp1@test.com` | `Upcycle2026!` |
 
-1. Ouvrir le client mysql:
+Ces comptes sont préconfigurés pour tester l’ensemble des fonctionnalités.
 
-```bash
-mysql -u root -p
-```
+## Parcours de démonstration recommandé
 
-2. Importer le SQL:
+1. **Connexion en tant que particulier** (`user1@test.com`) :
+   - Suivre le tutoriel de première connexion.
+   - Publier une annonce (don ou vente).
+   - Faire une demande de dépôt en conteneur.
+   - S’inscrire à un événement depuis le catalogue.
+   - Effectuer un paiement (simulation Stripe).
+   - Consulter ses documents et notifications.
 
-```sql
-SOURCE C:/chemin/vers/upcycle/database/upcycleconnect_v2.sql;
-```
+2. **Connexion en tant qu’administrateur** (`admin@upcycleconnect.fr`) :
+   - Valider l’annonce et le dépôt.
+   - Gérer les utilisateurs et les événements.
+   - Consulter la finance et l’audit.
 
-Important Windows: utiliser des slashs `/` dans le chemin.
+3. **Connexion en tant que professionnel** (`pro1@test.com`) :
+   - Créer une annonce.
+   - Récupérer un objet via un conteneur.
+   - Créer un projet d’upcycling.
 
-3. Verifier la base:
+4. **Connexion en tant que salarié** (`emp1@test.com`) :
+   - Créer un événement.
+   - Rédiger un conseil.
+   - Modérer le forum (si besoin).
 
-```sql
-USE upcycleconnect;
-SOURCE C:/chemin/vers/upcycle/database/verify_schema.sql;
-```
+Ce parcours couvre les cas d’usage principaux de la plateforme.
 
-4. Lancer le smoke test:
-
-```bash
-php scripts/qa_smoke.php
-```
-
-5. Lancer le site:
-- demarrer Apache avec XAMPP
-- ouvrir `http://localhost/upcycle` (ou le chemin local du projet)
-
-6. Lancer l'API Go:
-
-```bash
-cd api/api
-go run .
-```
-
-## Comptes de demonstration
-
-Mot de passe commun: `Upcycle2026!`
-
-- `admin@upcycleconnect.fr`
-- `user1@test.com`
-- `pro1@test.com`
-- `emp1@test.com`
-
-Roles attendus:
-- `admin@upcycleconnect.fr`: id_role = 1 (ADMIN)
-- `user1@test.com`: id_role = 2 (USER / particulier) + `tutorial_completed = 0` pour montrer le tutoriel
-- `pro1@test.com`: id_role = 3 (PRO) + `is_approved = 1`
-- `emp1@test.com`: id_role = 4 (SALARIE)
-
-## Fonctionnalites couvertes
-
-- Authentification/login/register/logout
-- Redirection par role
-- Guards de pages privees par role
-- Espaces:
-  - `particulier_*`
-  - `pro_*`
-  - `salarie_*`
-  - `admin_*`
-- Catalogue/prestations/evenements/inscriptions
-- Annonces et demandes de depot
-- Paiements (mode demo), factures et documents generes (stockage DB)
-- Notifications internes
-- Forum (topics/messages/signalements)
-- Journal d'audit admin
-- Tutoriel premiere connexion particulier (overlay + finalisation)
-- Multilingue FR/EN (socle sur pages publiques + navigation)
-
-## Repartition PHP / API Go
-
-- **API Go**: auth, profils, annonces, conteneurs, evenements, inscriptions, paiements API existants, score.
-- **PHP local (Mission 1 soutenance)**: notifications internes en base, generation de documents HTML imprimables, paiement demo, audit/gestion forum back-office.
-
-## Endpoints API Go principaux
-
-- `GET /health`
-- `POST /login`
-- `POST /register`
-- `GET /me`
-- `PUT /me/update`
-- `GET/POST /annonces`, `GET/PUT/DELETE /annonces/{id}`
-- `GET/POST /conteneurs`, `GET/PUT/DELETE /conteneurs/{id}`
-- `GET/POST /demandes-depot`, `GET/PUT/DELETE /demandes-depot/{id}`
-- `GET /events`, `GET/PUT/DELETE /events/{id}`
-- `POST /events/{id}/register`
-- `GET /me/inscriptions`, `GET /me/paiements`, `GET /me/score`
-- `GET/POST /conseils`
-
-## Verifications rapides
-
-Depuis la racine:
-
-```bash
-php -l login.php
-php -l register.php
-php -l pro.php
-php -l includes/pro_bootstrap.php
-php -l includes/employee_bootstrap.php
-```
-
-Lint PHP recursif (PowerShell):
-
-```powershell
-Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -l $_.FullName }
-```
-
-Depuis `api/api`:
-
-```bash
-go build ./...
-```
-
-## Limites actuelles
-
-- Paiements: mode demo actif (structure compatible Stripe en base)
-- OneSignal: non branche (notifications internes en base en place)
-- Certaines pages legacy (`users.php`, `events.php`, `prestations.php`) restent presentes pour compatibilite
-- Docker: non priorise pour la mission 1 (site + SQL + QA)
-
-## Parcours de demonstration recommande
-
-1. Connexion `user1@test.com`
-2. Tutoriel premiere connexion (dashboard particulier)
-3. Depot annonce particulier
-4. Demande depot conteneur
-5. Inscription evenement depuis le catalogue
-6. Paiement demo (planning particulier)
-7. Consultation document/facture (`particulier_documents.php`)
-8. Verification notification (`notifications.php`)
-9. Connexion admin (`admin@upcycleconnect.fr`)
-10. Validation annonce / depot / evenement
-11. Consultation finance, documents et audit
-12. Connexion pro (`pro1@test.com`)
-13. Recuperation objet (conteneurs pro)
-14. Creation projet upcycling
-15. Connexion salarie (`emp1@test.com`)
-16. Creation evenement, publication forum et moderation
+**UpcycleConnect** – Donnez une seconde vie aux objets, connectez les acteurs de l’upcycling.
