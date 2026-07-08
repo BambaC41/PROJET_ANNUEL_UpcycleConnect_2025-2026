@@ -11,7 +11,6 @@ $filter = trim((string)($_GET['filter'] ?? 'all'));
 $roleFilter = trim((string)($_GET['role'] ?? 'all'));
 $q = trim((string)($_GET['q'] ?? ''));
 
-// Actions de modération
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $postId = (int)($_POST['post_id'] ?? 0);
@@ -95,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-// Récupération des messages avec filtre par rôle
 $messages = (array)db_safe_exec(function (PDO $pdo) use ($page, $perPage, $filter, $roleFilter, $q) {
     $sql = "SELECT p.id_post, p.content, p.created_at, p.is_hidden, p.hidden_reason, p.hidden_by, p.hidden_at,
             u.id_user, u.pseudo, u.email, u.id_role,
@@ -143,7 +141,6 @@ $messages = (array)db_safe_exec(function (PDO $pdo) use ($page, $perPage, $filte
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }, []);
 
-// Récupération des suggestions pour l'autocomplete
 $suggestions = [];
 if (strlen($q) > 1) {
     $suggestions = (array)db_safe_exec(function (PDO $pdo) use ($q) {
@@ -158,7 +155,6 @@ if (strlen($q) > 1) {
     }, []);
 }
 
-// Comptage pour les statistiques
 $stats = (array)db_safe_exec(function (PDO $pdo) {
     $stats = [];
     $st = $pdo->query("SELECT COUNT(*) FROM forum_posts WHERE is_hidden = 1");
@@ -170,7 +166,6 @@ $stats = (array)db_safe_exec(function (PDO $pdo) {
     return $stats;
 }, ['hidden' => 0, 'visible' => 0, 'reports' => 0]);
 
-// Récupération des rôles pour le filtre
 $roles = (array)db_safe_exec(function (PDO $pdo) {
     return $pdo->query("SELECT id_role, libelle FROM role ORDER BY id_role")->fetchAll(PDO::FETCH_ASSOC);
 }, []);
@@ -205,7 +200,6 @@ $totalPages = max(1, (int)ceil($totalMessages / $perPage));
             <a href="forum.php" target="_blank">🌐 Voir le forum</a>
         </p>
         
-        <!-- Statistiques -->
         <div class="stats-bar">
             <div class="stat-badge">
                 <div class="stat-number"><?= $stats['visible'] ?></div>
@@ -221,7 +215,6 @@ $totalPages = max(1, (int)ceil($totalMessages / $perPage));
             </div>
         </div>
         
-        <!-- Filtres -->
         <div class="filter-bar">
             <a href="?filter=all&role=<?= e($roleFilter) ?><?= $q ? '&q=' . urlencode($q) : '' ?>" 
                class="filter-btn <?= $filter === 'all' ? 'active' : '' ?>">📋 Tous</a>
@@ -231,7 +224,6 @@ $totalPages = max(1, (int)ceil($totalMessages / $perPage));
                class="filter-btn <?= $filter === 'hidden' ? 'active' : '' ?>">🙈 Masqués</a>
         </div>
         
-        <!-- Filtre par rôle et recherche avec autocomplete -->
         <form method="GET" style="margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
             <input type="hidden" name="filter" value="<?= e($filter) ?>">
             <select name="role" class="role-filter-select" onchange="this.form.submit()">
@@ -385,7 +377,6 @@ $totalPages = max(1, (int)ceil($totalMessages / $perPage));
 </main>
 
 <script>
-// Autocomplete / suggestions en temps réel
 const searchInput = document.getElementById('searchInput');
 const suggestionsBox = document.getElementById('suggestions');
 let debounceTimer;
@@ -399,7 +390,6 @@ function showSuggestions() {
         return;
     }
     
-    // Filtrer les suggestions en fonction de ce qui est tapé
     const filtered = suggestions.filter(s => s.toLowerCase().includes(query));
     
     if (filtered.length > 0) {
@@ -415,7 +405,6 @@ function showSuggestions() {
 function selectSuggestion(value) {
     searchInput.value = value;
     suggestionsBox.classList.remove('show');
-    // Soumettre automatiquement le formulaire
     searchInput.closest('form').submit();
 }
 
@@ -424,7 +413,6 @@ searchInput.addEventListener('input', function() {
     debounceTimer = setTimeout(showSuggestions, 300);
 });
 
-// Cacher les suggestions quand on clique ailleurs
 document.addEventListener('click', function(e) {
     if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
         suggestionsBox.classList.remove('show');
