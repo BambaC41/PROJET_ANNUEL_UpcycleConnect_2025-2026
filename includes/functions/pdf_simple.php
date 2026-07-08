@@ -17,9 +17,7 @@ function pdf_simple_escape_pdf(string $s): string
     return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $s);
 }
 
-/**
- * @param list<string> $lines
- */
+
 function pdf_simple_build(string $title, array $lines): string
 {
     $title = pdf_simple_translit($title);
