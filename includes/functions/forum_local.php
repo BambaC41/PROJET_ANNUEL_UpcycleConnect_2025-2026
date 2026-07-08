@@ -239,7 +239,6 @@ function forum_moderate_topic(int $topicId, int $moderatorId, string $action, st
         return $ok;
     }, false);
 }
-// Remplacer la fonction forum_moderate_post par celle-ci:
 function forum_moderate_post(int $postId, int $moderatorId, string $action, string $reason = ''): bool
 {
     if ($postId <= 0 || !forum_schema_ready()) {
@@ -253,11 +252,11 @@ function forum_moderate_post(int $postId, int $moderatorId, string $action, stri
     
     return (bool)db_safe_exec(static function (PDO $pdo) use ($postId, $moderatorId, $hide, $reason, $action): bool {
         if ($hide == 1) {
-            // Masquer avec toutes les infos
+           
             $stmt = $pdo->prepare('UPDATE forum_posts SET is_hidden = ?, hidden_reason = ?, hidden_by = ?, hidden_at = NOW() WHERE id_post = ?');
             $ok = $stmt->execute([$hide, $reason, $moderatorId, $postId]);
         } else {
-            // Restaurer
+          
             $stmt = $pdo->prepare('UPDATE forum_posts SET is_hidden = ?, hidden_reason = NULL, hidden_by = NULL, hidden_at = NULL WHERE id_post = ?');
             $ok = $stmt->execute([$hide, $postId]);
         }
@@ -315,9 +314,6 @@ function forum_notify_moderators(string $title, string $content): void
     notif_notify_roles([1, 4], 'forum', $title, $content);
 }
 
-// ============================================
-// NOUVELLES FONCTIONS POUR LA MODÉRATION
-// ============================================
 
 function forum_is_user_banned(int $userId): bool
 {
