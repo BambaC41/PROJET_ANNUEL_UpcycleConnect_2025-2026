@@ -2,7 +2,6 @@
 require_once 'includes/admin_bootstrap.php';
 require_once 'includes/functions/local_db.php';
 
-// Fonction de traduction (inchangée)
 function traduireActionAudit($action) {
     $traductions = [
         'TOGGLE_PRESTATION' => '🔁 Activation/Désactivation d\'offre',
