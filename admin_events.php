@@ -5,9 +5,6 @@ require_once 'includes/functions/events.php';
 require_once 'includes/notifications.php';
 require_once 'includes/ui_helpers.php';
 
-// =============================================
-// 1. VALIDATION / MODIFICATION STATUT
-// =============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
     $eventId = (int)$_POST['event_id'];
     $dateDebut = date('Y-m-d H:i:s', strtotime((string)($_POST['date_debut'] ?? '')));
@@ -114,9 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_event'])) {
     exit;
 }
 
-// =============================================
-// 2. CRÉATION D'UN ÉVÉNEMENT (ADMIN)
-// =============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_event'])) {
     $prestationId = (int)$_POST['prestation_id'];
     $dateDebut = $_POST['date_debut'];
@@ -172,9 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_event'])) {
     exit;
 }
 
-// =============================================
-// 3. SUPPRESSION/ANNULATION D'UN ÉVÉNEMENT
-// =============================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event_id'])) {
     $eventId = (int)$_POST['delete_event_id'];
     
@@ -245,9 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_event_id'])) {
     exit;
 }
 
-// =============================================
-// 4. RÉCUPÉRATION DES DONNÉES
-// =============================================
 $events = api_get_events($_SESSION['token']);
 $prestations = api_get_prestations($_SESSION['token']);
 $q = mb_strtolower(trim((string)($_GET['q'] ?? '')));
@@ -415,7 +403,6 @@ function event_status_text(string $st): string {
     <?php endif; ?>
 </main>
 
-<!-- MODAL CRÉATION -->
 <div id="createModal" class="modal-event-zoom" onclick="closeCreateModal()">
     <div class="modal-event-content" onclick="event.stopPropagation()">
         <span class="modal-event-close" onclick="closeCreateModal()">&times;</span>
@@ -473,7 +460,6 @@ function event_status_text(string $st): string {
     </div>
 </div>
 
-<!-- MODAL ZOOM MODIFICATION -->
 <div id="eventZoomModal" class="modal-event-zoom" onclick="closeEventZoom()">
     <div class="modal-event-content" onclick="event.stopPropagation()">
         <span class="modal-event-close" onclick="closeEventZoom()">&times;</span>
@@ -491,12 +477,10 @@ function event_status_text(string $st): string {
             <div class="modal-actions">
                 <button class="btn-modal btn-modal-primary" onclick="toggleEditMode()">✏️ Modifier</button>
                 
-                <?php // Bouton Valider : uniquement si l'événement n'est PAS déjà validé ?>
                 <?php if ($st !== 'valide'): ?>
                     <button class="btn-modal btn-modal-warning" onclick="quickValidate()">✅ Valider</button>
                 <?php endif; ?>
                 
-                <?php // Bouton Annuler/Supprimer : uniquement si l'événement n'est PAS déjà annulé ?>
                 <?php if ($st !== 'annule'): ?>
                     <button class="btn-modal btn-modal-danger" id="deleteOrCancelBtn" onclick="confirmDeleteOrCancel()">
                         <?php if ($inscritsCount > 0): ?>❌ Annuler l'événement<?php else: ?>🗑️ Supprimer l'événement<?php endif; ?>
