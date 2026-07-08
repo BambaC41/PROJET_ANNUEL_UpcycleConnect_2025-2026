@@ -109,11 +109,8 @@ function runAutoSave() {
     body: formData,
     credentials: "same-origin",
   }).catch(() => {
-    // silence (pas de message UI)
   });
 }
-
-// Expose globally for inline onclick handlers
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
 window.openCreateUserModal = openCreateUserModal;
