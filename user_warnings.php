@@ -4,15 +4,12 @@ require_once 'includes/functions/forum_local.php';
 
 $userId = (int)$_SESSION['user_id'];
 
-// Marquer un avertissement comme lu
 if (isset($_GET['mark_read']) && isset($_GET['id'])) {
     $warningId = (int)$_GET['id'];
     forum_mark_warning_read($warningId, $userId);
     header('Location: user_warnings.php');
     exit;
 }
-
-// Marquer tous les avertissements comme lus
 if (isset($_GET['mark_all_read'])) {
     db_safe_exec(function (PDO $pdo) use ($userId) {
         $st = $pdo->prepare('UPDATE user_warnings SET is_read = 1 WHERE user_id = ?');
